@@ -1,0 +1,2780 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f1226">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="EnglishPro">
+<title>English Pro · B1 → C2 para trabajar</title>
+<style>
+  :root{
+    --bg:#0f1226; --bg2:#161a36; --card:#1c2148; --card2:#222a5c;
+    --accent:#5b8cff; --accent2:#22d3a8; --warn:#ffb020; --bad:#ff5c7a;
+    --text:#eef1ff; --muted:#9aa3d4; --line:#2c3470; --gold:#ffd35c;
+    --panel:rgba(22,26,54,.55); --header:rgba(15,18,38,.82); --trackbg:#242a5e;
+    --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  body.light{
+    --bg:#eef1fa; --bg2:#ffffff; --card:#ffffff; --card2:#f3f6fd;
+    --accent:#3a64f0; --accent2:#0fa97e; --warn:#e08a00; --bad:#e44867;
+    --text:#1b2138; --muted:#5a6486; --line:#dde3f3; --gold:#b9820a;
+    --panel:#f6f8ff; --header:rgba(255,255,255,.9); --trackbg:#e2e7f5;
+    --shadow:0 10px 30px rgba(60,80,140,.14);
+  }
+  *{box-sizing:border-box}
+  *::-webkit-scrollbar{width:10px;height:10px}
+  *::-webkit-scrollbar-thumb{background:var(--line);border-radius:10px}
+  *::-webkit-scrollbar-track{background:transparent}
+  body{margin:0;font-family:"Segoe UI",system-ui,Arial,sans-serif;background:
+    radial-gradient(1200px 600px at 10% -10%,#1d2552 0,transparent 60%),
+    radial-gradient(1000px 500px at 110% 10%,#142a44 0,transparent 55%),
+    var(--bg);color:var(--text);min-height:100vh}
+  header{padding:11px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:var(--header);backdrop-filter:blur(10px);z-index:60;flex-wrap:wrap}
+  .logo{font-weight:800;font-size:20px;letter-spacing:.3px}
+  .logo span{color:var(--accent2)}
+  .tag{font-size:12px;color:var(--muted)}
+  .spacer{flex:1}
+  .pill{background:var(--card);border:1px solid var(--line);padding:6px 11px;border-radius:999px;font-size:13px;color:var(--muted)}
+  .pill b{color:var(--gold)}
+  .icon-btn{background:var(--card);border:1px solid var(--line);color:var(--text);width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:17px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .icon-btn:hover{border-color:var(--accent)}
+  .hamb{display:none}
+  .shell{display:flex;align-items:flex-start;max-width:1340px;margin:0 auto}
+  nav.sidebar{position:sticky;top:62px;align-self:flex-start;width:240px;flex:0 0 240px;height:calc(100vh - 62px);overflow-y:auto;padding:14px 12px 30px;border-right:1px solid var(--line);background:var(--panel)}
+  .navgroup{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin:18px 12px 6px;font-weight:800;opacity:.65}
+  nav.sidebar button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;border:1px solid transparent;color:var(--muted);padding:10px 12px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;margin:2px 0;transition:background .12s,color .12s}
+  nav.sidebar button:hover{color:var(--text);background:var(--card)}
+  nav.sidebar button.active{color:#fff;background:linear-gradient(135deg,var(--accent),#7a5cff);border-color:transparent;box-shadow:0 4px 14px rgba(91,140,255,.32)}
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:55;backdrop-filter:blur(2px)}
+  main{flex:1;min-width:0;max-width:1060px;margin:0 auto;padding:26px 26px 90px}
+  @media(max-width:900px){
+    .hamb{display:inline-flex}
+    .tag{display:none}
+    nav.sidebar{position:fixed;top:0;left:0;height:100vh;z-index:70;transform:translateX(-102%);transition:transform .25s ease;box-shadow:var(--shadow);width:250px;padding-top:18px}
+    nav.sidebar.open{transform:none}
+    .overlay.show{display:block}
+    main{padding:18px 16px 80px}
+  }
+  .view{display:none;animation:fade .25s ease}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  h1{font-size:26px;margin:0 0 6px}
+  h2{font-size:20px;margin:26px 0 10px}
+  h3{margin:0 0 8px}
+  p.lead{color:var(--muted);margin-top:0}
+  .grid{display:grid;gap:16px}
+  .levels{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .card{background:linear-gradient(160deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+  .level-card{cursor:pointer;transition:transform .15s,border-color .15s;position:relative;overflow:hidden}
+  .level-card:hover{transform:translateY(-3px);border-color:var(--accent)}
+  .level-card.locked{opacity:.66;cursor:not-allowed}
+  .level-card .lvl{font-size:34px;font-weight:800}
+  .level-card .cefr{font-size:13px;color:var(--muted)}
+  .bar{height:8px;background:var(--trackbg);border-radius:99px;overflow:hidden;margin-top:12px}
+  .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent))}
+  .lock{position:absolute;top:12px;right:14px;font-size:18px}
+  .btn{background:linear-gradient(135deg,var(--accent),#7a5cff);color:#fff;border:none;padding:11px 18px;border-radius:12px;font-weight:700;cursor:pointer;font-size:14px}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.alt{background:var(--card2);border:1px solid var(--line);color:var(--text)}
+  .btn.green{background:linear-gradient(135deg,var(--accent2),#19b88f)}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted)}
+  .btn.small{padding:7px 12px;font-size:13px;border-radius:9px}
+  .btn.on{outline:2px solid var(--accent2);outline-offset:1px}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .word-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:14px}
+  .word{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .word .en{font-size:18px;font-weight:800;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .word .ipa{color:var(--accent2);font-size:13px;font-style:italic}
+  .word .es{color:var(--muted);margin:6px 0}
+  .word .ex{font-size:13px;color:var(--text);opacity:.82;border-left:3px solid var(--accent);padding-left:8px;margin-top:8px}
+  .spk{background:var(--accent);border:none;color:#fff;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center}
+  .spk.slow{background:var(--warn)}
+  .grammar{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:10px}
+  .grammar code{background:var(--trackbg);padding:2px 6px;border-radius:6px;color:var(--accent2)}
+  .quiz-q{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:16px;margin:12px 0}
+  .opt{display:block;width:100%;text-align:left;background:var(--bg2);border:1px solid var(--line);color:var(--text);padding:11px 14px;border-radius:10px;margin:7px 0;cursor:pointer;font-size:14px}
+  .opt:hover{border-color:var(--accent)}
+  .opt.correct{background:rgba(34,211,168,.18);border-color:var(--accent2)}
+  .opt.wrong{background:rgba(255,92,122,.16);border-color:var(--bad)}
+  .opt.picked{border-color:var(--accent)}
+  .muted{color:var(--muted)}
+  .badge{display:inline-block;background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:3px 10px;font-size:12px;color:var(--muted)}
+  .badge.done{color:var(--accent2);border-color:var(--accent2)}
+  .score-big{font-size:48px;font-weight:800}
+  .chat{display:flex;flex-direction:column;height:480px;background:var(--bg2);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .chat-log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+  .msg{max-width:78%;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.4;white-space:pre-wrap}
+  .msg.ai{background:var(--card2);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
+  .msg.me{background:linear-gradient(135deg,var(--accent),#7a5cff);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+  .msg .tr{display:block;color:var(--muted);font-size:12px;margin-top:6px;border-top:1px dashed var(--line);padding-top:5px}
+  .chat-input{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line);background:var(--card)}
+  .chat-input input{flex:1;background:var(--bg2);border:1px solid var(--line);color:var(--text);padding:11px 14px;border-radius:10px;font-size:14px}
+  .mic{width:46px;height:46px;border-radius:12px;border:none;background:var(--card2);color:var(--text);font-size:18px;cursor:pointer;border:1px solid var(--line)}
+  .mic.live{background:var(--bad);animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,92,122,.5)}50%{box-shadow:0 0 0 10px rgba(255,92,122,0)}}
+  input,select,textarea{font-family:inherit}
+  .setting{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0}
+  .setting input[type=text],.setting input[type=password],.setting select{background:var(--bg2);border:1px solid var(--line);color:var(--text);padding:9px 12px;border-radius:10px;font-size:14px}
+  .speak-card{text-align:center;padding:28px}
+  .speak-target{font-size:26px;font-weight:800;margin:10px 0}
+  .speak-result{min-height:24px;font-size:15px;margin-top:14px}
+  .ok{color:var(--accent2)} .err{color:var(--bad)}
+  .scenario-btn{text-align:left}
+  .topbtns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .hl-good{color:var(--accent2);font-weight:700}
+  .hl-bad{color:var(--bad);text-decoration:line-through}
+  footer{text-align:center;color:var(--muted);font-size:12px;padding:20px}
+  details summary{cursor:pointer;color:var(--accent2);margin:8px 0}
+  table{width:100%;border-collapse:collapse;margin-top:8px}
+  td,th{border:1px solid var(--line);padding:7px 10px;font-size:13px;text-align:left}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--accent2);padding:12px 20px;border-radius:12px;z-index:200;box-shadow:var(--shadow);opacity:0;transition:opacity .3s}
+  .toast.show{opacity:1}
+  /* Llamada de voz */
+  .call-stage{text-align:center;padding:30px 18px}
+  .orb{width:170px;height:170px;border-radius:50%;margin:10px auto 18px;position:relative;
+    background:radial-gradient(circle at 35% 30%,#7a5cff,#22d3a8);box-shadow:0 0 60px rgba(91,140,255,.5);
+    display:flex;align-items:center;justify-content:center;font-size:60px;transition:transform .2s}
+  .orb.speaking{animation:orbSpeak 1.1s ease-in-out infinite}
+  .orb.listening{animation:orbListen 1.4s ease-in-out infinite;background:radial-gradient(circle at 35% 30%,#ff5c7a,#ffb020)}
+  @keyframes orbSpeak{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+  @keyframes orbListen{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,92,122,.5)}50%{transform:scale(1.05);box-shadow:0 0 0 24px rgba(255,92,122,0)}}
+  .call-status{font-size:18px;font-weight:700;margin:6px 0}
+  .call-sub{color:var(--muted);min-height:22px;font-size:14px}
+  .caption{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:16px;text-align:left;max-height:200px;overflow-y:auto;font-size:14px;display:none}
+  .caption.show{display:block}
+  .caption .c-ai{color:var(--accent2)} .caption .c-me{color:var(--text)}
+  .caption p{margin:6px 0}
+  /* Lectura */
+  .reader{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:22px;line-height:2;font-size:17px}
+  .reader w{cursor:pointer;border-radius:4px;padding:1px 1px;transition:background .1s}
+  .reader w:hover{background:var(--card2)}
+  .reader w.reading{background:var(--gold);color:#222}
+  .reader w.gloss{border-bottom:1px dashed var(--accent2)}
+  .read-pop{position:fixed;background:var(--card2);border:1px solid var(--accent2);border-radius:10px;padding:8px 12px;font-size:14px;z-index:300;box-shadow:var(--shadow);display:none}
+  .read-pop b{color:var(--accent2)}
+  /* Dictado */
+  .dictation-box{text-align:center;padding:24px}
+  .dictation-box textarea{width:100%;max-width:560px;min-height:70px;background:var(--bg2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:12px;font-size:16px;margin-top:14px}
+  .diff-good{color:var(--accent2)} .diff-bad{color:var(--bad);text-decoration:underline}
+  /* Flashcards */
+  .flip{perspective:1200px;max-width:480px;margin:18px auto}
+  .flip-inner{position:relative;width:100%;min-height:230px;transition:transform .5s;transform-style:preserve-3d;cursor:pointer}
+  .flip.flipped .flip-inner{transform:rotateY(180deg)}
+  .flip-face{position:absolute;inset:0;backface-visibility:hidden;background:linear-gradient(160deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+  .flip-back{transform:rotateY(180deg)}
+  .flip-face .big{font-size:28px;font-weight:800}
+  .flip-face .ipa{color:var(--accent2);font-style:italic;margin-top:6px}
+  .flip-face .es{font-size:22px;color:var(--text);font-weight:700}
+  .flip-face .ex{color:var(--muted);margin-top:12px;font-size:15px;border-left:3px solid var(--accent);padding-left:10px}
+  .srs-stats{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:6px 0 4px}
+  /* Anillo objetivo diario */
+  .ring-wrap{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .ring{--p:0;width:120px;height:120px;border-radius:50%;background:conic-gradient(var(--accent2) calc(var(--p)*1%),var(--trackbg) 0);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .ring i{width:92px;height:92px;border-radius:50%;background:var(--bg2);display:flex;flex-direction:column;align-items:center;justify-content:center;font-style:normal}
+  .ring b{font-size:22px}
+  /* Medallas */
+  .badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:8px}
+  .medal{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center;opacity:.4}
+  .medal.on{opacity:1;border-color:var(--gold)}
+  .medal .ic{font-size:30px}
+  .medal .nm{font-weight:700;margin-top:6px;font-size:14px}
+  .medal .ds{font-size:12px;color:var(--muted);margin-top:2px}
+  /* Certificado */
+  .cert{background:linear-gradient(135deg,#fffdf5,#fff7e0);color:#2a2410;border:6px double #c9a227;border-radius:14px;padding:30px;text-align:center;max-width:600px;margin:10px auto;font-family:Georgia,serif}
+  .cert h2{color:#9a7a10;margin:6px 0;font-size:30px}
+  .cert .nm{font-size:26px;font-weight:800;border-bottom:2px solid #c9a227;display:inline-block;padding:0 20px 4px;margin:10px 0}
+  .cert .lv{font-size:20px;font-weight:700;color:#1f5e46}
+  .cert .sig{margin-top:18px;color:#6a5c20;font-size:13px}
+  /* Dashboard Hoy */
+  .dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .dash-item{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}
+  .dash-item .t{font-weight:700;display:flex;align-items:center;gap:8px}
+  .dash-item .d{font-size:13px;color:var(--muted);flex:1}
+  /* Tabs internas */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 16px}
+  .tabs button{background:var(--card2);border:1px solid var(--line);color:var(--muted);padding:8px 14px;border-radius:9px;cursor:pointer;font-weight:600;font-size:13px}
+  .tabs button.on{background:var(--accent);color:#fff;border-color:transparent}
+  /* Verbos */
+  .verb-train{max-width:520px;margin:0 auto}
+  .verb-q{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:18px;text-align:center}
+  .verb-q .inf{font-size:26px;font-weight:800}
+  .verb-q .es{color:var(--muted);margin:4px 0 14px}
+  .verb-q input{background:var(--bg2);border:1px solid var(--line);color:var(--text);padding:10px 12px;border-radius:9px;font-size:16px;width:160px;text-align:center;margin:4px}
+  .verb-q input.good{border-color:var(--accent2);background:rgba(34,211,168,.12)}
+  .verb-q input.bad{border-color:var(--bad);background:rgba(255,92,122,.12)}
+  .vtable td:first-child{font-weight:700}
+  .vtable .play{cursor:pointer;color:var(--accent)}
+  /* Fonética / pares mínimos */
+  .pair{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px;margin:8px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .pair .pw{flex:1;min-width:120px}
+  .pair .pw .w{font-size:19px;font-weight:800}
+  .pair .pw .ph{color:var(--accent2);font-size:13px;font-style:italic}
+  .tip-box{background:rgba(91,140,255,.1);border:1px solid var(--accent);border-radius:12px;padding:14px;margin:10px 0}
+  .ear-card{text-align:center;padding:26px}
+  .ear-opts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+  .ear-opt{background:var(--bg2);border:2px solid var(--line);color:var(--text);padding:16px 26px;border-radius:12px;font-size:20px;font-weight:800;cursor:pointer;min-width:120px}
+  .ear-opt:hover{border-color:var(--accent)}
+  .ear-opt.correct{border-color:var(--accent2);background:rgba(34,211,168,.16)}
+  .ear-opt.wrong{border-color:var(--bad);background:rgba(255,92,122,.16)}
+  /* Placement */
+  .place-progress{height:8px;background:var(--trackbg);border-radius:99px;overflow:hidden;margin:10px 0 18px}
+  .place-progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  /* Diálogos */
+  .dialog-line{display:flex;gap:12px;padding:12px 14px;border-radius:12px;margin:8px 0;background:var(--card2);border:1px solid var(--line);transition:background .15s,border-color .15s}
+  .dialog-line.playing{border-color:var(--accent2);background:rgba(34,211,168,.1)}
+  .dialog-line.me{background:rgba(91,140,255,.08)}
+  .dialog-line .who{flex:0 0 84px;font-weight:800;font-size:13px;color:var(--accent2)}
+  .dialog-line.me .who{color:var(--accent)}
+  .dialog-line .body{flex:1;min-width:0}
+  .dialog-line .en{font-size:15px}
+  .dialog-line .es{font-size:13px;color:var(--muted);margin-top:4px;display:none}
+  .dialog-line.show-es .es{display:block}
+  .dialog-line .ctl{display:flex;gap:5px;margin-top:6px}
+  .dialog-line .hidden-text{filter:blur(5px);user-select:none}
+  /* Gramática */
+  .gg-card{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:20px;max-width:620px;margin:0 auto}
+  .gg-q{font-size:18px;font-weight:700;margin:6px 0 14px;line-height:1.5}
+  .gg-q .blank{display:inline-block;min-width:60px;border-bottom:2px dashed var(--accent);margin:0 4px}
+  .gg-fill{background:var(--bg2);border:1px solid var(--line);color:var(--text);padding:10px 14px;border-radius:10px;font-size:16px;width:200px}
+  .gg-fill.good{border-color:var(--accent2);background:rgba(34,211,168,.12)}
+  .gg-fill.bad{border-color:var(--bad);background:rgba(255,92,122,.12)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .chip{background:var(--bg2);border:1px solid var(--line);color:var(--text);padding:9px 14px;border-radius:10px;cursor:pointer;font-size:15px;font-weight:600}
+  .chip:hover{border-color:var(--accent)}
+  .chip.used{opacity:.35;pointer-events:none}
+  .chip-slot{min-height:48px;background:var(--bg2);border:1px dashed var(--line);border-radius:10px;padding:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .chip.placed{background:var(--card);border-color:var(--accent)}
+  .gg-progress{display:flex;gap:6px;justify-content:center;margin-bottom:14px;flex-wrap:wrap}
+  .gg-dot{width:10px;height:10px;border-radius:50%;background:var(--trackbg)}
+  .gg-dot.ok{background:var(--accent2)} .gg-dot.bad{background:var(--bad)} .gg-dot.cur{background:var(--accent);transform:scale(1.3)}
+  @media(max-width:600px){.msg{max-width:88%}.speak-target{font-size:22px}.orb{width:130px;height:130px;font-size:48px}}
+</style>
+</head>
+<body>
+<header>
+  <button class="icon-btn hamb" id="hamb" title="Menú">☰</button>
+  <div class="logo">English<span>Pro</span></div>
+  <div class="tag">B1 → C2 · Inglés para trabajar</div>
+  <div class="spacer"></div>
+  <div class="pill" title="Racha de días seguidos">🔥 <b id="streak">0</b></div>
+  <div class="pill" title="Puntos de experiencia">⭐ <b id="xp">0</b></div>
+  <div class="pill" title="Tu nivel actual">📍 <b id="curLevel">B1</b></div>
+  <button class="icon-btn" id="themeBtn" title="Cambiar tema claro/oscuro">🌙</button>
+</header>
+
+<div class="shell">
+<nav class="sidebar" id="sidebar">
+  <button data-view="home" class="active">🏠 Inicio</button>
+  <button data-view="cs" style="color:var(--gold)">💼 Atención al cliente</button>
+  <div class="navgroup">Aprender</div>
+  <button data-view="lesson">📚 Lección</button>
+  <button data-view="grammar">✍️ Gramática</button>
+  <button data-view="verbos">🔤 Verbos</button>
+  <button data-view="fonetica">🎙️ Fonética</button>
+  <div class="navgroup">Practicar</div>
+  <button data-view="speak">🎤 Pronunciación</button>
+  <button data-view="call">🗣️ Conversación</button>
+  <button data-view="dialogos">🎬 Diálogos</button>
+  <button data-view="write">💬 Escritura</button>
+  <button data-view="read">📖 Lectura</button>
+  <button data-view="dictation">🎧 Dictado</button>
+  <button data-view="review">🃏 Repaso</button>
+  <div class="navgroup">Progreso</div>
+  <button data-view="test">📝 Examen</button>
+  <button data-view="mistakes">📓 Mis errores</button>
+  <button data-view="achievements">🏆 Logros</button>
+  <div class="navgroup">Cuenta</div>
+  <button data-view="settings">⚙️ Ajustes</button>
+</nav>
+<div class="overlay" id="overlay"></div>
+
+<main>
+  <!-- HOME -->
+  <section class="view active" id="view-home">
+    <h1>Tu camino del B1 al C2</h1>
+    <p class="lead">Completa cada nivel y aprueba el examen final (≥ 80%) para desbloquear el siguiente. Aprende vocabulario de trabajo, escucha la pronunciación (normal y lenta) y practica hablando con una IA.</p>
+
+    <div class="card" style="border-color:var(--accent2)">
+      <div class="row" style="justify-content:space-between">
+        <h3 style="margin:0">📅 Tu rutina de hoy</h3>
+        <button class="btn small alt" id="placementBtn">🎯 No sé mi nivel · hacer prueba</button>
+      </div>
+      <div class="dash" id="todayDash" style="margin-top:12px"></div>
+    </div>
+
+    <h2>Niveles</h2>
+    <div class="grid levels" id="levelGrid"></div>
+
+    <h2>¿Cómo funciona?</h2>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
+      <div class="card"><h3>📚 Lecciones</h3><p class="muted">Vocabulario laboral, gramática y ejemplos. Pulsa 🔊 para oír la palabra y 🐢 para oírla lenta y entender la pronunciación.</p></div>
+      <div class="card"><h3>🎤 Pronunciación</h3><p class="muted">Di la frase en voz alta; el micrófono comprueba si lo pronunciaste bien y te da una puntuación.</p></div>
+      <div class="card"><h3>🗣️ Conversación por voz</h3><p class="muted">Habla por voz con una IA, como una llamada. Manos libres: te escucha y te responde hablando.</p></div>
+      <div class="card"><h3>💬 Escritura</h3><p class="muted">Un segundo tutor de chat para practicar escribir: te corrige y te propone retos (emails, mensajes...).</p></div>
+      <div class="card"><h3>📖 Lectura</h3><p class="muted">Textos con lectura en voz alta resaltada palabra por palabra. Haz clic en cualquier palabra para oírla y traducirla.</p></div>
+      <div class="card"><h3>🎧 Dictado</h3><p class="muted">Escucha frases y escríbelas para entrenar el oído y la ortografía.</p></div>
+      <div class="card"><h3>🃏 Repaso</h3><p class="muted">Tarjetas con repetición espaciada: la forma más eficaz de memorizar el vocabulario para siempre.</p></div>
+      <div class="card"><h3>🏆 Logros</h3><p class="muted">Objetivo diario, medallas y un certificado descargable por cada nivel que apruebes (para tu CV).</p></div>
+      <div class="card"><h3>📝 Examen de nivel</h3><p class="muted">Cada nivel tiene un examen. Solo si apruebas (≥80%) se comprueba que puedes pasar al siguiente nivel.</p></div>
+    </div>
+  </section>
+
+  <!-- PLACEMENT (hidden, from home) -->
+  <section class="view" id="view-placement">
+    <h1>🎯 Prueba de nivel</h1>
+    <p class="lead">16 preguntas de dificultad creciente. Al final te recomiendo en qué nivel empezar. No es un examen oficial, solo una orientación para que no pierdas el tiempo en lo que ya sabes.</p>
+    <div class="place-progress"><i id="placeBar" style="width:0%"></i></div>
+    <div id="placeBody"></div>
+    <div id="placeResult"></div>
+  </section>
+
+  <!-- CUSTOMER SERVICE (módulo de trabajo) -->
+  <section class="view" id="view-cs">
+    <h1>💼 Inglés para Atención al Cliente</h1>
+    <p class="lead">Módulo para conseguir y desempeñar un trabajo de atención al cliente en inglés (call center, recepción, tienda). Aprende las frases que se usan de verdad y practica con la IA: una entrevista de trabajo y atender llamadas reales.</p>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin-bottom:8px">
+      <div class="card" style="border-color:var(--gold)">
+        <h3>💼 Practica la entrevista</h3>
+        <p class="muted">Un encargado te hace las preguntas típicas de una entrevista de atención al cliente. Responde por voz.</p>
+        <button class="btn" id="csInterviewBtn">▶ Empezar entrevista</button>
+      </div>
+      <div class="card" style="border-color:var(--accent2)">
+        <h3>📞 Atiende una llamada</h3>
+        <p class="muted">Un cliente te llama con un problema real. Practica resolverlo en inglés, como en el trabajo.</p>
+        <button class="btn green" id="csCallBtn">▶ Atender llamada</button>
+      </div>
+      <div class="card" style="border-color:var(--accent)">
+        <h3>🎯 Tu entrevista REAL</h3>
+        <p class="muted">La IA usa <b>tu experiencia</b> (calidad, soporte, trilingüe...) y te entrevista sobre tus trabajos de verdad. Lo mejor para preparar entrevistas reales.</p>
+        <button class="btn" id="csMyInterviewBtn">▶ Mi entrevista</button>
+      </div>
+    </div>
+    <details style="margin-bottom:14px">
+      <summary>✏️ Mi perfil profesional (lo usa "Tu entrevista REAL")</summary>
+      <p class="muted" style="font-size:13px">Edita aquí tu experiencia en inglés. Solo se guarda en tu dispositivo.</p>
+      <textarea id="csProfile" style="width:100%;min-height:120px;background:var(--bg2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:12px;font-size:14px"></textarea>
+      <button class="btn small green" id="csProfileSave" style="margin-top:8px">Guardar perfil</button>
+    </details>
+    <h2>📋 Frases clave del trabajo</h2>
+    <p class="muted" style="margin-top:0">Pulsa 🔊 para oírlas y 🐢 para oírlas despacio. Apréndelas: son las que usarás cada día.</p>
+    <div id="csPhrases"></div>
+  </section>
+
+  <!-- LESSON -->
+  <section class="view" id="view-lesson">
+    <div class="topbtns">
+      <span class="badge" id="lessonLevelBadge">B1</span>
+      <select id="unitSelect" class="setting"></select>
+      <span class="spacer"></span>
+    </div>
+    <h1 id="lessonTitle">Lección</h1>
+    <p class="lead" id="lessonGoal"></p>
+
+    <h2>🧠 Vocabulario</h2>
+    <p class="muted" style="margin-top:0">🔊 = pronunciación normal · 🐢 = pronunciación lenta (para entender bien cada sonido)</p>
+    <div class="word-list" id="wordList"></div>
+
+    <h2>📐 Gramática</h2>
+    <div id="grammarBox"></div>
+
+    <div class="row" style="margin-top:24px">
+      <button class="btn green" id="markUnitDone">✅ Marcar unidad como estudiada (+20 XP)</button>
+      <button class="btn alt" id="goPractice">🎤 Practicar pronunciación de esta unidad</button>
+    </div>
+  </section>
+
+  <!-- SPEAK -->
+  <section class="view" id="view-speak">
+    <h1>🎤 Práctica de pronunciación</h1>
+    <p class="lead">Pulsa <b>Escuchar</b> para oír la frase, <b>Lento</b> para oírla despacio, y luego <b>Hablar</b> para decirla tú. Con tu clave de Gemini, <b>la IA escucha tu voz, te puntúa /100 y te dice qué sonido mejorar.</b></p>
+    <div class="card speak-card">
+      <div class="muted" id="speakProgress"></div>
+      <div class="speak-target" id="speakTarget">—</div>
+      <div class="row" style="justify-content:center">
+        <button class="btn alt" id="speakHear">🔊 Escuchar</button>
+        <button class="btn" style="background:var(--warn);color:#222" id="speakSlow">🐢 Lento</button>
+        <button class="btn green" id="speakMic">🎤 Hablar</button>
+      </div>
+      <div class="speak-result" id="speakResult"></div>
+      <div class="row" style="justify-content:center;margin-top:18px">
+        <button class="btn ghost small" id="speakPrev">← Anterior</button>
+        <button class="btn ghost small" id="speakNext">Siguiente →</button>
+      </div>
+    </div>
+    <p class="muted" id="speakNote" style="margin-top:14px"></p>
+  </section>
+
+  <!-- CALL (voice only) -->
+  <section class="view" id="view-call">
+    <h1>🗣️ Conversación por voz</h1>
+    <p class="lead">Como hablar por teléfono con una persona. <b>Manos libres:</b> te escucha sola, habla con naturalidad (puedes hacer pausas) y te responde al terminar. Además <b>te corrige los errores y te dice honestamente tu nivel</b>.</p>
+    <div class="tip-box" id="callKeyWarn" style="display:none">
+      ⚠️ <b>Estás usando el tutor básico</b>, que repite frases y <b>no entiende</b> lo que dices. Para una conversación que de verdad te comprenda, conecta la IA real — <b>se puede GRATIS con Google Gemini (sin tarjeta)</b>.
+      <div style="margin-top:8px"><button class="btn small" onclick="goView('settings')">⚙️ Conectar IA gratis en Ajustes</button></div>
+    </div>
+    <div class="topbtns" id="callScenarioBtns"></div>
+    <div class="row" style="justify-content:center;margin-bottom:12px;flex-wrap:wrap">
+      <label class="muted" style="font-size:13px">Dificultad de escucha:</label>
+      <select id="callDiff" class="setting">
+        <option value="easy">🟢 Fácil (claro y lento)</option>
+        <option value="normal">🟡 Normal</option>
+        <option value="hard">🔴 Difícil (nativo, acentos, rápido)</option>
+      </select>
+      <label class="muted" style="display:inline-flex;gap:6px;align-items:center;font-size:13px;cursor:pointer">
+        <input type="checkbox" id="humanVoiceChk"> 🗣️ Voz humana (IA)
+      </label>
+    </div>
+    <div class="card call-stage">
+      <div class="orb" id="orb">🎧</div>
+      <div class="call-status" id="callStatus">Pulsa "Empezar conversación"</div>
+      <div class="call-sub" id="callSub"></div>
+      <div class="row" style="justify-content:center;margin-top:18px">
+        <button class="btn green" id="callStart">📞 Empezar conversación</button>
+        <button class="btn" id="callTalk" style="display:none">🎤 Hablar</button>
+        <button class="btn" style="background:var(--bad)" id="callEnd" disabled>⏹ Terminar</button>
+        <button class="btn alt" id="callRepeat" disabled>🐢 Repetir lento</button>
+      </div>
+      <label class="muted" style="display:inline-flex;gap:6px;align-items:center;margin-top:16px;cursor:pointer">
+        <input type="checkbox" id="capToggle"> Mostrar subtítulos
+      </label>
+      <div class="caption" id="caption"></div>
+      <div class="chat-input" style="margin-top:14px;border-radius:12px;border:1px solid var(--line)">
+        <input id="callText" placeholder="...o escribe aquí (ej: «quiero aprender a escribir»)" autocomplete="off">
+        <button class="btn" id="callTextSend">Enviar</button>
+      </div>
+    </div>
+    <p class="muted" id="callBackend" style="margin-top:10px"></p>
+  </section>
+
+  <!-- WRITE (text chat) -->
+  <section class="view" id="view-write">
+    <h1>💬 Escritura · practica escribiendo</h1>
+    <p class="lead">Aquí escribes en inglés y un tutor te corrige, mejora tus frases y te propone retos de escritura (emails, mensajes, descripciones). Ideal para aprender a escribir bien en el trabajo.</p>
+    <div class="topbtns" id="writeTaskBtns"></div>
+    <div class="chat">
+      <div class="chat-log" id="writeLog"></div>
+      <div class="chat-input">
+        <input id="writeText" placeholder="Escribe tu respuesta en inglés..." autocomplete="off">
+        <button class="btn" id="writeSend">Enviar</button>
+      </div>
+    </div>
+    <p class="muted" id="writeBackend" style="margin-top:10px"></p>
+  </section>
+
+  <!-- READ -->
+  <section class="view" id="view-read">
+    <h1>📖 Lectura</h1>
+    <p class="lead">Lee textos de trabajo. Pulsa <b>▶ Leer en voz alta</b> y sigue las palabras que se van marcando. Haz clic en <span style="border-bottom:1px dashed var(--accent2)">cualquier palabra</span> para oírla y ver su significado.</p>
+    <div class="topbtns" id="readBtns"></div>
+    <div class="row" style="margin-bottom:12px">
+      <button class="btn green" id="readPlay">▶ Leer en voz alta</button>
+      <button class="btn" style="background:var(--warn);color:#222" id="readSlow">🐢 Leer lento</button>
+      <button class="btn alt" id="readStop">⏹ Parar</button>
+    </div>
+    <div class="reader" id="readerBox"></div>
+    <h2>❓ Comprensión</h2>
+    <div id="readQuiz"></div>
+  </section>
+
+  <!-- DICTATION -->
+  <section class="view" id="view-dictation">
+    <h1>🎧 Dictado (entrena el oído)</h1>
+    <p class="lead">Escucha la frase y escríbela. Si no la entiendes, pulsa 🐢 para oírla lenta. Al corregir verás en qué palabras fallaste.</p>
+    <div class="card dictation-box">
+      <div class="muted" id="dictProgress"></div>
+      <div class="row" style="justify-content:center;margin-top:8px">
+        <button class="btn alt" id="dictHear">🔊 Escuchar</button>
+        <button class="btn" style="background:var(--warn);color:#222" id="dictSlow">🐢 Lento</button>
+      </div>
+      <textarea id="dictInput" placeholder="Escribe aquí lo que escuches..."></textarea>
+      <div class="row" style="justify-content:center;margin-top:10px">
+        <button class="btn green" id="dictCheck">✅ Corregir</button>
+        <button class="btn ghost" id="dictNext">Siguiente →</button>
+      </div>
+      <div id="dictResult" style="margin-top:14px;min-height:24px"></div>
+    </div>
+    <p class="muted" id="dictNote" style="margin-top:12px"></p>
+  </section>
+
+  <!-- TEST -->
+  <section class="view" id="view-test">
+    <h1>📝 Examen de nivel</h1>
+    <p class="lead">Necesitas <b>80%</b> o más para certificar que puedes pasar al siguiente nivel.</p>
+    <div id="testIntro"></div>
+    <div id="testBody"></div>
+    <div id="testResult"></div>
+  </section>
+
+  <!-- FONETICA (minimal pairs) -->
+  <section class="view" id="view-fonetica">
+    <h1>🎙️ Laboratorio de fonética</h1>
+    <p class="lead">Los sonidos que más cuestan a un hispanohablante. Entrena tu oído a distinguirlos y tu boca a producirlos. Es lo que más te ayudará a que te entiendan en inglés.</p>
+    <div class="tabs" id="fonTabs">
+      <button data-tab="learn" class="on">📖 Aprender la diferencia</button>
+      <button data-tab="ear">👂 Quiz de oído</button>
+    </div>
+    <div class="setting"><label>Sonido a practicar:</label><select id="fonGroup"></select></div>
+    <div id="fonLearn"></div>
+    <div id="fonEar" style="display:none"></div>
+  </section>
+
+  <!-- VERBOS (irregular verbs) -->
+  <section class="view" id="view-verbos">
+    <h1>🔤 Verbos irregulares</h1>
+    <p class="lead">Los verbos irregulares son imprescindibles para hablar en pasado. Estúdialos y luego pon a prueba tu memoria.</p>
+    <div class="tabs" id="verbTabs">
+      <button data-tab="study" class="on">📖 Estudiar</button>
+      <button data-tab="practice">✍️ Practicar</button>
+    </div>
+    <div id="verbStudy"></div>
+    <div id="verbPractice" style="display:none"></div>
+  </section>
+
+  <!-- GRAMMAR GYM -->
+  <section class="view" id="view-grammar">
+    <h1>✍️ Gimnasio de gramática</h1>
+    <p class="lead">No basta con leer la teoría: hay que practicarla. Ejercicios interactivos de tu nivel: completa huecos, elige la opción correcta y ordena frases.</p>
+    <div class="topbtns"><span class="badge" id="ggLevel">B1</span></div>
+    <div class="gg-progress" id="ggProgress"></div>
+    <div id="ggBody"></div>
+  </section>
+
+  <!-- DIALOGOS -->
+  <section class="view" id="view-dialogos">
+    <h1>🎬 Diálogos reales</h1>
+    <p class="lead">Conversaciones de trabajo como las de verdad. Escúchalas, lee la traducción si la necesitas, y practica tu papel hablando.</p>
+    <div class="topbtns" id="dialogBtns"></div>
+    <div class="row" style="margin-bottom:12px">
+      <button class="btn green" id="dlgPlay">▶ Reproducir todo</button>
+      <button class="btn" style="background:var(--bad)" id="dlgStop">⏹ Parar</button>
+      <button class="btn alt" id="dlgEs">🌐 Traducción</button>
+      <button class="btn alt" id="dlgRole">🎭 Hacer mi papel</button>
+    </div>
+    <div id="dialogBox"></div>
+    <p class="muted" id="dlgNote" style="margin-top:10px"></p>
+  </section>
+
+  <!-- REVIEW (flashcards SRS) -->
+  <section class="view" id="view-review">
+    <h1>🃏 Repaso con tarjetas</h1>
+    <p class="lead">Repetición espaciada: el método más eficaz para memorizar. Mira la palabra, intenta recordarla, gírala y di si la sabías. Las que fallas vuelven antes.</p>
+    <div class="srs-stats">
+      <span class="badge" id="srsDue">Pendientes hoy: 0</span>
+      <span class="badge" id="srsLearned">Aprendidas: 0</span>
+      <span class="badge" id="srsLevel">Nivel: B1</span>
+    </div>
+    <div id="srsArea"></div>
+  </section>
+
+  <!-- MISTAKES (cuaderno de errores) -->
+  <section class="view" id="view-mistakes">
+    <h1>📓 Mis errores</h1>
+    <p class="lead">Aquí se guardan solas las correcciones que te hace la IA en la Conversación y la Escritura. Repásalas: aprender de tus propios errores es lo que más rápido te hace mejorar.</p>
+    <div class="row" style="margin-bottom:12px">
+      <button class="btn alt small" id="mistakesClear">🗑️ Vaciar lista</button>
+      <span class="badge" id="mistakesCount">0 frases</span>
+    </div>
+    <div id="mistakesList"></div>
+  </section>
+
+  <!-- ACHIEVEMENTS -->
+  <section class="view" id="view-achievements">
+    <h1>🏆 Logros y certificado</h1>
+
+    <div class="card">
+      <h3>🎯 Objetivo diario</h3>
+      <div class="ring-wrap">
+        <div class="ring" id="goalRing"><i><b id="goalXP">0</b><span class="muted" style="font-size:12px">/ <span id="goalTarget">50</span> XP</span></i></div>
+        <div>
+          <p style="margin:0" id="goalMsg"></p>
+          <div class="setting"><label>Meta diaria:</label>
+            <select id="goalSelect" class="setting">
+              <option value="30">30 XP (suave)</option>
+              <option value="50">50 XP (normal)</option>
+              <option value="100">100 XP (intenso)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>🎖️ Medallas</h2>
+    <div class="badges" id="badgeGrid"></div>
+
+    <h2>📜 Certificado de práctica</h2>
+    <div class="tip-box" style="margin-top:0">
+      <b>⚠️ Importante y honesto:</b> este certificado es solo un recuerdo de tu progreso dentro de la app. <b>No tiene valor oficial</b> y no sirve para demostrar tu nivel a una empresa. No lo pongas en tu CV como una certificación. Sirve únicamente para motivarte.
+    </div>
+    <div class="setting">
+      <label>Tu nombre:</label>
+      <input type="text" id="certName" placeholder="Escribe tu nombre" style="min-width:220px">
+    </div>
+    <div id="certList" style="margin-top:12px"></div>
+
+    <h2>🎓 Certificados oficiales de verdad</h2>
+    <p class="muted" style="margin-top:0">Cuando te sientas listo, saca uno de estos. Estos <b>sí</b> los reconocen las empresas:</p>
+    <div class="dash">
+      <div class="dash-item"><div class="t">🆓 EF SET</div><div class="d">Gratis y online. Te da una puntuación A1–C2. Ideal como primera referencia.</div></div>
+      <div class="dash-item"><div class="t">🇬🇧 Aptis (British Council)</div><div class="d">De pago, rápido, muy usado por empresas para contratar.</div></div>
+      <div class="dash-item"><div class="t">🏛️ Cambridge B2 First / C1 Advanced</div><div class="d">El más reconocido a nivel mundial. No caduca.</div></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="view" id="view-settings">
+    <h1>⚙️ Ajustes</h1>
+
+    <div class="card">
+      <h3>🔊 Voz y pronunciación</h3>
+      <div class="setting">
+        <label>🗣️ Voz humana (conversación):</label>
+        <select id="humanVoiceSel">
+          <option value="gemini">☁️ Gemini IA — la más humana (gratis con tu clave · límite por minuto)</option>
+          <option value="device">📱 Voz del dispositivo — instantánea, no congela</option>
+        </select>
+      </div>
+      <p class="muted" style="font-size:12px;margin-top:0"><b>Gemini</b> suena más humana (con tu clave; pausa de 1 min al pasar el límite). <b>Dispositivo</b> es instantánea e ilimitada — en iPhone descarga una voz "Ava/Zoe" en Ajustes → Accesibilidad para que suene natural.</p>
+      <div class="setting">
+        <label>Voz del dispositivo (otras secciones):</label>
+        <select id="voiceSelect"></select>
+      </div>
+      <div class="setting">
+        <label>Velocidad lenta (🐢):</label>
+        <input type="range" id="slowRate" min="0.3" max="0.8" step="0.05" value="0.55">
+        <span id="slowRateVal" class="muted">0.55x</span>
+      </div>
+      <button class="btn small alt" id="testVoice">Probar voz</button>
+      <div class="tip-box" style="margin-top:12px;font-size:13px">
+        📱 <b>¿Voz robótica en el iPhone?</b> Descarga una voz humana (gratis, una vez):<br>
+        Ajustes del iPhone → <b>Accesibilidad</b> → <b>Contenido hablado</b> → <b>Voces</b> → <b>Inglés (English)</b> → elige una (ej. <i>Ava, Evan, Samantha, Zoe</i>) y pulsa para <b>descargarla</b>. Luego vuelve aquí, ábrela en el desplegable de arriba y pulsa "Probar voz". Suenan mucho más naturales.
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>🤖 IA real para conversar (que te entienda)</h3>
+      <p class="muted">Sin clave, la conversación usa un tutor básico que solo repite frases. Con una clave de IA, te <b>entiende y responde de verdad</b>. La opción <b>Gemini es gratis y sin tarjeta</b>.</p>
+      <div class="setting">
+        <label>Proveedor:</label>
+        <select id="providerSelect">
+          <option value="gemini">🆓 Google Gemini (GRATIS, sin tarjeta)</option>
+          <option value="anthropic">Anthropic Claude (de pago)</option>
+        </select>
+      </div>
+      <div class="setting">
+        <label>Clave (API key):</label>
+        <input type="password" id="apiKey" placeholder="pega tu clave aquí" style="min-width:240px">
+      </div>
+      <div class="setting">
+        <label>Modelo:</label>
+        <select id="modelSelect"></select>
+      </div>
+      <p class="muted" id="aiKeyHelp" style="font-size:12px"></p>
+      <div class="row">
+        <button class="btn small green" id="saveKey">Guardar clave</button>
+        <button class="btn small alt" id="getGeminiKey">🆓 Conseguir clave gratis de Gemini</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>📊 Progreso</h3>
+      <div id="progressSummary"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn small alt" id="exportProg">⬇️ Exportar copia de seguridad</button>
+        <button class="btn small alt" id="importProg">⬆️ Importar copia</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none">
+        <button class="btn small ghost" id="resetAll">🗑️ Borrar todo</button>
+      </div>
+      <p class="muted" style="font-size:12px;margin-top:8px">Tu progreso se guarda en este navegador. Exporta una copia para no perderlo si cambias de ordenador o limpias el navegador.</p>
+    </div>
+  </section>
+</main>
+</div>
+
+<div class="toast" id="toast"></div>
+<footer>EnglishPro · Hecho para que trabajes en inglés 💼 · Funciona mejor en Chrome o Edge</footer>
+
+<script>
+/* ============================================================
+   DATOS DEL CURSO  (B1 → B2 → C1 → C2)
+   ============================================================ */
+const COURSE = {
+  B1: {
+    name:"B1 · Intermedio", cefr:"Intermedio",
+    units:[
+      { title:"Unit 1 · Talking about your job", goal:"Describe tu trabajo, tu rutina y tus responsabilidades.",
+        words:[
+          {en:"to be in charge of",ipa:"/tə bi ɪn tʃɑːrdʒ ɒv/",es:"estar a cargo de",ex:"I'm in charge of the sales team."},
+          {en:"deadline",ipa:"/ˈdedlaɪn/",es:"fecha límite",ex:"The deadline is next Friday."},
+          {en:"to deal with",ipa:"/tə diːl wɪð/",es:"lidiar/ocuparse de",ex:"I deal with customers every day."},
+          {en:"colleague",ipa:"/ˈkɒliːɡ/",es:"compañero de trabajo",ex:"My colleague helped me a lot."},
+          {en:"shift",ipa:"/ʃɪft/",es:"turno",ex:"I work the night shift."},
+          {en:"to commute",ipa:"/tə kəˈmjuːt/",es:"desplazarse al trabajo",ex:"I commute by train."},
+          {en:"task",ipa:"/tɑːsk/",es:"tarea",ex:"My main task is answering emails."},
+          {en:"to handle",ipa:"/tə ˈhændl/",es:"manejar/gestionar",ex:"Can you handle this request?"}
+        ],
+        grammar:[
+          {t:"Present Simple vs Present Continuous",h:"Usa <code>Present Simple</code> para rutinas (<i>I work from home</i>) y <code>Present Continuous</code> para algo en este momento (<i>I'm working on a report now</i>)."},
+          {t:"Adverbios de frecuencia",h:"<code>always, usually, often, sometimes, rarely, never</code> van antes del verbo: <i>I usually start at 9.</i>"}
+        ]
+      },
+      { title:"Unit 2 · Emails & phone calls", goal:"Comunícate por correo y teléfono en el trabajo.",
+        words:[
+          {en:"to attach",ipa:"/tə əˈtætʃ/",es:"adjuntar",ex:"I've attached the file."},
+          {en:"regarding",ipa:"/rɪˈɡɑːdɪŋ/",es:"con respecto a",ex:"I'm writing regarding your order."},
+          {en:"to follow up",ipa:"/tə ˈfɒləʊ ʌp/",es:"dar seguimiento",ex:"I'll follow up next week."},
+          {en:"availability",ipa:"/əˌveɪləˈbɪləti/",es:"disponibilidad",ex:"Please send me your availability."},
+          {en:"to look forward to",ipa:"/tə lʊk ˈfɔːwəd tə/",es:"esperar con ganas",ex:"I look forward to hearing from you."},
+          {en:"on behalf of",ipa:"/ɒn bɪˈhɑːf ɒv/",es:"en nombre de",ex:"I'm calling on behalf of my manager."},
+          {en:"to get back to",ipa:"/tə ɡet bæk tə/",es:"responder/volver a contactar",ex:"I'll get back to you soon."},
+          {en:"enquiry",ipa:"/ɪnˈkwaɪəri/",es:"consulta",ex:"Thank you for your enquiry."}
+        ],
+        grammar:[
+          {t:"Lenguaje formal de email",h:"Saludo: <i>Dear Mr Smith,</i> · Cierre: <i>Best regards,</i> · Evita contracciones en correos muy formales (<i>I would</i> mejor que <i>I'd</i>)."},
+          {t:"Peticiones educadas",h:"<code>Could you...?</code> / <code>Would you mind ...ing?</code> son más educadas que <i>Can you?</i>: <i>Could you send me the report?</i>"}
+        ]
+      },
+      { title:"Unit 3 · Past experiences", goal:"Cuenta experiencias y logros pasados (entrevistas).",
+        words:[
+          {en:"to achieve",ipa:"/tə əˈtʃiːv/",es:"lograr",ex:"I achieved my targets last year."},
+          {en:"to improve",ipa:"/tə ɪmˈpruːv/",es:"mejorar",ex:"We improved our sales by 20%."},
+          {en:"to be responsible for",ipa:"/tə bi rɪˈspɒnsəbl fɔː/",es:"ser responsable de",ex:"I was responsible for the budget."},
+          {en:"experience",ipa:"/ɪkˈspɪəriəns/",es:"experiencia",ex:"I have five years of experience."},
+          {en:"to manage",ipa:"/tə ˈmænɪdʒ/",es:"dirigir/gestionar",ex:"I managed a team of ten."},
+          {en:"challenge",ipa:"/ˈtʃælɪndʒ/",es:"reto",ex:"It was a big challenge."},
+          {en:"to launch",ipa:"/tə lɔːntʃ/",es:"lanzar",ex:"We launched a new product."},
+          {en:"to reduce",ipa:"/tə rɪˈdjuːs/",es:"reducir",ex:"We reduced costs significantly."}
+        ],
+        grammar:[
+          {t:"Past Simple vs Present Perfect",h:"<code>Past Simple</code> con tiempo terminado (<i>I worked there in 2020</i>). <code>Present Perfect</code> sin tiempo concreto o relevante ahora (<i>I have worked in sales</i>)."},
+          {t:"Verbos irregulares clave",h:"go→went, make→made, take→took, do→did, have→had, get→got, give→gave."}
+        ]
+      }
+    ],
+    test:[
+      {q:"Choose: \"I ___ for this company since 2019.\"",o:["work","have worked","worked","am working"],a:1},
+      {q:"\"The ___ for the project is next Monday.\"",o:["deadline","colleague","shift","enquiry"],a:0},
+      {q:"Polite request:",o:["Give me the report.","Could you send me the report?","You send report.","I want report now."],a:1},
+      {q:"\"I'm in ___ of the marketing team.\"",o:["charge","front","time","case"],a:0},
+      {q:"Past simple of \"take\":",o:["taked","took","taken","takes"],a:1},
+      {q:"\"I look forward ___ from you.\"",o:["to hear","hearing","to hearing","hear"],a:2},
+      {q:"Which is a rutina (Present Simple)?",o:["I'm writing now","I usually start at 9","I have written","I was writing"],a:1},
+      {q:"\"Please find the document ___.\"",o:["attached","regarding","behalf","commute"],a:0},
+      {q:"\"We ___ sales by 20% last year.\"",o:["improve","have improved","improved","improving"],a:2},
+      {q:"Best email closing:",o:["Bye!","Best regards,","See ya","ok thanks"],a:1}
+    ]
+  },
+
+  B2: {
+    name:"B2 · Intermedio-alto", cefr:"Intermedio alto",
+    units:[
+      { title:"Unit 1 · Meetings & opinions", goal:"Participa en reuniones, opina y debate con educación.",
+        words:[
+          {en:"to point out",ipa:"/tə pɔɪnt aʊt/",es:"señalar/destacar",ex:"I'd like to point out a problem."},
+          {en:"agenda",ipa:"/əˈdʒendə/",es:"orden del día",ex:"What's next on the agenda?"},
+          {en:"to bring up",ipa:"/tə brɪŋ ʌp/",es:"sacar un tema",ex:"She brought up a good idea."},
+          {en:"to agree/disagree",ipa:"/tə əˈɡriː/",es:"estar (en des)acuerdo",ex:"I'm afraid I disagree."},
+          {en:"feasible",ipa:"/ˈfiːzəbl/",es:"viable/factible",ex:"That plan isn't feasible."},
+          {en:"to come up with",ipa:"/tə kʌm ʌp wɪð/",es:"idear/proponer",ex:"We came up with a solution."},
+          {en:"to clarify",ipa:"/tə ˈklærɪfaɪ/",es:"aclarar",ex:"Could you clarify that point?"},
+          {en:"stakeholder",ipa:"/ˈsteɪkhəʊldə/",es:"parte interesada",ex:"We must inform all stakeholders."}
+        ],
+        grammar:[
+          {t:"Opinar con matices",h:"<code>I'd say...</code>, <code>It seems to me that...</code>, <code>As far as I'm concerned...</code> suenan más profesionales que solo <i>I think</i>."},
+          {t:"Desacuerdo educado",h:"<i>I see your point, but...</i> · <i>I'm not so sure about that.</i> · <i>That's a fair point, however...</i>"}
+        ]
+      },
+      { title:"Unit 2 · Conditionals at work", goal:"Negocia y plantea hipótesis con condicionales.",
+        words:[
+          {en:"to negotiate",ipa:"/tə nɪˈɡəʊʃieɪt/",es:"negociar",ex:"We need to negotiate the price."},
+          {en:"deal",ipa:"/diːl/",es:"trato/acuerdo",ex:"Let's close the deal."},
+          {en:"to afford",ipa:"/tə əˈfɔːd/",es:"poder permitirse",ex:"We can't afford delays."},
+          {en:"budget",ipa:"/ˈbʌdʒɪt/",es:"presupuesto",ex:"That's over our budget."},
+          {en:"to estimate",ipa:"/tə ˈestɪmeɪt/",es:"estimar",ex:"We estimate two weeks."},
+          {en:"discount",ipa:"/ˈdɪskaʊnt/",es:"descuento",ex:"Can you offer a discount?"},
+          {en:"terms",ipa:"/tɜːmz/",es:"condiciones",ex:"Let's review the terms."},
+          {en:"to compromise",ipa:"/tə ˈkɒmprəmaɪz/",es:"llegar a un acuerdo intermedio",ex:"Both sides had to compromise."}
+        ],
+        grammar:[
+          {t:"First Conditional",h:"<code>If + present, will + verbo</code>: <i>If you order today, we'll ship tomorrow.</i> (real/probable)"},
+          {t:"Second Conditional",h:"<code>If + past, would + verbo</code>: <i>If we lowered the price, we would sell more.</i> (hipotético)"}
+        ]
+      },
+      { title:"Unit 3 · Solving problems", goal:"Reporta problemas y propón soluciones en el trabajo.",
+        words:[
+          {en:"issue",ipa:"/ˈɪʃuː/",es:"problema/asunto",ex:"We have an issue with the system."},
+          {en:"to troubleshoot",ipa:"/tə ˈtrʌblʃuːt/",es:"resolver problemas técnicos",ex:"Let me troubleshoot it."},
+          {en:"to sort out",ipa:"/tə sɔːt aʊt/",es:"solucionar/arreglar",ex:"I'll sort it out today."},
+          {en:"workaround",ipa:"/ˈwɜːkəraʊnd/",es:"solución temporal",ex:"Here's a quick workaround."},
+          {en:"root cause",ipa:"/ruːt kɔːz/",es:"causa raíz",ex:"What's the root cause?"},
+          {en:"to escalate",ipa:"/tə ˈeskəleɪt/",es:"escalar (a un superior)",ex:"We should escalate this."},
+          {en:"feedback",ipa:"/ˈfiːdbæk/",es:"retroalimentación",ex:"Thanks for your feedback."},
+          {en:"to prioritize",ipa:"/tə praɪˈɒrɪtaɪz/",es:"priorizar",ex:"Let's prioritize the urgent tasks."}
+        ],
+        grammar:[
+          {t:"Passive voice",h:"Para procesos: <code>be + participio</code>: <i>The bug was fixed.</i> / <i>The report is being reviewed.</i>"},
+          {t:"Reported speech",h:"<i>He said (that) the order was delayed.</i> El verbo retrocede un tiempo (is→was, will→would)."}
+        ]
+      }
+    ],
+    test:[
+      {q:"\"If we lowered the price, we ___ more.\"",o:["will sell","sell","would sell","sold"],a:2},
+      {q:"Polite disagreement:",o:["You're wrong.","I'm afraid I disagree.","No.","That's stupid."],a:1},
+      {q:"Passive: \"The report ___ yesterday.\"",o:["was sent","sent","is sending","send"],a:0},
+      {q:"\"That plan isn't ___; we don't have the resources.\"",o:["feasible","agenda","discount","shift"],a:0},
+      {q:"First conditional: \"If you order today, we ___ tomorrow.\"",o:["shipped","ship","will ship","would ship"],a:2},
+      {q:"\"Could you ___ that point? I didn't understand.\"",o:["clarify","afford","commute","launch"],a:0},
+      {q:"Reported: \"He said the order ___ delayed.\"",o:["is","was","will be","be"],a:1},
+      {q:"\"Let's ___ this to the manager.\"",o:["escalate","attach","commute","afford"],a:0},
+      {q:"Best way to give an opinion professionally:",o:["I think yes","As far as I'm concerned, ...","Maybe whatever","Dunno"],a:1},
+      {q:"\"We need to ___ a better price with the supplier.\"",o:["negotiate","attach","commute","clarify"],a:0},
+      {q:"\"What's the root ___ of the problem?\"",o:["cause","reason","because","case"],a:0},
+      {q:"\"We can't ___ any more delays.\"",o:["afford","offer","attach","escalate"],a:0}
+    ]
+  },
+
+  C1: {
+    name:"C1 · Avanzado", cefr:"Avanzado",
+    units:[
+      { title:"Unit 1 · Presentations & persuasion", goal:"Presenta ideas con fluidez y convence a tu audiencia.",
+        words:[
+          {en:"to highlight",ipa:"/tə ˈhaɪlaɪt/",es:"resaltar",ex:"Let me highlight the key results."},
+          {en:"compelling",ipa:"/kəmˈpelɪŋ/",es:"convincente",ex:"That's a compelling argument."},
+          {en:"to leverage",ipa:"/tə ˈliːvərɪdʒ/",es:"aprovechar",ex:"We can leverage our network."},
+          {en:"insight",ipa:"/ˈɪnsaɪt/",es:"perspectiva/idea clave",ex:"The data gives us valuable insights."},
+          {en:"to outline",ipa:"/tə ˈaʊtlaɪn/",es:"esbozar/describir a grandes rasgos",ex:"I'll outline our strategy."},
+          {en:"bottom line",ipa:"/ˈbɒtəm laɪn/",es:"lo esencial/resultado final",ex:"The bottom line is we need funding."},
+          {en:"to align",ipa:"/tə əˈlaɪn/",es:"alinear",ex:"Our goals are aligned."},
+          {en:"takeaway",ipa:"/ˈteɪkəweɪ/",es:"conclusión/lo que te llevas",ex:"The key takeaway is simple."}
+        ],
+        grammar:[
+          {t:"Cleft sentences (énfasis)",h:"<i>What we need is more time.</i> · <i>It's the deadline that worries me.</i> Sirven para enfatizar."},
+          {t:"Discourse markers avanzados",h:"<code>Having said that</code>, <code>on the whole</code>, <code>by and large</code>, <code>that being said</code> dan fluidez."}
+        ]
+      },
+      { title:"Unit 2 · Leadership & strategy", goal:"Habla de liderazgo, estrategia y toma de decisiones.",
+        words:[
+          {en:"to delegate",ipa:"/tə ˈdelɪɡeɪt/",es:"delegar",ex:"A good leader knows how to delegate."},
+          {en:"to streamline",ipa:"/tə ˈstriːmlaɪn/",es:"optimizar/agilizar",ex:"We streamlined the process."},
+          {en:"scalable",ipa:"/ˈskeɪləbl/",es:"escalable",ex:"We need a scalable solution."},
+          {en:"to foster",ipa:"/tə ˈfɒstə/",es:"fomentar",ex:"We foster a culture of trust."},
+          {en:"accountability",ipa:"/əˌkaʊntəˈbɪləti/",es:"responsabilidad/rendición de cuentas",ex:"Accountability is essential."},
+          {en:"to drive (growth)",ipa:"/tə draɪv/",es:"impulsar (crecimiento)",ex:"This will drive growth."},
+          {en:"resilient",ipa:"/rɪˈzɪliənt/",es:"resiliente",ex:"We built a resilient team."},
+          {en:"to onboard",ipa:"/tə ˈɒnbɔːd/",es:"incorporar (a un nuevo empleado)",ex:"We onboard new hires in a week."}
+        ],
+        grammar:[
+          {t:"Mixed conditionals",h:"<i>If I had taken that job, I would be in London now.</i> (pasado → presente)."},
+          {t:"Inversión para énfasis",h:"<i>Not only did we hit our targets, but we also exceeded them.</i> · <i>Rarely have I seen such results.</i>"}
+        ]
+      },
+      { title:"Unit 3 · Nuance & diplomacy", goal:"Expresa matices, hedging y diplomacia profesional.",
+        words:[
+          {en:"to imply",ipa:"/tə ɪmˈplaɪ/",es:"insinuar/dar a entender",ex:"Are you implying it's my fault?"},
+          {en:"tentative",ipa:"/ˈtentətɪv/",es:"provisional/tentativo",ex:"That's a tentative date."},
+          {en:"to reconsider",ipa:"/tə ˌriːkənˈsɪdə/",es:"reconsiderar",ex:"Could we reconsider this?"},
+          {en:"reservations",ipa:"/ˌrezəˈveɪʃnz/",es:"reservas/dudas",ex:"I have some reservations."},
+          {en:"to underestimate",ipa:"/tə ˌʌndərˈestɪmeɪt/",es:"subestimar",ex:"Don't underestimate the risk."},
+          {en:"viable",ipa:"/ˈvaɪəbl/",es:"viable",ex:"Is this a viable option?"},
+          {en:"to acknowledge",ipa:"/tə əkˈnɒlɪdʒ/",es:"reconocer/admitir",ex:"I acknowledge the mistake."},
+          {en:"trade-off",ipa:"/ˈtreɪd ɒf/",es:"compensación/sacrificio",ex:"There's always a trade-off."}
+        ],
+        grammar:[
+          {t:"Hedging (suavizar)",h:"<i>It might be worth considering...</i> · <i>I'd be inclined to...</i> · <i>There could be a slight delay.</i>"},
+          {t:"Subjuntivo formal",h:"<i>I suggest (that) he be informed.</i> · <i>It's essential (that) everyone attend.</i>"}
+        ]
+      }
+    ],
+    test:[
+      {q:"Cleft for emphasis: \"___ we need is more time.\"",o:["That","What","Which","It"],a:1},
+      {q:"\"Not only ___ we hit our targets, but we exceeded them.\"",o:["we did","did","do","have"],a:1},
+      {q:"\"We need a ___ solution that grows with us.\"",o:["scalable","tentative","compelling","resilient"],a:0},
+      {q:"Mixed conditional: \"If I ___ that job, I would be in London now.\"",o:["take","took","had taken","have taken"],a:2},
+      {q:"Diplomatic: \"I have some ___ about this plan.\"",o:["reservations","insights","takeaways","deadlines"],a:0},
+      {q:"\"A good leader knows how to ___ tasks.\"",o:["delegate","underestimate","imply","commute"],a:0},
+      {q:"Subjunctive: \"It's essential that everyone ___ present.\"",o:["is","be","was","being"],a:1},
+      {q:"\"The ___ line is we need more funding.\"",o:["bottom","top","base","end"],a:0},
+      {q:"Hedging (softest):",o:["You must fix it.","You'd better fix it.","It might be worth fixing this.","Fix it now."],a:2},
+      {q:"\"There's always a ___ between speed and quality.\"",o:["trade-off","takeaway","stakeholder","workaround"],a:0},
+      {q:"\"Rarely ___ I seen such strong results.\"",o:["have","has","did","do"],a:0},
+      {q:"\"We should ___ a culture of accountability.\"",o:["foster","afford","attach","commute"],a:0},
+      {q:"\"Our objectives are fully ___ with the company's vision.\"",o:["aligned","outlined","implied","reduced"],a:0},
+      {q:"\"Let me ___ the three key points.\"",o:["highlight","underestimate","commute","afford"],a:0}
+    ]
+  },
+
+  C2: {
+    name:"C2 · Maestría", cefr:"Dominio (casi nativo)",
+    units:[
+      { title:"Unit 1 · Idioms & natural English", goal:"Suena nativo con idioms y expresiones del mundo laboral.",
+        words:[
+          {en:"to get the ball rolling",ipa:"/ɡet ðə bɔːl ˈrəʊlɪŋ/",es:"poner las cosas en marcha",ex:"Let's get the ball rolling on this project."},
+          {en:"to think outside the box",ipa:"/θɪŋk aʊtˈsaɪd ðə bɒks/",es:"pensar de forma creativa",ex:"We need to think outside the box."},
+          {en:"to be on the same page",ipa:"/ɒn ðə seɪm peɪdʒ/",es:"estar de acuerdo/sincronizados",ex:"Let's make sure we're on the same page."},
+          {en:"to cut corners",ipa:"/kʌt ˈkɔːnəz/",es:"hacer las cosas a medias/atajar",ex:"We can't afford to cut corners on safety."},
+          {en:"a game changer",ipa:"/ə ˈɡeɪm tʃeɪndʒə/",es:"algo revolucionario",ex:"This tool is a real game changer."},
+          {en:"to touch base",ipa:"/tʌtʃ beɪs/",es:"ponerse en contacto brevemente",ex:"Let's touch base next week."},
+          {en:"to go the extra mile",ipa:"/ɡəʊ ði ˈekstrə maɪl/",es:"esforzarse más de lo esperado",ex:"She always goes the extra mile."},
+          {en:"to be snowed under",ipa:"/snəʊd ˈʌndə/",es:"estar hasta arriba de trabajo",ex:"I'm snowed under this week."}
+        ],
+        grammar:[
+          {t:"Collocations naturales",h:"Di <i>make a decision</i> (no <i>do</i>), <i>meet a deadline</i>, <i>reach a conclusion</i>, <i>raise concerns</i>, <i>take the initiative</i>."},
+          {t:"Phrasal verbs avanzados",h:"<i>to iron out</i> (resolver detalles), <i>to roll out</i> (lanzar gradualmente), <i>to weigh up</i> (sopesar), <i>to follow through</i> (cumplir)."}
+        ]
+      },
+      { title:"Unit 2 · Precision & register", goal:"Domina el registro y la precisión léxica de nivel experto.",
+        words:[
+          {en:"to mitigate",ipa:"/tə ˈmɪtɪɡeɪt/",es:"mitigar",ex:"We took steps to mitigate the risk."},
+          {en:"to substantiate",ipa:"/tə səbˈstænʃieɪt/",es:"fundamentar/corroborar",ex:"Can you substantiate that claim?"},
+          {en:"ramifications",ipa:"/ˌræmɪfɪˈkeɪʃnz/",es:"ramificaciones/consecuencias",ex:"Consider the legal ramifications."},
+          {en:"to streamline",ipa:"/tə ˈstriːmlaɪn/",es:"racionalizar/optimizar",ex:"We streamlined the entire workflow."},
+          {en:"unprecedented",ipa:"/ʌnˈpresɪdentɪd/",es:"sin precedentes",ex:"We saw unprecedented demand."},
+          {en:"to spearhead",ipa:"/tə ˈspɪəhed/",es:"liderar/encabezar",ex:"She spearheaded the initiative."},
+          {en:"contingency",ipa:"/kənˈtɪndʒənsi/",es:"contingencia/plan B",ex:"We need a contingency plan."},
+          {en:"to galvanize",ipa:"/tə ˈɡælvənaɪz/",es:"galvanizar/movilizar",ex:"The speech galvanized the team."}
+        ],
+        grammar:[
+          {t:"Nominalisation (registro formal)",h:"Inglés formal nominaliza: <i>The implementation of the policy resulted in...</i> en vez de <i>When we implemented the policy...</i>"},
+          {t:"Concesivas avanzadas",h:"<i>Notwithstanding the delays, we delivered.</i> · <i>Albeit costly, the plan succeeded.</i> · <i>Granted, there were issues, but...</i>"}
+        ]
+      },
+      { title:"Unit 3 · Debate & argumentation", goal:"Argumenta, refuta y persuade a nivel experto.",
+        words:[
+          {en:"to concede",ipa:"/tə kənˈsiːd/",es:"conceder/admitir",ex:"I'll concede that point."},
+          {en:"to refute",ipa:"/tə rɪˈfjuːt/",es:"refutar",ex:"The data refutes that theory."},
+          {en:"compelling",ipa:"/kəmˈpelɪŋ/",es:"contundente/convincente",ex:"a compelling case"},
+          {en:"to undermine",ipa:"/tə ˌʌndəˈmaɪn/",es:"socavar/minar",ex:"That undermines our credibility."},
+          {en:"nuanced",ipa:"/ˈnjuːɑːnst/",es:"matizado",ex:"It's a nuanced issue."},
+          {en:"to advocate for",ipa:"/tə ˈædvəkeɪt fɔː/",es:"abogar por",ex:"I advocate for transparency."},
+          {en:"inherent",ipa:"/ɪnˈhɪərənt/",es:"inherente",ex:"There are inherent risks."},
+          {en:"to reconcile",ipa:"/tə ˈrekənsaɪl/",es:"conciliar/reconciliar",ex:"We must reconcile these views."}
+        ],
+        grammar:[
+          {t:"Frases de argumentación",h:"<i>One could argue that...</i> · <i>This is borne out by...</i> · <i>It stands to reason that...</i> · <i>Far from being..., it is actually...</i>"},
+          {t:"Emphatic & rhetorical",h:"<i>Therein lies the problem.</i> · <i>Such was the impact that...</i> · <i>Little did they know...</i>"}
+        ]
+      }
+    ],
+    test:[
+      {q:"Idiom: \"Let's get the ball ___ on this.\"",o:["rolling","running","moving","kicking"],a:0},
+      {q:"\"Can you ___ that claim with data?\"",o:["substantiate","mitigate","concede","commute"],a:0},
+      {q:"Collocation: \"We need to ___ a decision today.\"",o:["do","make","take","have"],a:1},
+      {q:"\"___ the delays, we delivered on time.\"",o:["Notwithstanding","Because","Although it","Despite of"],a:0},
+      {q:"\"The evidence clearly ___ his argument.\"",o:["refutes","concedes","commutes","attaches"],a:0},
+      {q:"\"We must have a ___ plan in case it fails.\"",o:["contingency","compelling","tentative","nuanced"],a:0},
+      {q:"Emphatic inversion: \"Little ___ they know what was coming.\"",o:["did","do","had","were"],a:0},
+      {q:"\"It's a ___ issue with no simple answer.\"",o:["nuanced","unprecedented","snowed","feasible"],a:0},
+      {q:"Idiom for over-delivering:",o:["cut corners","go the extra mile","touch base","be snowed under"],a:1},
+      {q:"\"That decision could ___ our credibility.\"",o:["undermine","spearhead","galvanize","advocate"],a:0},
+      {q:"Formal concession:",o:["Yeah but","Granted, there were issues, but...","No way","Whatever"],a:1},
+      {q:"\"She ___ the entire initiative single-handedly.\"",o:["spearheaded","cut corners","touched base","commuted"],a:0},
+      {q:"\"We saw ___ demand this quarter — a record.\"",o:["unprecedented","tentative","feasible","viable"],a:0},
+      {q:"\"There are risks ___ in any new venture.\"",o:["inherent","compelling","snowed","nuanced"],a:0},
+      {q:"Phrasal verb: \"Let's ___ out the final details.\"",o:["iron","weigh","roll","follow"],a:0},
+      {q:"\"Therein ___ the real problem.\"",o:["lies","lay","lie","laying"],a:0}
+    ]
+  }
+};
+
+const LEVELS = ["B1","B2","C1","C2"];
+const PASS = 0.8;
+
+/* ============================================================
+   ESTADO  (localStorage)
+   ============================================================ */
+const DEFAULT_STATE = {
+  unlocked:["B1"], currentLevel:"B1", passed:[], xp:0,
+  streak:0, lastDay:null, unitsDone:{}, // unitsDone["B1-0"]=true
+  slowRate:0.55, voiceURI:"", apiKey:"", model:"gemini-2.5-flash",
+  srs:{}, name:"", dailyGoal:50, xpAtDayStart:0, badges:[], theme:"dark",
+  provider:"gemini", callDifficulty:"normal", humanVoice:true,
+  humanVoiceEngine:"gemini", voiceMigrated:false, mistakes:[],
+  profile:"Trilingual: English, Spanish and advanced Haitian Creole. 5 years (2020-2025) at a health-insurance (Obamacare) call center: started in Customer Service and grew into a Quality Assurance (QA) Agent — monitored and evaluated calls in English/Spanish/Creole for quality and sales effectiveness, managed and organized a database of recorded calls, updated scripts and support materials with the QA team, trained new agents, and provided technical support (fixing laptops). Also 1 month as chat support at an online betting company (Jugabet, Argentina). Skills: empathy, problem-solving, emotional intelligence, effective communication, adaptability, Excel, CRM, phone and computer repair."
+};
+/* Cuaderno de errores: guarda las correcciones de la IA para repasarlas */
+function addMistake(text){
+  text=(text||"").trim().replace(/\s+/g," ");
+  if(text.length<3||text.length>160) return;
+  if(!Array.isArray(S.mistakes)) S.mistakes=[];
+  const low=text.toLowerCase();
+  if(S.mistakes.some(m=>m.en.toLowerCase()===low)) return;   // sin duplicados
+  S.mistakes.unshift({en:text, date:Date.now()});
+  if(S.mistakes.length>80) S.mistakes.pop();
+  save();
+}
+function captureCorrections(aiText){
+  // La IA corrige con "✔ Better: <frase>" o "Better: <frase>"
+  const re=/(?:✔\s*)?better:\s*([^\n.!?]*[.!?]?)/gi; let m;
+  while((m=re.exec(aiText||""))){ const s=m[1].replace(/["“”]/g,"").trim(); if(s) addMistake(s); }
+}
+let S = load();
+// Las voces Piper/Kokoro congelan los móviles -> migrar a la nube/dispositivo una vez
+if(!S.voiceMigrated){ if(S.humanVoiceEngine==="piper"||S.humanVoiceEngine==="kokoro"){ S.humanVoiceEngine = S.apiKey ? "gemini" : "device"; } S.voiceMigrated=true; }
+function load(){ try{ return Object.assign({}, DEFAULT_STATE, JSON.parse(localStorage.getItem("englishpro")||"{}")); }catch(e){ return {...DEFAULT_STATE}; } }
+function save(){ localStorage.setItem("englishpro", JSON.stringify(S)); refreshHeader(); }
+
+/* racha diaria */
+(function streakCheck(){
+  const today = new Date().toDateString();
+  if(S.lastDay !== today){
+    const y = new Date(Date.now()-864e5).toDateString();
+    S.streak = (S.lastDay===y)? S.streak+1 : 1;
+    S.lastDay = today; S.xpAtDayStart = S.xp; save();
+  }
+})();
+function todayXP(){ return Math.max(0, S.xp - (S.xpAtDayStart||0)); }
+
+/* ============================================================
+   VOZ (Web Speech API)
+   ============================================================ */
+let voices = [];
+function loadVoices(){
+  voices = speechSynthesis.getVoices().filter(v=>/en[-_]/i.test(v.lang));
+  const sel = document.getElementById("voiceSelect");
+  if(sel){
+    sel.innerHTML="";
+    voices.forEach(v=>{ const o=document.createElement("option"); o.value=v.voiceURI; o.textContent=`${v.name} (${v.lang})`; sel.appendChild(o); });
+    if(S.voiceURI) sel.value=S.voiceURI;
+  }
+}
+if('speechSynthesis' in window){ speechSynthesis.onvoiceschanged = loadVoices; loadVoices(); }
+function pickVoice(){
+  if(S.voiceURI){ const v=voices.find(x=>x.voiceURI===S.voiceURI); if(v) return v; }
+  // Prioriza voces que suenan humanas (neural/natural/Siri/Google) sobre las robóticas
+  const pref=["natural","neural","siri","google us english","google uk english","online","premium","enhanced",
+    "microsoft aria","microsoft jenny","microsoft ava","microsoft emma","microsoft andrew","microsoft guy","microsoft brian",
+    "samantha","ava","allison","evan","serena","daniel","karen","aaron","nicky"];
+  for(const p of pref){ const v=voices.find(x=>(x.name||"").toLowerCase().includes(p) && /^en/i.test(v.lang)); if(v) return v; }
+  return voices.find(v=>/en[-_]US/i.test(v.lang)) || voices.find(v=>/en[-_]GB/i.test(v.lang)) || voices.find(v=>/^en/i.test(v.lang)) || voices[0];
+}
+function speak(text, slow=false){
+  if(!('speechSynthesis' in window)){ toast("Tu navegador no soporta voz"); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  const v = pickVoice(); if(v){ u.voice=v; u.lang=v.lang; } else u.lang="en-US";
+  u.rate = slow ? S.slowRate : 1; u.pitch=1;
+  speechSynthesis.speak(u);
+}
+
+/* ============================================================
+   RECONOCIMIENTO DE VOZ
+   ============================================================ */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const HAS_SR = !!SR;
+/* En iPhone/Safari no existe SpeechRecognition. Como alternativa grabamos audio y
+   lo transcribimos con un modelo Whisper que corre dentro del navegador (gratis, offline tras descargar). */
+let whisperPipe=null, whisperLoading=false;
+async function loadWhisper(statusCb){
+  if(whisperPipe) return whisperPipe;
+  if(whisperLoading){ while(whisperLoading){ await new Promise(r=>setTimeout(r,200)); } return whisperPipe; }
+  whisperLoading=true;
+  statusCb && statusCb("⬇️ Descargando voz IA (solo la primera vez, ~40 MB)...");
+  try{
+    const mod = await import("https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2");
+    mod.env.allowLocalModels=false; mod.env.useBrowserCache=true;
+    whisperPipe = await mod.pipeline("automatic-speech-recognition","Xenova/whisper-tiny.en");
+  } finally { whisperLoading=false; }
+  return whisperPipe;
+}
+async function blobToAudio16k(blob){
+  const ab=await blob.arrayBuffer();
+  const Ctx=window.AudioContext||window.webkitAudioContext;
+  const ctx=new Ctx();
+  const decoded=await ctx.decodeAudioData(ab);
+  let data=decoded.getChannelData(0);
+  if(decoded.numberOfChannels>1){ const b=decoded.getChannelData(1); const t=new Float32Array(data.length); for(let i=0;i<data.length;i++) t[i]=(data[i]+b[i])/2; data=t; }
+  const target=16000;
+  if(decoded.sampleRate!==target){
+    const ratio=decoded.sampleRate/target, n=Math.round(data.length/ratio), out=new Float32Array(n);
+    for(let i=0;i<n;i++) out[i]=data[Math.floor(i*ratio)];
+    data=out;
+  }
+  try{ ctx.close(); }catch(e){}
+  return data;
+}
+function encodeWav(f32, rate){
+  const n=f32.length, buf=new ArrayBuffer(44+n*2), dv=new DataView(buf);
+  const ws=(o,s)=>{ for(let i=0;i<s.length;i++) dv.setUint8(o+i,s.charCodeAt(i)); };
+  ws(0,"RIFF"); dv.setUint32(4,36+n*2,true); ws(8,"WAVE"); ws(12,"fmt ");
+  dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,1,true);
+  dv.setUint32(24,rate,true); dv.setUint32(28,rate*2,true); dv.setUint16(32,2,true); dv.setUint16(34,16,true);
+  ws(36,"data"); dv.setUint32(40,n*2,true);
+  let o=44; for(let i=0;i<n;i++){ const s=Math.max(-1,Math.min(1,f32[i])); dv.setInt16(o,s<0?s*32768:s*32767,true); o+=2; }
+  return new Uint8Array(buf);
+}
+function u8ToBase64(u8){ let s=""; const C=0x8000; for(let i=0;i<u8.length;i+=C) s+=String.fromCharCode.apply(null,u8.subarray(i,i+C)); return btoa(s); }
+/* Transcribe tu voz con Gemini (rápido, sin descargar modelos). */
+async function geminiTranscribe(blob){
+  const f32=await blobToAudio16k(blob);
+  if(!f32||f32.length<1600) return "";   // demasiado corto
+  const b64=u8ToBase64(encodeWav(f32,16000));
+  const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(S.apiKey)}`,{
+    method:"POST",headers:{"content-type":"application/json"},
+    body:JSON.stringify({contents:[{parts:[{text:"Transcribe this English speech exactly. Output ONLY the words spoken, nothing else."},{inlineData:{mimeType:"audio/wav",data:b64}}]}],generationConfig:{maxOutputTokens:120,temperature:0,thinkingConfig:{thinkingBudget:0}}})
+  });
+  if(!res.ok) throw new Error(res.status);
+  const d=await res.json();
+  return ((((d.candidates||[])[0]||{}).content||{}).parts||[]).map(p=>p.text||"").join("").trim();
+}
+/* Entrenador de pronunciación: Gemini ESCUCHA tu audio y te puntúa + da un consejo. */
+async function geminiPronScore(blob, target){
+  const f32=await blobToAudio16k(blob);
+  if(!f32||f32.length<1600) return null;
+  const b64=u8ToBase64(encodeWav(f32,16000));
+  const prompt=`You are a friendly English pronunciation coach for a Spanish speaker. The learner tried to say: "${target}". Listen to the audio and judge ONLY the pronunciation (not grammar). Reply ONLY with JSON: {"heard":"what you actually heard","score":0-100,"tip":"ONE short, specific tip IN SPANISH about a sound or word to improve; if it was great, praise them in Spanish"}`;
+  const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(S.apiKey)}`,{
+    method:"POST",headers:{"content-type":"application/json"},
+    body:JSON.stringify({contents:[{parts:[{text:prompt},{inlineData:{mimeType:"audio/wav",data:b64}}]}],generationConfig:{maxOutputTokens:220,temperature:0.2,thinkingConfig:{thinkingBudget:0},responseMimeType:"application/json"}})
+  });
+  if(!res.ok) throw new Error(res.status);
+  const d=await res.json();
+  const txt=((((d.candidates||[])[0]||{}).content||{}).parts||[]).map(p=>p.text||"").join("");
+  try{ return JSON.parse(txt); }catch(e){ return null; }
+}
+/* Grabador simple para el entrenador de pronunciación (siempre captura audio). */
+let pronRec=null;
+function pronRecordToggle(onBlob, statusCb){
+  if(pronRec){ pronRec.stop(); return; }
+  if(!navigator.mediaDevices||!window.MediaRecorder){ statusCb&&statusCb("Tu navegador no permite el micrófono"); onBlob(null); return; }
+  let stopped=false;
+  pronRec={stop:()=>{ stopped=true; try{ pronRec._mr && pronRec._mr.state!=="inactive" && pronRec._mr.stop(); }catch(e){} }};
+  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+    const mr=new MediaRecorder(stream), chunks=[]; pronRec._mr=mr;
+    mr.ondataavailable=e=>{ if(e.data&&e.data.size) chunks.push(e.data); };
+    mr.onstop=()=>{ try{stream.getTracks().forEach(t=>t.stop());}catch(e){} pronRec=null; onBlob(new Blob(chunks)); };
+    if(stopped){ try{stream.getTracks().forEach(t=>t.stop());}catch(e){} pronRec=null; return; }
+    mr.start(); statusCb&&statusCb("🔴 Grabando... toca «Parar» al terminar");
+  }).catch(e=>{ pronRec=null; statusCb&&statusCb("No pude acceder al micrófono"); onBlob(null); });
+}
+/* Captura de voz universal: usa SpeechRecognition si existe (PC/Android), o graba + Gemini/Whisper (iPhone).
+   onResult(texto|null). statusCb(mensaje). */
+let activeMic=null;
+function micToggle(onResult, statusCb){
+  if(activeMic){ activeMic.stop(); return; }
+  if(HAS_SR){
+    const r=new SR(); r.lang="en-US"; r.continuous=true; r.interimResults=true; r.maxAlternatives=1;
+    let acc="", done=false, silT=null, maxT=null;
+    const clearTs=()=>{ clearTimeout(silT); clearTimeout(maxT); };
+    const finish=()=>{ if(done) return; done=true; clearTs(); activeMic=null; onResult(acc.trim()||null); };
+    const arm=()=>{ clearTimeout(silT); silT=setTimeout(()=>{ try{r.stop();}catch(e){} }, 3200); };
+    r.onresult=e=>{ for(let i=e.resultIndex;i<e.results.length;i++){ if(e.results[i].isFinal) acc+=e.results[i][0].transcript+" "; } arm(); };
+    r.onspeechstart=()=>arm();
+    r.onerror=e=>{ if(e.error==="no-speech"){ return; } statusCb&&statusCb("Error de micrófono: "+e.error); finish(); };
+    r.onend=()=>{ if(!done) finish(); };
+    activeMic={stop:()=>{ try{r.stop();}catch(e){} }, sr:true};
+    try{ r.start(); silT=setTimeout(()=>{ try{r.stop();}catch(e){} }, 7000); maxT=setTimeout(()=>{ try{r.stop();}catch(e){} }, 60000); statusCb&&statusCb("🎤 Te escucho... habla con naturalidad"); }catch(e){ finish(); }
+  } else {
+    if(!navigator.mediaDevices||!window.MediaRecorder){ statusCb&&statusCb("Tu navegador no permite el micrófono"); onResult(null); return; }
+    let mr,chunks=[],stream,stopped=false,ac=null,poll=null,maxT=null;
+    const cleanup=()=>{ try{clearInterval(poll);}catch(e){} try{clearTimeout(maxT);}catch(e){} try{ac&&ac.close();}catch(e){} };
+    activeMic={stop:()=>{ stopped=true; cleanup(); try{ mr&&mr.state!=="inactive"&&mr.stop(); }catch(e){} }, sr:false};
+    navigator.mediaDevices.getUserMedia({audio:true}).then(s=>{
+      stream=s; chunks=[]; mr=new MediaRecorder(s);
+      mr.ondataavailable=e=>{ if(e.data&&e.data.size) chunks.push(e.data); };
+      mr.onstop=async()=>{
+        cleanup();
+        try{ stream.getTracks().forEach(t=>t.stop()); }catch(e){}
+        statusCb&&statusCb("🧠 Entendiendo...");
+        const blob=new Blob(chunks);
+        let txt="";
+        try{
+          // 1º intentar con Gemini (rápido, sin descargas) si hay clave
+          if(S.apiKey && (S.provider||"gemini")==="gemini"){
+            try{ txt=await geminiTranscribe(blob); }catch(e){ txt=""; }
+          }
+          // respaldo: modelo Whisper en el navegador
+          if(!txt){
+            statusCb&&statusCb("🧠 Analizando tu voz...");
+            const pipe=await loadWhisper(statusCb);
+            const audio=await blobToAudio16k(blob);
+            const res=await pipe(audio);
+            txt=((res&&res.text)||"");
+          }
+          txt=txt.replace(/\[.*?\]/g,"").replace(/\(.*?\)/g,"").replace(/[♪♫]/g,"").trim();
+          activeMic=null; onResult(txt);
+        }catch(err){ activeMic=null; statusCb&&statusCb("Error: "+(err.message||err)); onResult(null); }
+      };
+      if(stopped){ try{stream.getTracks().forEach(t=>t.stop());}catch(e){} activeMic=null; return; }
+      mr.start(); statusCb&&statusCb("🔴 Grabando... (se envía solo cuando dejas de hablar, o pulsa «Parar»)");
+      // detección de silencio: para cuando hablas y luego te callas ~2 s
+      try{
+        ac=new (window.AudioContext||window.webkitAudioContext)();
+        if(ac.state==="suspended"){ try{ ac.resume(); }catch(e){} }
+        const src=ac.createMediaStreamSource(stream), an=ac.createAnalyser(); an.fftSize=512; src.connect(an);
+        const buf=new Uint8Array(an.fftSize); let spoke=false, lastLoud=Date.now();
+        poll=setInterval(()=>{
+          an.getByteTimeDomainData(buf); let sum=0;
+          for(let i=0;i<buf.length;i++){ const v=(buf[i]-128)/128; sum+=v*v; }
+          const rms=Math.sqrt(sum/buf.length);
+          if(rms>0.04){ spoke=true; lastLoud=Date.now(); }
+          if(spoke && Date.now()-lastLoud>2800){ activeMic&&activeMic.stop(); }
+        },150);
+      }catch(e){}
+      maxT=setTimeout(()=>{ activeMic&&activeMic.stop(); }, 45000);
+    }).catch(e=>{ cleanup(); activeMic=null; statusCb&&statusCb("No pude acceder al micrófono"); onResult(null); });
+  }
+}
+function similarity(a,b){
+  a=clean(a); b=clean(b);
+  const wa=a.split(" "), wb=b.split(" ");
+  let hit=0; const used=[];
+  wa.forEach(w=>{ const i=wb.findIndex((x,j)=>x===w&&!used.includes(j)); if(i>=0){hit++;used.push(i);} });
+  return Math.round(hit/Math.max(wa.length,1)*100);
+}
+function clean(s){ return s.toLowerCase().replace(/[^a-z0-9' ]/g," ").replace(/\s+/g," ").trim(); }
+
+/* ============================================================
+   NAVEGACIÓN
+   ============================================================ */
+document.querySelectorAll("nav button").forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    document.getElementById("view-"+b.dataset.view).classList.add("active");
+    if(b.dataset.view==="lesson") renderLesson();
+    if(b.dataset.view==="speak") initSpeak();
+    if(b.dataset.view==="test") renderTest();
+    if(b.dataset.view==="settings") renderSettings();
+    if(b.dataset.view==="home") renderHome();
+    if(b.dataset.view==="call") initCall();
+    if(b.dataset.view==="write") initWrite();
+    if(b.dataset.view==="read") initRead();
+    if(b.dataset.view==="dictation") initDictation();
+    if(b.dataset.view==="fonetica") initFonetica();
+    if(b.dataset.view==="verbos") initVerbos();
+    if(b.dataset.view==="grammar") initGrammar();
+    if(b.dataset.view==="dialogos") initDialogos();
+    if(b.dataset.view==="review") initReview();
+    if(b.dataset.view==="mistakes") renderMistakes();
+    if(b.dataset.view==="cs") renderCS();
+    if(b.dataset.view==="achievements") renderAchievements();
+    if(b.dataset.view!=="call") endCall();
+    if(b.dataset.view!=="dialogos"){ try{ stopDialog(); }catch(e){} }
+    closeDrawer();
+  };
+});
+function goView(name){ document.querySelector(`nav button[data-view="${name}"]`).click(); }
+
+/* ============================================================
+   HOME
+   ============================================================ */
+function renderHome(){
+  const g = document.getElementById("levelGrid"); g.innerHTML="";
+  LEVELS.forEach(lv=>{
+    const data=COURSE[lv]; const unlocked=S.unlocked.includes(lv); const passed=S.passed.includes(lv);
+    const total=data.units.length;
+    const done=data.units.filter((_,i)=>S.unitsDone[`${lv}-${i}`]).length;
+    const pct=Math.round(done/total*100);
+    const card=document.createElement("div");
+    card.className="card level-card"+(unlocked?"":" locked");
+    card.innerHTML=`
+      <div class="lock">${passed?"🏆":unlocked?"":"🔒"}</div>
+      <div class="lvl">${lv}</div>
+      <div class="cefr">${data.cefr}</div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="muted" style="margin-top:8px;font-size:13px">${done}/${total} unidades · ${passed?'<span class="hl-good">Aprobado ✔</span>':unlocked?'En progreso':'Bloqueado'}</div>
+    `;
+    if(unlocked){ card.onclick=()=>{ S.currentLevel=lv; save(); goView("lesson"); }; }
+    else card.onclick=()=> toast("Aprueba el examen del nivel anterior para desbloquear "+lv);
+    g.appendChild(card);
+  });
+  renderTodayDash();
+}
+document.getElementById("placementBtn").onclick=startPlacement;
+
+/* ============================================================
+   LECCIÓN
+   ============================================================ */
+let curUnit=0;
+function renderLesson(){
+  const lv=S.currentLevel, data=COURSE[lv];
+  document.getElementById("lessonLevelBadge").textContent=lv+" · "+data.cefr;
+  const us=document.getElementById("unitSelect"); us.innerHTML="";
+  data.units.forEach((u,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=(S.unitsDone[`${lv}-${i}`]?"✔ ":"")+u.title; us.appendChild(o); });
+  us.value=Math.min(curUnit,data.units.length-1);
+  us.onchange=()=>{ curUnit=+us.value; paintUnit(); };
+  curUnit=+us.value; paintUnit();
+}
+function paintUnit(){
+  const lv=S.currentLevel, u=COURSE[lv].units[curUnit];
+  document.getElementById("lessonTitle").textContent=u.title;
+  document.getElementById("lessonGoal").textContent=u.goal;
+  const wl=document.getElementById("wordList"); wl.innerHTML="";
+  u.words.forEach(w=>{
+    const d=document.createElement("div"); d.className="word";
+    d.innerHTML=`<div class="en">${w.en}
+        <button class="spk" title="Escuchar">🔊</button>
+        <button class="spk slow" title="Lento">🐢</button></div>
+      <div class="ipa">${w.ipa}</div>
+      <div class="es">${w.es}</div>
+      <div class="ex">${w.ex}</div>`;
+    d.querySelector(".spk:not(.slow)").onclick=()=>speak(w.en,false);
+    d.querySelector(".spk.slow").onclick=()=>speak(w.en,true);
+    d.querySelector(".ex").onclick=()=>speak(w.ex,false);
+    wl.appendChild(d);
+  });
+  const gb=document.getElementById("grammarBox"); gb.innerHTML="";
+  u.grammar.forEach(gr=>{ const d=document.createElement("div"); d.className="grammar"; d.innerHTML=`<h3>${gr.t}</h3><p style="margin:0">${gr.h}</p>`; gb.appendChild(d); });
+}
+document.getElementById("markUnitDone").onclick=()=>{
+  const k=`${S.currentLevel}-${curUnit}`;
+  if(!S.unitsDone[k]){ S.unitsDone[k]=true; S.xp+=20; save(); toast("¡+20 XP! Unidad estudiada ✔"); renderLesson(); }
+  else toast("Esta unidad ya estaba marcada ✔");
+};
+document.getElementById("goPractice").onclick=()=>{ goView("speak"); };
+
+/* ============================================================
+   PRONUNCIACIÓN
+   ============================================================ */
+let speakItems=[], speakIdx=0;
+function initSpeak(){
+  const lv=S.currentLevel, u=COURSE[lv].units[curUnit]||COURSE[lv].units[0];
+  speakItems=[]; u.words.forEach(w=>{ speakItems.push(w.en); speakItems.push(w.ex); });
+  speakIdx=0; paintSpeak();
+  let note="Practicando: "+lv+" · "+u.title;
+  if(!HAS_SR) note+=" · 📱 iPhone: pulsa «Hablar», di la frase y pulsa «Parar» (la 1ª vez descarga el modelo de voz ~40 MB).";
+  document.getElementById("speakNote").textContent=note;
+}
+function paintSpeak(){
+  document.getElementById("speakProgress").textContent=`Frase ${speakIdx+1} de ${speakItems.length}`;
+  document.getElementById("speakTarget").textContent=speakItems[speakIdx];
+  document.getElementById("speakResult").innerHTML="";
+}
+document.getElementById("speakHear").onclick=()=>speak(speakItems[speakIdx],false);
+document.getElementById("speakSlow").onclick=()=>speak(speakItems[speakIdx],true);
+document.getElementById("speakNext").onclick=()=>{ speakIdx=(speakIdx+1)%speakItems.length; paintSpeak(); };
+document.getElementById("speakPrev").onclick=()=>{ speakIdx=(speakIdx-1+speakItems.length)%speakItems.length; paintSpeak(); };
+document.getElementById("speakMic").onclick=function(){
+  const btn=this, res=document.getElementById("speakResult");
+  const lentoBtn=`<div style="margin-top:8px"><button class="btn small" onclick="speak('${speakItems[speakIdx].replace(/'/g,"\\'")}',true)">🐢 Oír lento de nuevo</button></div>`;
+  if(S.apiKey && (S.provider||"gemini")==="gemini"){
+    // 🎤 Entrenador IA: graba tu voz y la IA evalúa tu PRONUNCIACIÓN + da un consejo
+    if(pronRec){ pronRec.stop(); btn.textContent="⏳ Analizando..."; return; }
+    pronRecordToggle(async(blob)=>{
+      btn.textContent="🎤 Hablar";
+      if(!blob){ res.innerHTML='<span class="muted">No pude grabar. Revisa el micrófono.</span>'; return; }
+      res.innerHTML='<span class="muted">🧠 La IA está escuchando tu pronunciación...</span>';
+      try{
+        const r=await geminiPronScore(blob, speakItems[speakIdx]);
+        if(!r){ res.innerHTML='<span class="muted">No te entendí bien. Inténtalo otra vez 🎤</span>'+lentoBtn; return; }
+        const score=Math.max(0,Math.min(100,Math.round(+r.score||0)));
+        const cls=score>=80?"ok":score>=50?"":"err";
+        const emoji=score>=80?"✅ ¡Muy bien!":score>=50?"🟡 Casi":"❌ A mejorar";
+        res.innerHTML=`<div class="${cls}" style="font-size:24px;font-weight:800">${score}/100 · ${emoji}</div>
+          <div style="margin-top:8px;text-align:left;max-width:420px;margin-left:auto;margin-right:auto"><b>💡 Consejo:</b> ${r.tip||""}</div>
+          <div class="muted" style="margin-top:6px;font-size:13px">Te oí: "<i>${r.heard||""}</i>"</div>`+lentoBtn;
+        if(score>=80){ S.xp+=5; save(); }
+      }catch(e){ res.innerHTML='<span class="muted">Error al evaluar (¿límite de Gemini?). Prueba en un momento.</span>'+lentoBtn; }
+    }, (st)=>{ res.innerHTML='<span class="muted">'+st+'</span>'; btn.textContent="⏹ Parar y evaluar"; });
+  } else {
+    // Sin clave: método básico (compara las palabras que reconoce)
+    if(activeMic){ activeMic.stop(); btn.textContent="⏳..."; return; }
+    micToggle(
+      (heard)=>{
+        btn.textContent="🎤 Hablar";
+        if(!heard){ res.innerHTML='<span class="muted">No te entendí. Inténtalo otra vez 🎤</span>'; return; }
+        const score=similarity(heard, speakItems[speakIdx]);
+        let cls=score>=80?"ok":score>=50?"":"err";
+        let emoji=score>=80?"✅ ¡Excelente!":score>=50?"🟡 Casi, repite":"❌ Inténtalo otra vez";
+        res.innerHTML=`<div class="${cls}" style="font-size:20px;font-weight:800">${score}% · ${emoji}</div>
+          <div class="muted" style="margin-top:6px">Te he oído: "<i>${heard}</i>"</div>`;
+        if(score>=80){ S.xp+=5; save(); } else { res.innerHTML+=lentoBtn; }
+      },
+      (st)=>{ res.innerHTML='<span class="muted">'+st+'</span>'; btn.textContent="⏹ Parar y comprobar"; }
+    );
+  }
+};
+
+/* ============================================================
+   EXAMEN DE NIVEL
+   ============================================================ */
+let testAnswers={};
+function renderTest(){
+  const lv=S.currentLevel, data=COURSE[lv];
+  document.getElementById("testIntro").innerHTML=`<div class="card"><h3>Examen de ${lv} · ${data.cefr}</h3>
+    <p class="muted">${data.test.length} preguntas · necesitas ${Math.ceil(data.test.length*PASS)}/${data.test.length} (80%) para pasar a ${nextLevel(lv)||'¡el final!'}.</p></div>`;
+  testAnswers={};
+  const body=document.getElementById("testBody"); body.innerHTML="";
+  data.test.forEach((q,qi)=>{
+    const d=document.createElement("div"); d.className="quiz-q";
+    d.innerHTML=`<b>${qi+1}. ${q.q}</b>`;
+    q.o.forEach((opt,oi)=>{
+      const b=document.createElement("button"); b.className="opt"; b.textContent=opt;
+      b.onclick=()=>{ testAnswers[qi]=oi; d.querySelectorAll(".opt").forEach(x=>x.classList.remove("picked")); b.classList.add("picked"); };
+      d.appendChild(b);
+    });
+    body.appendChild(d);
+  });
+  const submit=document.createElement("button"); submit.className="btn green"; submit.style.marginTop="10px";
+  submit.textContent="✅ Corregir examen"; submit.onclick=()=>gradeTest(lv);
+  body.appendChild(submit);
+  document.getElementById("testResult").innerHTML="";
+}
+function gradeTest(lv){
+  const data=COURSE[lv]; let correct=0;
+  document.querySelectorAll("#testBody .quiz-q").forEach((d,qi)=>{
+    const opts=d.querySelectorAll(".opt"); const a=data.test[qi].a; const picked=testAnswers[qi];
+    opts.forEach((o,oi)=>{ o.disabled=true; if(oi===a)o.classList.add("correct"); if(oi===picked&&picked!==a)o.classList.add("wrong"); });
+    if(picked===a) correct++;
+  });
+  const pct=Math.round(correct/data.test.length*100);
+  const passed=pct>=PASS*100;
+  const next=nextLevel(lv);
+  let html=`<div class="card" style="text-align:center;border-color:${passed?'var(--accent2)':'var(--bad)'}">
+     <div class="score-big ${passed?'ok':'err'}">${pct}%</div>
+     <div>${correct}/${data.test.length} correctas</div>`;
+  if(passed){
+    S.xp+=100;
+    if(!S.passed.includes(lv)) S.passed.push(lv);
+    if(next && !S.unlocked.includes(next)){ S.unlocked.push(next); html+=`<h3 class="ok">🎉 ¡APROBADO! Has desbloqueado el nivel ${next}</h3><p>Se ha comprobado que puedes pasar al siguiente nivel.</p><button class="btn green" onclick="S.currentLevel='${next}';save();goView('lesson')">Empezar ${next} →</button>`; }
+    else if(!next) html+=`<h3 class="ok">🏆 ¡FELICIDADES! Has completado el C2. Tienes nivel de dominio para trabajar en inglés.</h3>`;
+    else html+=`<h3 class="ok">✔ Aprobado de nuevo. El nivel ${next} ya estaba desbloqueado.</h3>`;
+    save();
+  } else {
+    html+=`<h3 class="err">Aún no. Necesitas 80%.</h3><p class="muted">Repasa las lecciones y la pronunciación, y vuelve a intentarlo. ¡Tú puedes!</p><button class="btn alt" onclick="renderTest()">🔁 Reintentar examen</button>`;
+  }
+  html+=`</div>`;
+  document.getElementById("testResult").innerHTML=html;
+  document.getElementById("testResult").scrollIntoView({behavior:"smooth"});
+  refreshHeader();
+}
+function nextLevel(lv){ const i=LEVELS.indexOf(lv); return LEVELS[i+1]||null; }
+
+/* ============================================================
+   BACKEND DE IA COMPARTIDO (real Claude o tutor offline)
+   ============================================================ */
+async function fetchTimeout(url, opts, ms=12000){
+  const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(), ms);
+  try{ return await fetch(url, Object.assign({}, opts, {signal:ctrl.signal})); }
+  finally{ clearTimeout(t); }
+}
+function aiRetryable(err){
+  if(err.name==="AbortError"||err.name==="TypeError") return true;   // timeout / sin red
+  const m=/^(\d{3})\s/.exec(err.message||""); return m ? +m[1]>=500 : false;   // error de servidor
+}
+async function askAI(history, systemPrompt, localFallback){
+  if(!S.apiKey) return {text:localFallback(), real:false};
+  for(let attempt=0; attempt<2; attempt++){
+    try{
+      if(S.provider==="anthropic"){
+        const res=await fetchTimeout("https://api.anthropic.com/v1/messages",{
+          method:"POST",
+          headers:{"content-type":"application/json","x-api-key":S.apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+          body:JSON.stringify({model:S.model||"claude-haiku-4-5-20251001",max_tokens:400,system:systemPrompt,messages:history})
+        });
+        if(!res.ok){ throw new Error(res.status+" "+(await res.text()).slice(0,90)); }
+        const data=await res.json();
+        return {text:data.content.map(c=>c.text||"").join("").trim(), real:true};
+      } else {
+        // Google Gemini (gratis)
+        const primary=(S.model&&S.model.startsWith("gemini"))?S.model:"gemini-2.5-flash";
+        const contents=history.map(m=>({role:m.role==="assistant"?"model":"user",parts:[{text:m.content}]}));
+        const body=JSON.stringify({system_instruction:{parts:[{text:systemPrompt}]},contents,generationConfig:{maxOutputTokens:500,temperature:0.8,thinkingConfig:{thinkingBudget:0}}});
+        const tryModel=(model)=>fetchTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(S.apiKey)}`,{method:"POST",headers:{"content-type":"application/json"},body});
+        let res=await tryModel(primary);
+        if(!res.ok && (res.status===429||res.status===503) && primary!=="gemini-2.5-flash-lite"){ res=await tryModel("gemini-2.5-flash-lite"); }
+        if(!res.ok){ throw new Error(res.status+" "+(await res.text()).slice(0,90)); }
+        const data=await res.json();
+        const txt=(((data.candidates||[])[0]||{}).content||{}).parts||[];
+        return {text:txt.map(p=>p.text||"").join("").trim(), real:true};
+      }
+    }catch(err){
+      // Un solo reintento si fue un fallo pasajero (red/timeout/error de servidor); si es la clave o la petición, no sirve reintentar.
+      if(attempt===0 && aiRetryable(err)){ await new Promise(r=>setTimeout(r,900)); continue; }
+      return {text:localFallback(), real:false, error:err.message||String(err)};
+    }
+  }
+}
+function quickFix(t){
+  const low=" "+t.toLowerCase()+" ";
+  const rules=[
+    [/ i is /," I am "],[/ i are /," I am "],[/ i has /," I have "],[/ he have /," he has "],[/ she have /," she has "],
+    [/ i no /," I don't "],[/ more better /," better "],[/ people is /," people are "],[/ i am agree /," I agree "],
+    [/ explain me /," explain to me "],[/ since 2 years /," for 2 years "],[/ i very /," I am very "],
+    [/ how is called /," what is it called "],[/ i have 30 years /," I am 30 years old "]
+  ];
+  for(const [re,to] of rules){ if(re.test(low)){ return {from:low.match(re)[0].trim(), to:to.trim()}; } }
+  return null;
+}
+
+/* ============================================================
+   1) CONVERSACIÓN POR VOZ (modo llamada, manos libres)
+   ============================================================ */
+const SCENARIOS={
+  interview:{label:"💼 Entrevista", sys:"You are a friendly job interviewer. Ask interview questions one at a time. Keep replies short (1-2 sentences).", open:"Hi! Thanks for coming. Can you tell me a bit about yourself and your work experience?",
+    fu:["Interesting! What's your biggest strength?","Can you describe a challenge you faced at work?","Why do you want to work with us?","Where do you see yourself in five years?","Great. Do you have any questions for me?"]},
+  meeting:{label:"📊 Reunión", sys:"You are a teammate in a work meeting. Keep talking about deadlines, tasks and ideas. Short replies.", open:"Morning! So, where are we with the project? Will we hit the deadline?",
+    fu:["Good point. What about the budget?","OK, who can take that task?","Do you think we need more time?","What should we prioritize first?","Sounds good. Let's sync again tomorrow, OK?"]},
+  customer:{label:"📞 Cliente", sys:"You are a polite customer whose order is late. The learner is the support agent. React naturally, short replies.", open:"Hello, my order hasn't arrived yet and I'm a bit worried. Can you help me?",
+    fu:["Thank you. So when will it arrive?","Can you offer any compensation for the delay?","Could you confirm my order number?","OK. Is there anything else I should do?","Great, thanks for your help!"]},
+  smalltalk:{label:"☕ Charla casual", sys:"You are a friendly coworker making small talk. Very casual, short replies.", open:"Hey! How was your weekend? Did you do anything fun?",
+    fu:["Nice! Any plans for next weekend?","Did you try the new coffee place?","How's your project going these days?","Oh really? Tell me more!","Ha, same here! Anyway, back to work soon?"]},
+  csinterview:{label:"💼 Entrevista (Atención al cliente)", sys:"You are a hiring manager interviewing the learner for a CUSTOMER SERVICE job (call center, front desk, retail or reception). Ask common customer-service interview questions one at a time: why customer service, handling angry/difficult customers, working in a team, staying calm under pressure, a time they helped someone. Keep replies short and realistic.", open:"Hi, thanks for coming in! To start: why do you want to work in customer service?",
+    fu:["Good. How would you handle an angry customer who is shouting?","Tell me about a time you helped solve someone's problem.","How do you stay calm when you're under pressure?","What does great customer service mean to you?","Great. Do you have any questions for me?"]},
+  cscall:{label:"📞 Atender una llamada (cliente)", sys:"You are a CUSTOMER calling a company where the learner works in customer service. You have a realistic problem (a late order, a wrong item, a billing question, or you want a refund). Stay in character as the customer and let the learner practice helping you. React naturally to how well they help. Keep replies short.", open:"Hello? Hi, yeah — I ordered something two weeks ago and it still hasn't arrived. I'm really not happy about this.",
+    fu:["Okay, so when will I actually get it?","Can I just get a refund instead?","You know, this is the second time this happens.","Alright. Can you confirm that to me by email?","Okay... thank you for sorting it out."]},
+  myinterview:{label:"🎯 Mi entrevista real", sys:"You are a hiring manager interviewing the candidate (Leo) for a customer service / chat support job in English. Ask questions based on THEIR REAL background (given below). Help them explain their actual experience clearly in English. Ask about their Quality Assurance role, handling difficult customers, working in three languages, the chat support job, and why they fit. Stay realistic, short replies.", open:"Hi Leo, thanks for coming in! I've looked at your background. To start, can you tell me about your experience at the call center?",
+    fu:["Interesting. What exactly did you do as a Quality Assurance agent?","How did you handle a difficult or angry customer?","You speak three languages — how does that help in customer service?","Tell me about your chat support experience.","Why do you think you're a good fit for this role?"]}
+};
+/* Módulo especializado: Inglés para Atención al Cliente (contenido vendible) */
+const CS_PHRASES=[
+  {cat:"👋 Saludar / abrir", items:[
+    {en:"Thank you for calling. How can I help you today?",es:"Gracias por llamar. ¿Cómo puedo ayudarle hoy?"},
+    {en:"Good morning, how may I assist you?",es:"Buenos días, ¿en qué puedo asistirle?"},
+    {en:"Hi, welcome! What can I do for you?",es:"¡Hola, bienvenido! ¿Qué puedo hacer por usted?"}
+  ]},
+  {cat:"👂 Escuchar / aclarar", items:[
+    {en:"Let me make sure I understand correctly.",es:"Déjeme asegurarme de que entiendo bien."},
+    {en:"Could you please repeat that?",es:"¿Podría repetir eso, por favor?"},
+    {en:"May I have your name and order number, please?",es:"¿Me da su nombre y número de pedido, por favor?"},
+    {en:"Just to confirm, you'd like to...?",es:"Solo para confirmar, ¿usted quiere...?"}
+  ]},
+  {cat:"🙏 Disculparse / empatizar", items:[
+    {en:"I'm so sorry for the inconvenience.",es:"Lamento mucho las molestias."},
+    {en:"I completely understand your frustration.",es:"Entiendo perfectamente su frustración."},
+    {en:"I apologize for the wait.",es:"Le pido disculpas por la espera."},
+    {en:"You're absolutely right. Let me fix that for you.",es:"Tiene toda la razón. Déjeme arreglarlo."}
+  ]},
+  {cat:"🛠️ Resolver / actuar", items:[
+    {en:"Let me look into that for you right away.",es:"Déjeme revisar eso ahora mismo."},
+    {en:"I'll take care of this for you.",es:"Yo me encargo de esto."},
+    {en:"Let me transfer you to the right department.",es:"Le transfiero al departamento correcto."},
+    {en:"I've processed your refund. You'll see it in three to five days.",es:"He procesado su reembolso. Lo verá en tres a cinco días."}
+  ]},
+  {cat:"⏸️ Poner en espera", items:[
+    {en:"May I put you on hold for a moment?",es:"¿Puedo ponerle en espera un momento?"},
+    {en:"Thank you for your patience.",es:"Gracias por su paciencia."},
+    {en:"Bear with me one second, please.",es:"Deme un segundo, por favor."}
+  ]},
+  {cat:"✅ Cerrar", items:[
+    {en:"Is there anything else I can help you with?",es:"¿Hay algo más en lo que pueda ayudarle?"},
+    {en:"Thank you for calling. Have a great day!",es:"Gracias por llamar. ¡Que tenga un buen día!"},
+    {en:"It was my pleasure to help you.",es:"Fue un placer ayudarle."}
+  ]}
+];
+let callScenario="interview", callHistory=[], callActive=false, callTurn=0, lastAiLine="", callRec=null, callLastFu=-1, callEmptyCount=0, callPaused=false, callAiFailWarned=false, callFuUsed=[];
+
+function initCall(){
+  renderCallBtns();
+  document.getElementById("callKeyWarn").style.display = S.apiKey ? "none" : "block";
+  let txt = S.apiKey ? "🟢 IA real conectada — te entiende, te corrige y sube la dificultad según mejoras." : "🟡 Tutor básico (repite frases, sin comprensión). Conecta la IA en Ajustes.";
+  if(!HAS_SR) txt += " · 📱 iPhone: la 1ª vez descarga el modelo de voz (~40 MB).";
+  document.getElementById("callBackend").textContent = txt;
+  const cd=document.getElementById("callDiff");
+  cd.value=S.callDifficulty||"normal";
+  cd.onchange=()=>{ S.callDifficulty=cd.value; save(); toast(cd.value==="hard"?"Modo difícil: hablará rápido y con acentos 🔴":cd.value==="easy"?"Modo fácil: claro y lento 🟢":"Modo normal 🟡"); };
+  const hv=document.getElementById("humanVoiceChk");
+  hv.checked = S.humanVoice!==false;
+  hv.disabled = false;
+  hv.title = "Voz humana natural (elige cuál en Ajustes)";
+  hv.onchange=()=>{ S.humanVoice=hv.checked; save(); toast(hv.checked?"Voz humana activada 🗣️":"Voz del dispositivo"); };
+  const send=()=>callSendText();
+  document.getElementById("callTextSend").onclick=send;
+  document.getElementById("callText").onkeydown=e=>{ if(e.key==="Enter") send(); };
+}
+function renderCallBtns(){
+  const c=document.getElementById("callScenarioBtns"); c.innerHTML="";
+  Object.entries(SCENARIOS).forEach(([k,v])=>{
+    const b=document.createElement("button"); b.className="btn small "+(k===callScenario?"":"alt"); b.textContent=v.label;
+    b.onclick=()=>{ if(callActive) endCall(); callScenario=k; renderCallBtns(); };
+    c.appendChild(b);
+  });
+}
+function setOrb(state,status,sub){
+  const o=document.getElementById("orb");
+  o.className="orb"+(state?" "+state:"");
+  o.textContent = state==="speaking"?"🗣️":state==="listening"?"👂":"🎧";
+  if(status!==undefined) document.getElementById("callStatus").textContent=status;
+  if(sub!==undefined) document.getElementById("callSub").textContent=sub;
+}
+function caption(who,text){
+  const c=document.getElementById("caption");
+  const p=document.createElement("p"); p.innerHTML=`<span class="c-${who}">${who==="ai"?"🤖":"🙋"} </span>${text}`;
+  c.appendChild(p); c.scrollTop=c.scrollHeight;
+}
+document.getElementById("capToggle").onchange=e=>document.getElementById("caption").classList.toggle("show",e.target.checked);
+document.getElementById("callStart").onclick=startCall;
+document.getElementById("callEnd").onclick=endCall;
+document.getElementById("callRepeat").onclick=()=>{ if(lastAiLine) speakThen(lastAiLine,true,callListen); };
+
+function startCall(){
+  callActive=true; callTurn=0; callHistory=[]; callEmptyCount=0; callPaused=false; ttsRateLimited=false; callAiFailWarned=false; callFuUsed=[];
+  ensureTtsCtx(); requestWakeLock();
+  // Desbloqueo de voz del navegador (iOS) dentro del gesto, por si toca usarla
+  try{ speechSynthesis.cancel(); const w=new SpeechSynthesisUtterance(" "); w.volume=0; speechSynthesis.speak(w); }catch(e){}
+  document.getElementById("caption").innerHTML="";
+  document.getElementById("caption").classList.add("show");
+  document.getElementById("capToggle").checked=true;
+  document.getElementById("callStart").disabled=true;
+  document.getElementById("callEnd").disabled=false;
+  document.getElementById("callRepeat").disabled=false;
+  const open=SCENARIOS[callScenario].open;
+  lastAiLine=open; callHistory.push({role:"assistant",content:open});
+  caption("ai",open);
+  speakThen(open,false,callListen);
+}
+function endCall(){
+  if(!callActive) return;
+  callActive=false;
+  try{ speechSynthesis.cancel(); }catch(e){}
+  try{ stopGeminiSpeak(); }catch(e){}
+  try{ callRec&&callRec.stop(); }catch(e){}
+  try{ activeMic&&activeMic.stop(); }catch(e){}
+  releaseWakeLock();
+  const tb=document.getElementById("callTalk"); if(tb) tb.style.display="none";
+  setOrb("","Conversación terminada","");
+  const sb=document.getElementById("callStart"); if(sb){ sb.disabled=false; }
+  const eb=document.getElementById("callEnd"); if(eb) eb.disabled=true;
+  const rb=document.getElementById("callRepeat"); if(rb) rb.disabled=true;
+}
+function callRate(){ const d=S.callDifficulty||"normal"; return d==="easy"?0.9:d==="hard"?1.18:1.0; }
+function callPickVoice(){
+  if((S.callDifficulty||"normal")==="hard"){
+    for(const a of [/en[-_]GB/i,/en[-_]AU/i,/en[-_]IN/i]){ const v=voices.find(x=>a.test(x.lang)); if(v) return v; }
+  }
+  return pickVoice();
+}
+/* ---- Voz humana con Gemini TTS (suena natural, no robótica) ---- */
+let ttsCtx=null, ttsSources=[], ttsRateLimited=false;
+function ensureTtsCtx(){
+  try{
+    ttsCtx=ttsCtx||new (window.AudioContext||window.webkitAudioContext)();
+    if(ttsCtx.state==="suspended") ttsCtx.resume();
+    // Desbloqueo de iOS: reproducir un sonido mudo DENTRO del gesto del usuario
+    const b=ttsCtx.createBuffer(1,1,22050), s=ttsCtx.createBufferSource(); s.buffer=b; s.connect(ttsCtx.destination); s.start(0);
+  }catch(e){}
+}
+function stopGeminiSpeak(){ try{ ttsSources.forEach(s=>{ try{ s.onended=null; s.stop(); }catch(e){} }); }catch(e){} ttsSources=[]; }
+async function geminiSpeak(text, cb, cancelled, onStart){
+  try{
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${encodeURIComponent(S.apiKey)}`,{
+      method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({contents:[{parts:[{text}]}],generationConfig:{responseModalities:["AUDIO"],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:"Kore"}}}}})
+    });
+    if(!res.ok){ if(res.status===429 && !ttsRateLimited){ ttsRateLimited=true; toast("Voz IA en pausa 1 min (límite gratis). Voz del móvil mientras tanto."); setTimeout(()=>{ ttsRateLimited=false; }, 70000); } return false; }
+    const d=await res.json();
+    const part=(((d.candidates||[])[0]||{}).content||{}).parts||[];
+    const inline=part.find(p=>p.inlineData); if(!inline) return false;
+    const bin=atob(inline.inlineData.data), len=bin.length, bytes=new Uint8Array(len);
+    for(let i=0;i<len;i++) bytes[i]=bin.charCodeAt(i);
+    let rate=24000; const mm=(inline.inlineData.mimeType||"").match(/rate=(\d+)/); if(mm) rate=+mm[1];
+    const samples=Math.floor(len/2), f32=new Float32Array(samples), dv=new DataView(bytes.buffer);
+    for(let i=0;i<samples;i++) f32[i]=dv.getInt16(i*2,true)/32768;
+    ensureTtsCtx(); if(!ttsCtx) return false;
+    if(ttsCtx.state==="suspended"){ try{ await ttsCtx.resume(); }catch(e){} }
+    if(ttsCtx.state!=="running") return false;   // si iOS no deja, usa la voz del navegador
+    const buf=ttsCtx.createBuffer(1,samples,rate); buf.getChannelData(0).set(f32);
+    if(cancelled&&cancelled()) return false;
+    stopGeminiSpeak();
+    const src=ttsCtx.createBufferSource(); src.buffer=buf; src.connect(ttsCtx.destination);
+    ttsSources.push(src); src.onended=()=>{ cb&&cb(); };
+    src.start(); onStart&&onStart();
+    return true;
+  }catch(e){ return false; }
+}
+function browserSpeakThen(text,slow,cb){
+  if(!('speechSynthesis' in window)){ cb&&cb(); return; }
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  const v=callPickVoice(); if(v){u.voice=v;u.lang=v.lang;} else u.lang="en-US";
+  u.rate = slow ? S.slowRate : callRate();
+  u.onend=()=>{ if(callActive) cb&&cb(); };
+  speechSynthesis.speak(u);
+}
+function speakThen(text,slow,cb){
+  // Voz: Gemini IA (si hay clave y no está limitada) o la del dispositivo. Sencillo y fiable.
+  let useGemini = (S.humanVoice!==false) && (S.humanVoiceEngine||"gemini")==="gemini"
+                  && S.apiKey && (S.provider||"gemini")==="gemini" && !ttsRateLimited;
+  if(!useGemini){ browserSpeakThen(text,slow,cb); return; }
+  setOrb("speaking","La IA está hablando... 🗣️","preparando voz...");
+  let settled=false;
+  const cancelled=()=>settled;
+  const onDone=()=>{ if(settled) return; settled=true; if(callActive) cb&&cb(); };
+  // Si la voz de IA no empieza a sonar en ~4,5 s, no te hacemos esperar: voz del dispositivo (instantánea)
+  const wd=setTimeout(()=>{ if(!settled){ settled=true; browserSpeakThen(text,slow,cb); } }, 4500);
+  const onStart=()=>{ clearTimeout(wd); };
+  const finishOk=ok=>{ if(ok){ clearTimeout(wd); } else if(!settled){ settled=true; clearTimeout(wd); browserSpeakThen(text,slow,cb); } };
+  const d=S.callDifficulty||"normal";
+  const styled = slow ? "Say slowly and very clearly: "+text
+               : d==="easy" ? "Say slowly and clearly: "+text
+               : d==="hard" ? "Say quickly, like a fast native speaker: "+text
+               : text;
+  geminiSpeak(styled,onDone,cancelled,onStart).then(finishOk);
+}
+/* ---- Mantener la pantalla encendida durante la conversación ---- */
+let wakeLock=null;
+async function requestWakeLock(){ try{ if('wakeLock' in navigator) wakeLock=await navigator.wakeLock.request('screen'); }catch(e){} }
+function releaseWakeLock(){ try{ wakeLock&&wakeLock.release(); }catch(e){} wakeLock=null; }
+document.addEventListener('visibilitychange',()=>{ if(callActive && document.visibilityState==='visible') requestWakeLock(); });
+function callListen(){
+  if(!callActive||callPaused) return;
+  document.getElementById("callTalk").style.display="none";
+  setOrb("listening","Te escucho... habla 🎤","Habla con naturalidad; cuando termines, te respondo");
+  micToggle(
+    heard=>{
+      if(!callActive||callPaused) return;
+      if(heard && heard.trim().length>=2){ callEmptyCount=0; handleUserVoice(heard,false); }
+      else { callEmptyCount++; if(callEmptyCount>=4){ callEmptyCount=0; showManualTalk(); } else if(callActive&&!callPaused){ setTimeout(callListen,400); } }
+    },
+    st=>{ if(callActive&&!callPaused) setOrb("listening",st,""); }
+  );
+}
+function showManualTalk(){
+  setOrb("listening","¿Sigues ahí? 🎤","No te oí. Pulsa para hablar (o escribe abajo).");
+  const tb=document.getElementById("callTalk"); tb.style.display=""; tb.textContent="🎤 Hablar";
+}
+document.getElementById("callTalk").onclick=function(){
+  // Reanudar la conversación por voz (manos libres)
+  if(!callActive) return;
+  try{ activeMic&&activeMic.stop(); }catch(e){}
+  callPaused=false; callEmptyCount=0; this.style.display="none";
+  callListen();
+};
+/* Enviar texto (barra de chat). Pausa la voz y entra en modo escribir. */
+function callSendText(){
+  const inp=document.getElementById("callText"); if(!inp) return;
+  const txt=inp.value.trim(); if(!txt||!callActive) return;
+  inp.value="";
+  callPaused=true;
+  try{ activeMic&&activeMic.stop(); }catch(e){}
+  document.getElementById("caption").classList.add("show");
+  handleUserVoice(txt,true);
+}
+function afterTextReply(){
+  if(!callActive) return;
+  setOrb("","Tu turno ⌨️","Escribe abajo, o pulsa 🎤 para hablar");
+  const tb=document.getElementById("callTalk"); tb.style.display=""; tb.textContent="🎤 Hablar";
+}
+async function handleUserVoice(text, viaText){
+  caption("me",text);
+  callHistory.push({role:"user",content:text});
+  setOrb("speaking","Pensando... 🤔","");
+  callTurn++;
+  const dmode=S.callDifficulty||"normal";
+  const diffName=dmode==="easy"?"EASY":dmode==="hard"?"HARD":"NORMAL";
+  const diffRule=dmode==="easy"
+    ? "Speak clearly with simple, common words and short sentences."
+    : dmode==="hard"
+    ? "Speak like a native: use idioms, phrasal verbs, contractions, natural fast phrasing and challenging questions. Make it genuinely harder to follow."
+    : "Use natural everyday English.";
+  const cvLine = (callScenario==="myinterview"||callScenario==="csinterview") && S.profile ? `\nThe candidate's REAL background/CV: ${S.profile}\nAsk about this real experience and help them present it well in English.` : "";
+  const sys=`${SCENARIOS[callScenario].sys}${cvLine}
+You are ALSO an honest, adaptive English tutor/examiner for a Spanish-speaking learner. Target level: ${S.currentLevel} (CEFR). Difficulty mode: ${diffName}.
+- You are a real person in this conversation, not a quiz bot. Your #1 rule: your next line MUST clearly respond to what they just said — pick up a specific detail, opinion or word from their last message before moving on. Never ignore it and jump to an unrelated stock question.
+- It's OK to sometimes just react/comment (no question) instead of always interrogating them — real conversations aren't a rapid-fire Q&A.
+- Vary your wording turn to turn; don't reuse the same opener ("Interesting!", "Great.", "Good point.") twice in a row.
+- Under 50 words per turn.
+- DIFFICULTY: ${diffRule}
+- ADAPT: if they answer fluently and correctly, gradually make it HARDER (richer vocabulary, idioms, faster native phrasing, tougher questions). If they struggle, simplify.
+- CORRECT: if they make a clear grammar/vocabulary mistake, correct it briefly first: "✔ Better: <correct sentence>." then continue, still reacting to the content of what they said.
+- LEVEL: be honest — if their English is clearly below ${S.currentLevel}, tell them kindly and specifically what to practice before advancing; if good, encourage them.
+- WRITING: if the learner asks (in Spanish or English) to learn or practice WRITING (e.g. "quiero aprender a escribir"), switch to writing-tutor mode: give a short writing task, then correct what they write and show a better version, step by step.
+- If their message is garbled/nonsense (maybe bad pronunciation), gently say so and ask them to repeat.
+- Answer in English; a tiny note in (Spanish) is OK only to explain a correction.`;
+  const local=()=>{
+    const f=quickFix(text), arr=SCENARIOS[callScenario].fu;
+    if(callFuUsed.length>=arr.length) callFuUsed=[];
+    let idx,g=0; do{ idx=Math.floor(Math.random()*arr.length); g++; }while((idx===callLastFu||callFuUsed.includes(idx))&&g<10);
+    callLastFu=idx; callFuUsed.push(idx);
+    let r=arr[idx];
+    const low=text.toLowerCase();
+    const words=text.trim().split(/\s+/).filter(w=>w.length>2 && !/^(the|and|that|this|with|from|have|about|just|what|when|where|really)$/i.test(w));
+    const echo=words.length ? words[words.length-1].replace(/[^a-zA-Z']/g,"") : "";
+    if(/\?\s*$/.test(text.trim())) r="Good question. "+r;
+    else if(/\b(yes|yeah|yep|sure|of course|ok|okay)\b/.test(low)) r="Great"+(echo?`, so about "${echo}"`:"")+". "+r;
+    else if(/\b(no|not|don't|nope|never)\b/.test(low)) r="No worries. "+r;
+    else if(/\b(thanks|thank you)\b/.test(low)) r="You're welcome! "+r;
+    else if(echo) r=`Got it, "${echo}" — `+r;
+    if(f) r=`(Tip: say "${f.to}", not "${f.from}".) `+r;
+    return r;
+  };
+  const {text:reply,real,error}=await askAI(callHistory,sys,local);
+  if(!callActive) return;
+  if(!real && S.apiKey && !callAiFailWarned){
+    callAiFailWarned=true;
+    toast("⚠️ Falló la IA real, usando el tutor básico"+(error?" ("+error.slice(0,60)+")":""), 4500);
+  }
+  lastAiLine=reply; callHistory.push({role:"assistant",content:reply});
+  captureCorrections(reply);
+  caption("ai",reply);
+  speakThen(reply,false, viaText ? afterTextReply : callListen);
+}
+
+/* ============================================================
+   2) ESCRITURA (chat de texto con tutor)
+   ============================================================ */
+const WTASKS={
+  free:{label:"✍️ Libre", sys:"You are a warm English writing tutor. The student writes in English. First, briefly correct mistakes (show the corrected version), then reply naturally and ask a follow-up question to keep them writing.", open:"Hi! Let's practice your writing. Tell me what you did at work today. ✍️"},
+  email:{label:"📧 Escribir un email", sys:"You are an English writing tutor focused on professional emails. Ask the student to write a short work email, then correct it line by line and suggest more natural/professional phrasing.", open:"Let's write a work email. Task: write a short email to a client apologizing for a late delivery and offering a solution. Go ahead!"},
+  describe:{label:"🧩 Describir", sys:"You are an English writing tutor. Ask the student to describe things (their job, a process, a problem). Correct grammar and improve vocabulary.", open:"Describe your job to me in 3-4 sentences: what you do and what you like about it."},
+  story:{label:"📔 Contar algo", sys:"You are an English writing tutor practicing past tenses. The student tells short stories. Correct verb tenses gently.", open:"Tell me about the last time you solved a problem at work. What happened?"}
+};
+let writeTask="free", writeHistory=[], writeAiFailWarned=false;
+function initWrite(){ renderWriteBtns(); startWrite(); }
+function renderWriteBtns(){
+  const c=document.getElementById("writeTaskBtns"); c.innerHTML="";
+  Object.entries(WTASKS).forEach(([k,v])=>{
+    const b=document.createElement("button"); b.className="btn small "+(k===writeTask?"":"alt"); b.textContent=v.label;
+    b.onclick=()=>{ writeTask=k; renderWriteBtns(); startWrite(); };
+    c.appendChild(b);
+  });
+}
+function startWrite(){
+  writeHistory=[];
+  document.getElementById("writeLog").innerHTML="";
+  writeAiFailWarned=false;
+  document.getElementById("writeBackend").textContent=S.apiKey?`🟢 Tutor IA real (${(S.provider||"gemini")==="anthropic"?"Claude":"Gemini"})`:"🟡 Tutor incorporado (offline). Añade API key en Ajustes para correcciones avanzadas.";
+  writeMsg("ai",WTASKS[writeTask].open);
+  writeHistory.push({role:"assistant",content:WTASKS[writeTask].open});
+}
+function writeMsg(who,text){
+  const log=document.getElementById("writeLog");
+  const d=document.createElement("div"); d.className="msg "+who; d.textContent=text;
+  if(who==="ai"){
+    const sp=document.createElement("button"); sp.className="btn ghost small"; sp.textContent="🔊"; sp.style.marginLeft="8px";
+    sp.onclick=()=>speak(text.replace(/[✍️📧🧩📔👍]/g,""),false); d.appendChild(sp);
+  }
+  log.appendChild(d); log.scrollTop=log.scrollHeight;
+}
+async function writeSend(text){
+  text=text.trim(); if(!text) return;
+  writeMsg("me",text); writeHistory.push({role:"user",content:text});
+  document.getElementById("writeText").value="";
+  const typing=document.createElement("div"); typing.className="msg ai"; typing.textContent="✍️ ..."; document.getElementById("writeLog").appendChild(typing);
+  const sys=`${WTASKS[writeTask].sys} The learner's level is ${S.currentLevel}. Answer in English. Keep it under 80 words. Use this format when correcting: "✅ Better: <corrected sentence>" then your reply. Always react to the specific content of what they wrote, not just its grammar — respond like a person who actually read it.`;
+  const local=()=>{
+    const f=quickFix(text);
+    const tips=["Good effort! ","Nice try! ","Well written! ","Keep going! "];
+    let r=tips[Math.floor(Math.random()*tips.length)];
+    if(f) r+=`✅ Better: replace "${f.from}" with "${f.to}". `;
+    r+=["Now add one more sentence with more detail.","Can you say the same thing using a different word?","Try writing the next part using the past tense.","Good. Now tell me why."][Math.floor(Math.random()*4)];
+    return r;
+  };
+  const {text:reply,real,error}=await askAI(writeHistory,sys,local);
+  if(!real && S.apiKey && !writeAiFailWarned){
+    writeAiFailWarned=true;
+    toast("⚠️ Falló la IA real, usando el tutor básico"+(error?" ("+error.slice(0,60)+")":""), 4500);
+  }
+  typing.remove();
+  writeMsg("ai",reply); writeHistory.push({role:"assistant",content:reply}); captureCorrections(reply);
+}
+document.getElementById("writeSend").onclick=()=>writeSend(document.getElementById("writeText").value);
+document.getElementById("writeText").addEventListener("keydown",e=>{ if(e.key==="Enter") writeSend(e.target.value); });
+
+/* ============================================================
+   3) LECTURA (read-along + clic en palabra + comprensión)
+   ============================================================ */
+const READINGS={
+  B1:[{title:"A normal day at work", text:"My name is Carla and I work in a small office. I usually start at nine o'clock. First, I check my emails and answer the most important ones. Then I have a short meeting with my colleagues. We talk about our tasks for the day. At lunch, I eat with my team in the kitchen. In the afternoon, I deal with customers on the phone. I like my job because every day is different.",
+    gloss:{office:"oficina",colleagues:"compañeros",tasks:"tareas","deal":"lidiar / tratar con",customers:"clientes",different:"diferente"},
+    q:[{q:"What time does Carla start?",o:["8:00","9:00","10:00"],a:1},{q:"What does she do first?",o:["A meeting","Check emails","Eat lunch"],a:1},{q:"Why does she like her job?",o:["It's easy","Every day is different","It's short"],a:1}]}],
+  B2:[{title:"Working from home", text:"Remote work has become very common. Many companies now allow their employees to work from home, at least a few days a week. There are clear advantages: workers save time because they don't have to commute, and they often feel more productive. However, there are also challenges. Some people find it hard to separate work from their personal life, and others miss the social contact with their colleagues. In the end, the best solution is probably a balance between the office and home.",
+    gloss:{"Remote work":"trabajo remoto",employees:"empleados",advantages:"ventajas",commute:"desplazarse al trabajo",productive:"productivo",challenges:"retos",balance:"equilibrio"},
+    q:[{q:"What is one advantage mentioned?",o:["More money","Saving commute time","Longer holidays"],a:1},{q:"What is one challenge?",o:["Separating work and personal life","Slow internet","No computer"],a:0},{q:"What is the best solution?",o:["Only office","Only home","A balance"],a:2}]}],
+  C1:[{title:"The skills that matter", text:"In today's fast-changing job market, technical knowledge alone is rarely enough. Employers increasingly value so-called soft skills: the ability to communicate clearly, to collaborate across teams, and to adapt quickly when circumstances change. While these qualities are harder to measure than a degree or a certificate, they often determine who thrives and who merely survives. Crucially, soft skills can be developed. With deliberate practice and honest feedback, anyone can become a more effective communicator and a more resilient professional.",
+    gloss:{"job market":"mercado laboral","soft skills":"habilidades blandas",collaborate:"colaborar",adapt:"adaptarse",circumstances:"circunstancias",thrives:"prospera",deliberate:"deliberada / intencionada",resilient:"resiliente"},
+    q:[{q:"What does the text say about technical knowledge?",o:["It is enough","It is rarely enough alone","It is useless"],a:1},{q:"Can soft skills be developed?",o:["No, you are born with them","Yes, with practice and feedback","Only at university"],a:1},{q:"What do soft skills often determine?",o:["Your salary exactly","Who thrives vs survives","Your job title"],a:1}]}],
+  C2:[{title:"On the future of work", text:"Few topics provoke as much speculation as the future of work. Pessimists warn that automation will render entire professions obsolete, while optimists counter that every technological upheaval has ultimately created more jobs than it destroyed. The truth, as is so often the case, is likely to be more nuanced. What seems certain is that the nature of work will continue to shift, rewarding those who can learn, unlearn and relearn with remarkable agility. Adaptability, not expertise in any single domain, may well become the defining currency of professional success.",
+    gloss:{provoke:"provocar",speculation:"especulación",automation:"automatización",obsolete:"obsoleto",upheaval:"agitación / cambio radical",nuanced:"matizado",agility:"agilidad",currency:"moneda / valor"},
+    q:[{q:"What do pessimists warn about?",o:["More jobs","Automation making jobs obsolete","Lower salaries"],a:1},{q:"What does the author think the truth is?",o:["Simple","More nuanced","Impossible to know"],a:1},{q:"What may become 'the defining currency'?",o:["Expertise in one field","Adaptability","A university degree"],a:1}]}]
+};
+let curReading=0, readUtter=null;
+function initRead(){ curReading=0; renderReadBtns(); paintReading(); }
+function renderReadBtns(){
+  const lv=S.currentLevel, c=document.getElementById("readBtns"); c.innerHTML="";
+  (READINGS[lv]||[]).forEach((r,i)=>{
+    const b=document.createElement("button"); b.className="btn small "+(i===curReading?"":"alt"); b.textContent="📄 "+r.title;
+    b.onclick=()=>{ curReading=i; renderReadBtns(); paintReading(); };
+    c.appendChild(b);
+  });
+}
+function paintReading(){
+  const lv=S.currentLevel, r=(READINGS[lv]||[])[curReading]; if(!r){ document.getElementById("readerBox").textContent="No hay lectura para este nivel."; return; }
+  const box=document.getElementById("readerBox"); box.innerHTML="";
+  const glossKeys=Object.keys(r.gloss);
+  r.text.split(/(\s+)/).forEach(tok=>{
+    if(/^\s+$/.test(tok)){ box.appendChild(document.createTextNode(tok)); return; }
+    const w=document.createElement("w");
+    const bare=tok.toLowerCase().replace(/[^a-z']/g,"");
+    const gk=glossKeys.find(k=>k.toLowerCase()===bare || k.toLowerCase().split(" ")[0]===bare);
+    if(gk) w.classList.add("gloss");
+    w.textContent=tok; w.dataset.bare=bare; w.dataset.gloss=gk?r.gloss[gk]:"";
+    w.onclick=(e)=>{ speak(bare,false); showPop(e,tok.replace(/[^A-Za-z']/g,""), w.dataset.gloss); };
+    box.appendChild(w);
+  });
+  // comprensión
+  const q=document.getElementById("readQuiz"); q.innerHTML="";
+  r.q.forEach((item,qi)=>{
+    const d=document.createElement("div"); d.className="quiz-q"; d.innerHTML=`<b>${qi+1}. ${item.q}</b>`;
+    item.o.forEach((opt,oi)=>{
+      const b=document.createElement("button"); b.className="opt"; b.textContent=opt;
+      b.onclick=()=>{ d.querySelectorAll(".opt").forEach(x=>{x.disabled=true;});
+        if(oi===item.a){ b.classList.add("correct"); S.xp+=3; save(); toast("✔ Correct! +3 XP"); }
+        else { b.classList.add("wrong"); d.querySelectorAll(".opt")[item.a].classList.add("correct"); } };
+      d.appendChild(b);
+    });
+    q.appendChild(d);
+  });
+}
+function showPop(e,word,gloss){
+  let pop=document.getElementById("readPop");
+  if(!pop){ pop=document.createElement("div"); pop.id="readPop"; pop.className="read-pop"; document.body.appendChild(pop); }
+  pop.innerHTML=`<b>${word}</b>${gloss?" · "+gloss:""} <span style="cursor:pointer" onclick="speak('${word.replace(/'/g,"")}',true)">🐢</span>`;
+  pop.style.display="block";
+  pop.style.left=Math.min(e.clientX, window.innerWidth-180)+"px";
+  pop.style.top=(e.clientY+18)+"px";
+  clearTimeout(pop._t); pop._t=setTimeout(()=>pop.style.display="none",2600);
+}
+function readAloud(slow){
+  const lv=S.currentLevel, r=(READINGS[lv]||[])[curReading]; if(!r) return;
+  speechSynthesis.cancel();
+  const words=[...document.querySelectorAll("#readerBox w")];
+  words.forEach(w=>w.classList.remove("reading"));
+  readUtter=new SpeechSynthesisUtterance(r.text);
+  const v=pickVoice(); if(v){readUtter.voice=v;readUtter.lang=v.lang;} else readUtter.lang="en-US";
+  readUtter.rate=slow?S.slowRate:0.95;
+  let idx=0;
+  readUtter.onboundary=(ev)=>{
+    if(ev.name && ev.name!=="word") return;
+    words.forEach(w=>w.classList.remove("reading"));
+    // marca la palabra cuya posición de caracter corresponde
+    let acc=0; const r2=(READINGS[lv]||[])[curReading];
+    // aproximación: avanza un índice por boundary
+    if(words[idx]){ words[idx].classList.add("reading"); words[idx].scrollIntoView({block:"nearest"}); }
+    idx++;
+  };
+  readUtter.onend=()=>words.forEach(w=>w.classList.remove("reading"));
+  speechSynthesis.speak(readUtter);
+}
+document.getElementById("readPlay").onclick=()=>readAloud(false);
+document.getElementById("readSlow").onclick=()=>readAloud(true);
+document.getElementById("readStop").onclick=()=>{ speechSynthesis.cancel(); document.querySelectorAll("#readerBox w").forEach(w=>w.classList.remove("reading")); };
+
+/* ============================================================
+   4) DICTADO (escucha y escribe)
+   ============================================================ */
+let dictItems=[], dictIdx=0;
+function initDictation(){
+  const lv=S.currentLevel; dictItems=[];
+  COURSE[lv].units.forEach(u=>u.words.forEach(w=>{ if(w.ex&&w.ex.split(" ").length>=3) dictItems.push(w.ex); }));
+  (READINGS[lv]||[]).forEach(r=>r.text.split(/(?<=[.!?])\s+/).forEach(s=>{ if(s.split(" ").length>=4&&s.split(" ").length<=14) dictItems.push(s.trim()); }));
+  dictItems=dictItems.sort(()=>Math.random()-0.5).slice(0,12);
+  dictIdx=0; paintDict();
+  document.getElementById("dictNote").textContent="Frases del nivel "+lv;
+}
+function paintDict(){
+  document.getElementById("dictProgress").textContent=`Frase ${dictIdx+1} de ${dictItems.length}`;
+  document.getElementById("dictInput").value="";
+  document.getElementById("dictResult").innerHTML="";
+}
+document.getElementById("dictHear").onclick=()=>speak(dictItems[dictIdx],false);
+document.getElementById("dictSlow").onclick=()=>speak(dictItems[dictIdx],true);
+document.getElementById("dictNext").onclick=()=>{ dictIdx=(dictIdx+1)%dictItems.length; paintDict(); };
+document.getElementById("dictCheck").onclick=()=>{
+  const target=dictItems[dictIdx], typed=document.getElementById("dictInput").value;
+  const tw=clean(target).split(" "), uw=clean(typed).split(" ");
+  let html=""; let correct=0;
+  tw.forEach((word,i)=>{ const ok=uw[i]===word; if(ok)correct++; html+=`<span class="${ok?'diff-good':'diff-bad'}">${word}</span> `; });
+  const pct=Math.round(correct/tw.length*100);
+  document.getElementById("dictResult").innerHTML=`<div style="font-weight:800;font-size:18px" class="${pct>=80?'ok':'err'}">${pct}% correcto</div>
+    <div style="margin-top:6px">Frase correcta: ${html}</div>`;
+  if(pct>=80){ S.xp+=5; save(); }
+};
+
+/* ============================================================
+   AJUSTES
+   ============================================================ */
+function renderSettings(){
+  loadVoices();
+  document.getElementById("slowRate").value=S.slowRate;
+  document.getElementById("slowRateVal").textContent=S.slowRate+"x";
+  document.getElementById("apiKey").value=S.apiKey;
+  document.getElementById("providerSelect").value=S.provider||"gemini";
+  document.getElementById("humanVoiceSel").value = (S.humanVoiceEngine==="device") ? "device" : "gemini";
+  fillModels(); setKeyHelp();
+  const tot=LEVELS.length, done=S.passed.length;
+  const units=Object.keys(S.unitsDone).length;
+  document.getElementById("progressSummary").innerHTML=`
+    <table>
+      <tr><th>Niveles aprobados</th><td>${done}/${tot} (${S.passed.join(", ")||"ninguno"})</td></tr>
+      <tr><th>Nivel actual</th><td>${S.currentLevel}</td></tr>
+      <tr><th>Unidades estudiadas</th><td>${units}</td></tr>
+      <tr><th>XP total</th><td>${S.xp}</td></tr>
+      <tr><th>Racha</th><td>${S.streak} día(s)</td></tr>
+    </table>`;
+}
+document.getElementById("voiceSelect").onchange=e=>{ S.voiceURI=e.target.value; save(); speak("This is my new voice.",false); };
+document.getElementById("humanVoiceSel").onchange=e=>{
+  S.humanVoiceEngine = (e.target.value==="device") ? "device" : "gemini";
+  save(); toast(S.humanVoiceEngine==="device"?"Voz del dispositivo 📱":"Voz IA Gemini (con límite por minuto)");
+};
+document.getElementById("slowRate").oninput=e=>{ S.slowRate=+e.target.value; document.getElementById("slowRateVal").textContent=S.slowRate+"x"; save(); };
+document.getElementById("testVoice").onclick=()=>{ speak("Hello! Welcome to your English course.",false); setTimeout(()=>speak("Hello! Welcome to your English course.",true),1600); };
+function aiModels(){
+  return (S.provider==="anthropic")
+    ? [["claude-haiku-4-5-20251001","Claude Haiku 4.5 (económico)"],["claude-sonnet-4-6","Claude Sonnet 4.6 (mejor)"]]
+    : [["gemini-2.5-flash","Gemini 2.5 Flash (recomendado · gratis)"],["gemini-2.5-flash-lite","Gemini 2.5 Flash Lite (más rápido · gratis)"]];
+}
+function fillModels(){
+  const sel=document.getElementById("modelSelect"); sel.innerHTML="";
+  aiModels().forEach(([v,l])=>{ const o=document.createElement("option"); o.value=v; o.textContent=l; sel.appendChild(o); });
+  sel.value = ([...sel.options].some(o=>o.value===S.model)) ? S.model : aiModels()[0][0];
+}
+function setKeyHelp(){
+  const h=document.getElementById("aiKeyHelp");
+  if((S.provider||"gemini")==="anthropic"){
+    h.innerHTML="La clave se guarda solo en tu navegador. Se consigue en console.anthropic.com (requiere pago).";
+    document.getElementById("apiKey").placeholder="sk-ant-...";
+  } else {
+    h.innerHTML="✅ <b>Gratis y sin tarjeta.</b> Entra en aistudio.google.com con tu cuenta de Google → «Get API key» → «Create API key». Pega aquí la clave (empieza por <b>AIza...</b>). Se guarda solo en tu navegador.";
+    document.getElementById("apiKey").placeholder="AIza... (clave de Gemini)";
+  }
+}
+document.getElementById("providerSelect").onchange=e=>{ S.provider=e.target.value; S.model=""; fillModels(); S.model=document.getElementById("modelSelect").value; setKeyHelp(); };
+document.getElementById("getGeminiKey").onclick=()=>window.open("https://aistudio.google.com/apikey","_blank");
+document.getElementById("saveKey").onclick=()=>{ S.apiKey=document.getElementById("apiKey").value.trim(); S.provider=document.getElementById("providerSelect").value; S.model=document.getElementById("modelSelect").value; save(); toast(S.apiKey?"Clave guardada ✔ IA real activada":"Clave borrada"); };
+document.getElementById("resetAll").onclick=()=>{ if(confirm("¿Borrar TODO el progreso? Esto no se puede deshacer.")){ localStorage.removeItem("englishpro"); S=load(); save(); renderSettings(); renderHome(); toast("Progreso borrado"); } };
+
+/* ============================================================
+   5) REPASO · FLASHCARDS (repetición espaciada)
+   ============================================================ */
+function jsq(s){ return String(s).replace(/'/g,"\\'"); }
+function allVocab(){
+  const out=[];
+  S.unlocked.forEach(lv=>COURSE[lv].units.forEach(u=>u.words.forEach(w=>out.push(Object.assign({lv},w)))));
+  return out;
+}
+let srsQueue=[], srsCard=null;
+function initReview(){
+  const now=Date.now(), vocab=allVocab();
+  srsQueue=vocab.filter(w=>{ const c=S.srs[w.en]; return !c || c.due<=now; }).slice(0,25);
+  document.getElementById("srsLearned").textContent="Aprendidas: "+Object.values(S.srs).filter(c=>c.reps>=2).length;
+  document.getElementById("srsLevel").textContent="Niveles: "+S.unlocked.join(", ");
+  nextCard();
+}
+function nextCard(){
+  const area=document.getElementById("srsArea");
+  document.getElementById("srsDue").textContent="Pendientes hoy: "+srsQueue.length;
+  if(srsQueue.length===0){
+    area.innerHTML=`<div class="card" style="text-align:center"><div style="font-size:40px">🎉</div><h3>¡Repaso completado!</h3><p class="muted">No te quedan tarjetas pendientes hoy. Estudia nuevas unidades o vuelve mañana.</p><button class="btn alt" onclick="initReview()">🔁 Repasar de nuevo</button></div>`;
+    return;
+  }
+  srsCard=srsQueue[0];
+  area.innerHTML=`
+    <div class="flip" id="flipCard"><div class="flip-inner">
+      <div class="flip-face">
+        <div class="muted" style="font-size:13px">¿Recuerdas qué significa?</div>
+        <div class="big">${srsCard.en}</div>
+        <div class="ipa">${srsCard.ipa}</div>
+        <div class="row" style="justify-content:center;margin-top:14px">
+          <button class="btn small alt" onclick="event.stopPropagation();speak('${jsq(srsCard.en)}',false)">🔊</button>
+          <button class="btn small" style="background:var(--warn);color:#222" onclick="event.stopPropagation();speak('${jsq(srsCard.en)}',true)">🐢</button>
+        </div>
+        <div class="muted" style="margin-top:14px;font-size:13px">👆 Toca la tarjeta para girarla</div>
+      </div>
+      <div class="flip-face flip-back">
+        <div class="es">${srsCard.es}</div>
+        <div class="ex">${srsCard.ex}</div>
+        <button class="btn small alt" style="margin-top:10px" onclick="event.stopPropagation();speak('${jsq(srsCard.ex)}',false)">🔊 Ejemplo</button>
+      </div>
+    </div></div>
+    <div class="row" id="srsRate" style="justify-content:center;margin-top:16px;display:none">
+      <button class="btn" style="background:var(--bad)" onclick="rateCard(false)">❌ No la sabía</button>
+      <button class="btn green" onclick="rateCard(true)">✅ Sí la sabía</button>
+    </div>`;
+  const fc=document.getElementById("flipCard");
+  fc.onclick=()=>{ fc.classList.add("flipped"); document.getElementById("srsRate").style.display="flex"; };
+}
+function rateCard(known){
+  const key=srsCard.en, c=S.srs[key]||{reps:0}, day=864e5;
+  if(known){ c.reps=(c.reps||0)+1; const steps=[1,2,4,9,18,35]; c.due=Date.now()+steps[Math.min(c.reps-1,steps.length-1)]*day; S.xp+=2; srsQueue.shift(); }
+  else { c.reps=0; c.due=Date.now(); srsQueue.shift(); srsQueue.push(srsCard); }
+  S.srs[key]=c; save();
+  document.getElementById("srsLearned").textContent="Aprendidas: "+Object.values(S.srs).filter(x=>x.reps>=2).length;
+  nextCard();
+}
+
+/* ============================================================
+   6) LOGROS · objetivo diario, medallas y certificados
+   ============================================================ */
+const BADGES=[
+  {ic:"📚",nm:"Primer paso",ds:"Estudia tu 1ª unidad",has:()=>Object.keys(S.unitsDone).length>=1},
+  {ic:"🥉",nm:"B1 superado",ds:"Aprueba el examen B1",has:()=>S.passed.includes("B1")},
+  {ic:"🥈",nm:"B2 superado",ds:"Aprueba el examen B2",has:()=>S.passed.includes("B2")},
+  {ic:"🥇",nm:"C1 superado",ds:"Aprueba el examen C1",has:()=>S.passed.includes("C1")},
+  {ic:"🏆",nm:"C2 · Maestría",ds:"Aprueba el examen C2",has:()=>S.passed.includes("C2")},
+  {ic:"🔥",nm:"Constante",ds:"Racha de 7 días",has:()=>S.streak>=7},
+  {ic:"🧠",nm:"Memorión",ds:"50 palabras aprendidas",has:()=>Object.values(S.srs).filter(c=>c.reps>=2).length>=50},
+  {ic:"⭐",nm:"Estrella",ds:"Consigue 1000 XP",has:()=>S.xp>=1000}
+];
+function renderMistakes(){
+  const list=document.getElementById("mistakesList"), arr=Array.isArray(S.mistakes)?S.mistakes:[];
+  document.getElementById("mistakesCount").textContent=arr.length+" frase"+(arr.length===1?"":"s");
+  if(arr.length===0){ list.innerHTML='<div class="card" style="text-align:center"><div style="font-size:38px">📭</div><p class="muted">Todavía no hay errores guardados. Cuando la IA te corrija en la Conversación o la Escritura (frases tipo "✔ Better: ..."), aparecerán aquí para repasarlas.</p></div>'; return; }
+  list.innerHTML="";
+  arr.forEach(mk=>{
+    const d=document.createElement("div"); d.className="word"; d.style.marginBottom="10px";
+    d.innerHTML=`<div class="en" style="font-size:16px">${mk.en}
+        <button class="spk" title="Escuchar">🔊</button>
+        <button class="spk slow" title="Lento">🐢</button></div>`;
+    d.querySelector(".spk:not(.slow)").onclick=()=>speak(mk.en,false);
+    d.querySelector(".spk.slow").onclick=()=>speak(mk.en,true);
+    list.appendChild(d);
+  });
+}
+document.getElementById("mistakesClear").onclick=()=>{ if(confirm("¿Vaciar tu cuaderno de errores?")){ S.mistakes=[]; save(); renderMistakes(); } };
+function renderCS(){
+  const box=document.getElementById("csPhrases"); box.innerHTML="";
+  CS_PHRASES.forEach(group=>{
+    const h=document.createElement("h3"); h.style.marginTop="18px"; h.textContent=group.cat; box.appendChild(h);
+    const wl=document.createElement("div"); wl.className="word-list";
+    group.items.forEach(it=>{
+      const d=document.createElement("div"); d.className="word";
+      d.innerHTML=`<div class="en" style="font-size:15px">${it.en}
+          <button class="spk" title="Escuchar">🔊</button>
+          <button class="spk slow" title="Lento">🐢</button></div>
+        <div class="es">${it.es}</div>`;
+      d.querySelector(".spk:not(.slow)").onclick=()=>speak(it.en,false);
+      d.querySelector(".spk.slow").onclick=()=>speak(it.en,true);
+      wl.appendChild(d);
+    });
+    box.appendChild(wl);
+  });
+  document.getElementById("csProfile").value = S.profile||"";
+}
+function csLaunch(scen){ if(callActive) endCall(); callScenario=scen; goView("call"); try{ startCall(); }catch(e){} }
+document.getElementById("csInterviewBtn").onclick=()=>csLaunch("csinterview");
+document.getElementById("csCallBtn").onclick=()=>csLaunch("cscall");
+document.getElementById("csMyInterviewBtn").onclick=()=>csLaunch("myinterview");
+document.getElementById("csProfileSave").onclick=()=>{ S.profile=document.getElementById("csProfile").value.trim(); save(); toast("Perfil guardado ✔"); };
+function renderAchievements(){
+  const tx=todayXP(), tgt=S.dailyGoal, pct=Math.min(100,Math.round(tx/tgt*100));
+  document.getElementById("goalRing").style.setProperty("--p",pct);
+  document.getElementById("goalXP").textContent=tx;
+  document.getElementById("goalTarget").textContent=tgt;
+  document.getElementById("goalSelect").value=tgt;
+  document.getElementById("goalMsg").innerHTML = tx>=tgt ? '<span class="hl-good">🎉 ¡Objetivo de hoy cumplido!</span>' : `Te faltan <b>${tgt-tx} XP</b> para tu meta de hoy. ¡Tú puedes!`;
+  const g=document.getElementById("badgeGrid"); g.innerHTML="";
+  BADGES.forEach(b=>{ const on=b.has(); const d=document.createElement("div"); d.className="medal"+(on?" on":""); d.innerHTML=`<div class="ic">${on?b.ic:"🔒"}</div><div class="nm">${b.nm}</div><div class="ds">${b.ds}</div>`; g.appendChild(d); });
+  document.getElementById("certName").value=S.name||"";
+  renderCerts();
+}
+function renderCerts(){
+  const c=document.getElementById("certList"); c.innerHTML="";
+  if(S.passed.length===0){ c.innerHTML='<p class="muted">Aún no has aprobado ningún nivel. ¡Aprueba un examen para conseguir tu primer certificado! 🎓</p>'; return; }
+  LEVELS.filter(lv=>S.passed.includes(lv)).forEach(lv=>{
+    const b=document.createElement("button"); b.className="btn small green"; b.style.margin="4px"; b.textContent="📜 Certificado "+lv;
+    b.onclick=()=>printCert(lv); c.appendChild(b);
+  });
+}
+function printCert(lv){
+  const name=((S.name||"").trim())||"________________";
+  const data=COURSE[lv];
+  const date=new Date().toLocaleDateString('es-ES',{year:'numeric',month:'long',day:'numeric'});
+  const w=window.open("","_blank");
+  if(!w){ toast("Permite las ventanas emergentes para ver el certificado"); return; }
+  w.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Certificado ${lv}</title></head>
+  <body style="font-family:Georgia,serif;background:#efe9d6;padding:30px;margin:0">
+    <div style="background:linear-gradient(135deg,#fffdf5,#fff7e0);color:#2a2410;border:8px double #c9a227;border-radius:16px;padding:48px;text-align:center;max-width:720px;margin:auto;box-shadow:0 10px 40px rgba(0,0,0,.2)">
+      <div style="font-size:48px">🏆</div>
+      <div style="letter-spacing:5px;color:#9a7a10;font-size:14px">CERTIFICADO DE PRÁCTICA</div>
+      <h1 style="color:#9a7a10;margin:8px 0 0;font-size:34px">EnglishPro</h1>
+      <p style="margin-top:24px">Se certifica que</p>
+      <div style="font-size:30px;font-weight:800;border-bottom:2px solid #c9a227;display:inline-block;padding:0 36px 6px">${name}</div>
+      <p style="margin-top:20px">ha completado y aprobado con éxito el nivel</p>
+      <div style="font-size:26px;font-weight:800;color:#1f5e46;margin:6px 0">${lv} · ${data.cefr}</div>
+      <p style="margin-top:8px;max-width:520px;margin-left:auto;margin-right:auto">de inglés profesional, demostrando las competencias necesarias para comunicarse en un entorno de trabajo.</p>
+      <div style="margin-top:34px;color:#6a5c20;font-size:14px">Fecha: ${date}<br>EnglishPro · Curso de inglés B1 → C2</div>
+      <div style="margin-top:14px;color:#b08; font-size:11px;font-style:italic">Certificado de práctica sin validez oficial · Solo refleja el progreso dentro de la aplicación.</div>
+    </div>
+    <div style="text-align:center;margin-top:22px"><button onclick="window.print()" style="padding:11px 22px;font-size:15px;cursor:pointer;border-radius:8px;border:1px solid #999;background:#fff">🖨️ Imprimir / Guardar como PDF</button></div>
+  </body></html>`);
+  w.document.close();
+}
+document.getElementById("goalSelect").onchange=e=>{ S.dailyGoal=+e.target.value; save(); renderAchievements(); };
+document.getElementById("certName").oninput=e=>{ S.name=e.target.value; save(); };
+
+/* ============================================================
+   7) PANEL "HOY" (rutina recomendada)
+   ============================================================ */
+function showView(name){ document.querySelectorAll(".view").forEach(v=>v.classList.remove("active")); const el=document.getElementById("view-"+name); if(el)el.classList.add("active"); window.scrollTo(0,0); }
+function renderTodayDash(){
+  const dash=document.getElementById("todayDash"); if(!dash) return;
+  const now=Date.now();
+  const due=allVocab().filter(w=>{ const c=S.srs[w.en]; return !c||c.due<=now; }).length;
+  const lv=S.currentLevel, total=COURSE[lv].units.length;
+  const studied=COURSE[lv].units.filter((_,i)=>S.unitsDone[`${lv}-${i}`]).length;
+  const goalLeft=Math.max(0,S.dailyGoal-todayXP());
+  const items=[
+    {ic:"📚",t:"Estudia una unidad",d:`Llevas ${studied}/${total} unidades de ${lv}.`,b:"Ir a Lección",v:"lesson"},
+    {ic:"🃏",t:"Repasa vocabulario",d:due>0?`Tienes ${due} tarjetas pendientes hoy.`:"Sin tarjetas pendientes. ¡Bien!",b:"Repasar",v:"review"},
+    {ic:"🗣️",t:"Habla 5 minutos",d:"Practica una conversación de voz con la IA.",b:"Conversar",v:"call"},
+    {ic:"🎙️",t:"Mejora tu acento",d:"Entrena los sonidos difíciles del inglés.",b:"Fonética",v:"fonetica"}
+  ];
+  if(studied>=total) items.push({ic:"📝",t:"¡Listo para el examen!",d:`Has estudiado todo ${lv}. Demuestra que puedes pasar de nivel.`,b:"Hacer examen",v:"test"});
+  dash.innerHTML="";
+  items.forEach(it=>{ const d=document.createElement("div"); d.className="dash-item";
+    d.innerHTML=`<div class="t">${it.ic} ${it.t}</div><div class="d">${it.d}</div>`;
+    const b=document.createElement("button"); b.className="btn small"; b.textContent=it.b; b.onclick=()=>goView(it.v); d.appendChild(b);
+    dash.appendChild(d); });
+  const g=document.createElement("div"); g.className="dash-item"; g.style.borderColor="var(--accent2)";
+  g.innerHTML=`<div class="t">🎯 Meta de hoy</div><div class="d">${goalLeft>0?`Te faltan <b>${goalLeft} XP</b>.`:'<span class="hl-good">¡Meta cumplida! 🎉</span>'} Racha: ${S.streak} día(s).</div>`;
+  const gb=document.createElement("button"); gb.className="btn small alt"; gb.textContent="Ver logros"; gb.onclick=()=>goView("achievements"); g.appendChild(gb);
+  dash.appendChild(g);
+}
+
+/* ============================================================
+   8) PRUEBA DE NIVEL (placement)
+   ============================================================ */
+const PLACEMENT=[
+  {band:"B1",q:"She ___ to work every day.",o:["go","goes","going","gone"],a:1},
+  {band:"B1",q:"\"Where's Tom?\" \"He ___ coffee right now.\"",o:["make","makes","is making","made"],a:2},
+  {band:"B1",q:"There ___ some milk in the fridge.",o:["is","are","be","am"],a:0},
+  {band:"B1",q:"Yesterday I ___ to the cinema.",o:["go","goes","went","gone"],a:2},
+  {band:"B2",q:"If it rains tomorrow, we ___ the meeting.",o:["cancel","will cancel","cancelled","would cancel"],a:1},
+  {band:"B2",q:"The report ___ by the manager last week.",o:["wrote","was written","is writing","written"],a:1},
+  {band:"B2",q:"I've worked here ___ 2019.",o:["for","from","since","during"],a:2},
+  {band:"B2",q:"He's the colleague ___ helped me.",o:["which","who","what","whose"],a:1},
+  {band:"C1",q:"Not only ___ he apologize, he also fixed it.",o:["he did","did he","does he","he does"],a:1},
+  {band:"C1",q:"I'd rather you ___ smoke in here.",o:["don't","didn't","not","wouldn't"],a:1},
+  {band:"C1",q:"By next year, she ___ here for a decade.",o:["works","has worked","will work","will have worked"],a:3},
+  {band:"C1",q:"It's high time we ___ a decision.",o:["make","made","making","makes"],a:1},
+  {band:"C2",q:"___ the rising costs, the project succeeded.",o:["Notwithstanding","Despite of","However","Although"],a:0},
+  {band:"C2",q:"Were it not for your help, we ___ failed.",o:["will have","would have","had","would"],a:1},
+  {band:"C2",q:"Little ___ they know what awaited them.",o:["did","do","had","were"],a:0},
+  {band:"C2",q:"His argument, ___ compelling, ignored the data.",o:["despite","albeit","although it","even"],a:1}
+];
+let placeIdx=0, placeBands={B1:0,B2:0,C1:0,C2:0};
+function startPlacement(){
+  placeIdx=0; placeBands={B1:0,B2:0,C1:0,C2:0};
+  document.getElementById("placeResult").innerHTML="";
+  showView("placement"); document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
+  paintPlace();
+}
+function paintPlace(){
+  document.getElementById("placeBar").style.width=Math.round(placeIdx/PLACEMENT.length*100)+"%";
+  const body=document.getElementById("placeBody");
+  if(placeIdx>=PLACEMENT.length){ finishPlacement(); return; }
+  const item=PLACEMENT[placeIdx];
+  const d=document.createElement("div"); d.className="quiz-q";
+  d.innerHTML=`<div class="muted">Pregunta ${placeIdx+1} de ${PLACEMENT.length}</div><b>${item.q}</b>`;
+  item.o.forEach((opt,oi)=>{ const b=document.createElement("button"); b.className="opt"; b.textContent=opt;
+    b.onclick=()=>{ if(oi===item.a) placeBands[item.band]++; placeIdx++; paintPlace(); }; d.appendChild(b); });
+  body.innerHTML=""; body.appendChild(d);
+}
+function finishPlacement(){
+  document.getElementById("placeBar").style.width="100%";
+  document.getElementById("placeBody").innerHTML="";
+  const mastered=b=>placeBands[b]>=3;
+  let rec="B1";
+  if(mastered("B1")){ rec="B2"; if(mastered("B2")){ rec="C1"; if(mastered("C1")){ rec="C2"; } } }
+  const idx=LEVELS.indexOf(rec);
+  const total=Object.values(placeBands).reduce((a,b)=>a+b,0);
+  document.getElementById("placeResult").innerHTML=`
+    <div class="card" style="text-align:center;border-color:var(--accent2)">
+      <div class="score-big ok">${rec}</div>
+      <p>Acertaste <b>${total}/16</b>. Por tus respuestas (B1:${placeBands.B1}/4 · B2:${placeBands.B2}/4 · C1:${placeBands.C1}/4 · C2:${placeBands.C2}/4), te recomiendo <b>empezar en el nivel ${rec}</b>.</p>
+      <p class="muted" style="font-size:13px">Desbloquearé los niveles hasta ${rec} para que también puedas repasar los anteriores. Recuerda: esto es orientativo, no un examen oficial.</p>
+      <div class="row" style="justify-content:center">
+        <button class="btn green" onclick="applyPlacement('${rec}')">✅ Empezar en ${rec}</button>
+        <button class="btn alt" onclick="goView('home')">Volver al inicio</button>
+      </div>
+    </div>`;
+}
+function applyPlacement(rec){
+  const idx=LEVELS.indexOf(rec);
+  for(let i=0;i<=idx;i++){ if(!S.unlocked.includes(LEVELS[i])) S.unlocked.push(LEVELS[i]); }
+  S.currentLevel=rec; save(); toast("¡Nivel fijado en "+rec+"!"); goView("lesson");
+}
+
+/* ============================================================
+   9) FONÉTICA · pares mínimos para hispanohablantes
+   ============================================================ */
+const PAIRS=[
+  {name:"/iː/ larga vs /ɪ/ corta", tip:"El español solo tiene una 'i'. En inglés hay dos: la <b>larga y tensa</b> (sheep 🐑) y la <b>corta y relajada</b> (ship 🚢). Confundirlas cambia el significado.",
+   items:[["sheep","ʃiːp","ship","ʃɪp"],["seat","siːt","sit","sɪt"],["leave","liːv","live","lɪv"],["feel","fiːl","fill","fɪl"],["heat","hiːt","hit","hɪt"],["green","ɡriːn","grin","ɡrɪn"]]},
+  {name:"/b/ vs /v/", tip:"En español la b y la v suenan igual. En inglés la <b>v</b> se hace mordiendo suavemente el labio inferior con los dientes de arriba (vibra). La <b>b</b> junta los dos labios.",
+   items:[["best","best","vest","vest"],["berry","ˈberi","very","ˈveri"],["boat","bəʊt","vote","vəʊt"],["ban","bæn","van","væn"],["curb","kɜːb","curve","kɜːv"]]},
+  {name:"'th' /θ/ vs /s/ o /t/", tip:"La <b>th</b> se pronuncia sacando un poco la lengua entre los dientes. No es ni 's' ni 't'. (think ≠ sink, three ≠ tree).",
+   items:[["think","θɪŋk","sink","sɪŋk"],["thing","θɪŋ","sing","sɪŋ"],["three","θriː","tree","triː"],["thank","θæŋk","tank","tæŋk"],["path","pɑːθ","pass","pɑːs"]]},
+  {name:"/s/ vs /z/ final", tip:"En español la 's' final nunca vibra. En inglés la <b>z</b> sí vibra la garganta (rise ≠ rice). Importa para los plurales y verbos.",
+   items:[["rice","raɪs","rise","raɪz"],["ice","aɪs","eyes","aɪz"],["peace","piːs","peas","piːz"],["bus","bʌs","buzz","bʌz"],["place","pleɪs","plays","pleɪz"]]},
+  {name:"vocales /æ/ /ʌ/ /e/", tip:"Tres vocales que en español serían casi la misma 'a/e'. <b>cat</b> (boca muy abierta), <b>cut</b> (sonido neutro), <b>bet</b> (como 'e').",
+   items:[["cat","kæt","cut","kʌt"],["bad","bæd","bud","bʌd"],["bat","bæt","bet","bet"],["man","mæn","men","men"],["cap","kæp","cup","kʌp"]]},
+  {name:"'h' aspirada vs muda", tip:"En español la 'h' es muda. En inglés se <b>sopla</b> aire (hold ≠ old, heat ≠ eat). Si no la pronuncias, cambias la palabra.",
+   items:[["hill","hɪl","ill","ɪl"],["heat","hiːt","eat","iːt"],["hair","heə","air","eə"],["hold","həʊld","old","əʊld"],["high","haɪ","eye","aɪ"]]},
+  {name:"/ʃ/ vs /tʃ/", tip:"<b>sh</b> es un soplo continuo (ship). <b>ch</b> es un golpe seco (chip). Los hispanohablantes tienden a mezclarlas.",
+   items:[["ship","ʃɪp","chip","tʃɪp"],["share","ʃeə","chair","tʃeə"],["wash","wɒʃ","watch","wɒtʃ"],["sheep","ʃiːp","cheap","tʃiːp"],["shoes","ʃuːz","choose","tʃuːz"]]}
+];
+let fonGroupIdx=0, fonMode="learn", ear={};
+function initFonetica(){
+  const sel=document.getElementById("fonGroup");
+  if(!sel.dataset.filled){ PAIRS.forEach((p,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=p.name; sel.appendChild(o); }); sel.dataset.filled="1"; }
+  sel.onchange=()=>{ fonGroupIdx=+sel.value; fonMode==="learn"?renderFonLearn():startEar(); };
+  document.querySelectorAll("#fonTabs button").forEach(b=>b.onclick=()=>{
+    document.querySelectorAll("#fonTabs button").forEach(x=>x.classList.remove("on")); b.classList.add("on");
+    fonMode=b.dataset.tab;
+    document.getElementById("fonLearn").style.display = fonMode==="learn"?"block":"none";
+    document.getElementById("fonEar").style.display = fonMode==="ear"?"block":"none";
+    fonMode==="learn"?renderFonLearn():startEar();
+  });
+  renderFonLearn();
+}
+function renderFonLearn(){
+  const p=PAIRS[fonGroupIdx], box=document.getElementById("fonLearn");
+  let html=`<div class="tip-box">💡 <b>${p.name}</b><br>${p.tip}</div>`;
+  p.items.forEach(it=>{
+    html+=`<div class="pair">
+      <div class="pw"><div class="w">${it[0]}</div><div class="ph">/${it[1]}/</div>
+        <button class="btn small alt" onclick="speak('${jsq(it[0])}',false)">🔊</button>
+        <button class="btn small" style="background:var(--warn);color:#222" onclick="speak('${jsq(it[0])}',true)">🐢</button></div>
+      <div style="font-size:22px">vs</div>
+      <div class="pw"><div class="w">${it[2]}</div><div class="ph">/${it[3]}/</div>
+        <button class="btn small alt" onclick="speak('${jsq(it[2])}',false)">🔊</button>
+        <button class="btn small" style="background:var(--warn);color:#222" onclick="speak('${jsq(it[2])}',true)">🐢</button></div>
+    </div>`;
+  });
+  box.innerHTML=html;
+}
+function startEar(){
+  ear={score:0,total:0,group:fonGroupIdx};
+  nextEar();
+}
+function nextEar(){
+  const p=PAIRS[fonGroupIdx];
+  const it=p.items[Math.floor(Math.random()*p.items.length)];
+  const said=Math.random()<0.5?0:1; // 0 => word A, 1 => word B
+  ear.it=it; ear.said=said;
+  const box=document.getElementById("fonEar");
+  box.innerHTML=`<div class="card ear-card">
+    <div class="muted">Aciertos: ${ear.score}/${ear.total}</div>
+    <h3 style="margin:8px 0">¿Cuál de las dos palabras escuchaste?</h3>
+    <div class="row" style="justify-content:center">
+      <button class="btn green" id="earPlay">🔊 Escuchar</button>
+      <button class="btn" style="background:var(--warn);color:#222" id="earSlow">🐢 Lento</button>
+    </div>
+    <div class="ear-opts" id="earOpts">
+      <button class="ear-opt" data-i="0">${it[0]}</button>
+      <button class="ear-opt" data-i="1">${it[2]}</button>
+    </div>
+    <div id="earFb" style="margin-top:12px;min-height:24px"></div>
+  </div>`;
+  const word=said===0?it[0]:it[2];
+  document.getElementById("earPlay").onclick=()=>speak(word,false);
+  document.getElementById("earSlow").onclick=()=>speak(word,true);
+  setTimeout(()=>speak(word,false),250);
+  box.querySelectorAll(".ear-opt").forEach(b=>b.onclick=()=>{
+    const pick=+b.dataset.i; ear.total++;
+    box.querySelectorAll(".ear-opt").forEach(x=>x.disabled=true);
+    const correctBtn=box.querySelector(`.ear-opt[data-i="${said}"]`);
+    if(pick===said){ b.classList.add("correct"); ear.score++; S.xp+=2; save(); document.getElementById("earFb").innerHTML='<span class="ok" style="font-weight:700">✅ ¡Correcto!</span>'; }
+    else { b.classList.add("wrong"); correctBtn.classList.add("correct"); document.getElementById("earFb").innerHTML=`<span class="err" style="font-weight:700">❌ Era "${said===0?it[0]:it[2]}". Escucha otra vez 🐢</span>`; speak(word,true); }
+    const nb=document.createElement("button"); nb.className="btn alt small"; nb.style.marginTop="10px"; nb.textContent="Siguiente →"; nb.onclick=nextEar;
+    document.getElementById("earFb").appendChild(document.createElement("br")); document.getElementById("earFb").appendChild(nb);
+  });
+}
+
+/* ============================================================
+   10) VERBOS IRREGULARES
+   ============================================================ */
+const IRREGULAR=[
+ ["be","was / were","been","ser / estar"],["become","became","become","convertirse"],["begin","began","begun","empezar"],
+ ["break","broke","broken","romper"],["bring","brought","brought","traer"],["build","built","built","construir"],
+ ["buy","bought","bought","comprar"],["catch","caught","caught","atrapar"],["choose","chose","chosen","elegir"],
+ ["come","came","come","venir"],["cost","cost","cost","costar"],["cut","cut","cut","cortar"],
+ ["do","did","done","hacer"],["drink","drank","drunk","beber"],["drive","drove","driven","conducir"],
+ ["eat","ate","eaten","comer"],["fall","fell","fallen","caer"],["feel","felt","felt","sentir"],
+ ["find","found","found","encontrar"],["forget","forgot","forgotten","olvidar"],["get","got","got / gotten","conseguir"],
+ ["give","gave","given","dar"],["go","went","gone","ir"],["grow","grew","grown","crecer"],
+ ["have","had","had","tener"],["hear","heard","heard","oír"],["keep","kept","kept","mantener"],
+ ["know","knew","known","saber"],["leave","left","left","dejar / salir"],["lose","lost","lost","perder"],
+ ["make","made","made","hacer"],["meet","met","met","conocer / reunirse"],["pay","paid","paid","pagar"],
+ ["put","put","put","poner"],["read","read","read","leer"],["run","ran","run","correr"],
+ ["say","said","said","decir"],["see","saw","seen","ver"],["sell","sold","sold","vender"],
+ ["send","sent","sent","enviar"],["sit","sat","sat","sentarse"],["sleep","slept","slept","dormir"],
+ ["speak","spoke","spoken","hablar"],["spend","spent","spent","gastar / pasar"],["take","took","taken","tomar"],
+ ["teach","taught","taught","enseñar"],["tell","told","told","contar"],["think","thought","thought","pensar"],
+ ["understand","understood","understood","entender"],["wear","wore","worn","llevar puesto"],["win","won","won","ganar"],
+ ["write","wrote","written","escribir"]
+];
+function initVerbos(){
+  document.querySelectorAll("#verbTabs button").forEach(b=>b.onclick=()=>{
+    document.querySelectorAll("#verbTabs button").forEach(x=>x.classList.remove("on")); b.classList.add("on");
+    const t=b.dataset.tab;
+    document.getElementById("verbStudy").style.display=t==="study"?"block":"none";
+    document.getElementById("verbPractice").style.display=t==="practice"?"block":"none";
+    if(t==="practice") nextVerb(); else renderVerbTable();
+  });
+  renderVerbTable();
+}
+function renderVerbTable(){
+  let html=`<p class="muted">Pulsa 🔊 en cualquier forma para oírla.</p><table class="vtable"><tr><th>Infinitivo</th><th>Past Simple</th><th>Past Participle</th><th>Español</th></tr>`;
+  IRREGULAR.forEach(v=>{
+    html+=`<tr>
+      <td>${v[0]} <span class="play" onclick="speak('${jsq(v[0])}',false)">🔊</span></td>
+      <td>${v[1]} <span class="play" onclick="speak('${jsq(v[1].split(' / ')[0])}',false)">🔊</span></td>
+      <td>${v[2]} <span class="play" onclick="speak('${jsq(v[2].split(' / ')[0])}',false)">🔊</span></td>
+      <td class="muted">${v[3]}</td></tr>`;
+  });
+  html+=`</table>`;
+  document.getElementById("verbStudy").innerHTML=html;
+}
+let curVerb=null, verbScore=0, verbTotal=0;
+function nextVerb(){
+  curVerb=IRREGULAR[Math.floor(Math.random()*IRREGULAR.length)];
+  document.getElementById("verbPractice").innerHTML=`
+    <div class="verb-train">
+      <div class="muted" style="text-align:center">Aciertos: ${verbScore}/${verbTotal}</div>
+      <div class="verb-q">
+        <div class="inf">${curVerb[0]} <span class="play" onclick="speak('${jsq(curVerb[0])}',false)">🔊</span></div>
+        <div class="es">${curVerb[3]}</div>
+        <div>Past Simple:<br><input id="vPast" autocomplete="off" placeholder="..."></div>
+        <div style="margin-top:8px">Past Participle:<br><input id="vPP" autocomplete="off" placeholder="..."></div>
+        <div class="row" style="justify-content:center;margin-top:14px">
+          <button class="btn green" id="vCheck">✅ Comprobar</button>
+          <button class="btn alt" id="vSkip">Saltar →</button>
+        </div>
+        <div id="vFb" style="margin-top:12px;min-height:22px"></div>
+      </div>
+    </div>`;
+  const past=document.getElementById("vPast"), pp=document.getElementById("vPP");
+  past.focus();
+  past.addEventListener("keydown",e=>{ if(e.key==="Enter") pp.focus(); });
+  pp.addEventListener("keydown",e=>{ if(e.key==="Enter") checkVerb(); });
+  document.getElementById("vCheck").onclick=checkVerb;
+  document.getElementById("vSkip").onclick=nextVerb;
+}
+function normV(s){ return (s||"").toLowerCase().trim().replace(/\s+/g," "); }
+function acceptVerb(target,input){
+  const opts=target.split("/").map(x=>normV(x));
+  const full=normV(target.replace(/\s*\/\s*/g," "));
+  const inp=normV(input);
+  return opts.includes(inp)||inp===full;
+}
+function checkVerb(){
+  const pastEl=document.getElementById("vPast"), ppEl=document.getElementById("vPP");
+  const okPast=acceptVerb(curVerb[1],pastEl.value), okPP=acceptVerb(curVerb[2],ppEl.value);
+  pastEl.className=okPast?"good":"bad"; ppEl.className=okPP?"good":"bad";
+  verbTotal++;
+  const fb=document.getElementById("vFb");
+  if(okPast&&okPP){ verbScore++; S.xp+=3; save(); fb.innerHTML='<span class="ok" style="font-weight:700">✅ ¡Perfecto! +3 XP</span>'; speak(curVerb[1].split(' / ')[0]+", "+curVerb[2].split(' / ')[0],false); }
+  else { fb.innerHTML=`<span class="err" style="font-weight:700">Correcto: <u>${curVerb[1]}</u> · <u>${curVerb[2]}</u></span>`; speak(curVerb[0]+", "+curVerb[1].split(' / ')[0]+", "+curVerb[2].split(' / ')[0],true); }
+  const nb=document.createElement("button"); nb.className="btn small"; nb.style.marginTop="10px"; nb.textContent="Siguiente →"; nb.onclick=nextVerb;
+  fb.appendChild(document.createElement("br")); fb.appendChild(nb);
+  document.getElementById("vCheck").disabled=true;
+}
+
+/* ============================================================
+   11) COPIA DE SEGURIDAD (export / import)
+   ============================================================ */
+document.getElementById("exportProg").onclick=()=>{
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="englishpro-progreso-"+new Date().toISOString().slice(0,10)+".json"; a.click();
+  toast("Copia descargada ✔");
+};
+document.getElementById("importProg").onclick=()=>document.getElementById("importFile").click();
+document.getElementById("importFile").onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{ const data=JSON.parse(r.result); if(!data.unlocked) throw new Error("formato"); S=Object.assign({},DEFAULT_STATE,data); save(); toast("Progreso importado ✔"); renderHome(); renderSettings(); }catch(err){ toast("Archivo no válido"); } };
+  r.readAsText(f);
+};
+
+/* ============================================================
+   12) GIMNASIO DE GRAMÁTICA (ejercicios interactivos)
+   ============================================================ */
+const GRAMMAR={
+  B1:[
+    {type:"fill",q:"She ___ (go) to work by bus every day.",a:["goes"]},
+    {type:"mc",q:"\"Where's Ana?\" \"She ___ an email right now.\"",o:["writes","is writing","wrote"],a:1},
+    {type:"fill",q:"There ___ (be) three meetings yesterday.",a:["were"]},
+    {type:"order",words:["I","have","worked","here","for","two","years"],a:"I have worked here for two years"},
+    {type:"mc",q:"We ___ to the client last week.",o:["speak","spoke","have spoken"],a:1},
+    {type:"fill",q:"He ___ (not/like) working late.",a:["doesn't like","does not like"]},
+    {type:"mc",q:"___ you finish the report on time?",o:["Did","Do","Does"],a:0},
+    {type:"order",words:["Could","you","help","me","please"],a:"Could you help me please"}
+  ],
+  B2:[
+    {type:"mc",q:"If we lowered the price, we ___ more units.",o:["will sell","would sell","sold"],a:1},
+    {type:"fill",q:"The project ___ (finish) last week. (passive)",a:["was finished"]},
+    {type:"order",words:["I","have","just","sent","the","invoice"],a:"I have just sent the invoice"},
+    {type:"mc",q:"He said he ___ very busy that day.",o:["is","was","will be"],a:1},
+    {type:"fill",q:"We've worked together ___ 2020.",a:["since"]},
+    {type:"mc",q:"If it rains tomorrow, we ___ the event.",o:["cancel","will cancel","cancelled"],a:1},
+    {type:"order",words:["The","problem","is","being","investigated"],a:"The problem is being investigated"},
+    {type:"fill",q:"She's the colleague ___ helped me yesterday.",a:["who","that"]}
+  ],
+  C1:[
+    {type:"mc",q:"Not only ___ he apologize, he also fixed it.",o:["he did","did he","does he"],a:1},
+    {type:"fill",q:"It's high time we ___ (make) a decision.",a:["made"]},
+    {type:"order",words:["Rarely","have","I","seen","such","results"],a:"Rarely have I seen such results"},
+    {type:"mc",q:"I'd rather you ___ smoke in the office.",o:["don't","didn't","not"],a:1},
+    {type:"fill",q:"By next year she ___ (work) here for a decade.",a:["will have worked"]},
+    {type:"mc",q:"___ we really need is more time.",o:["That","What","Which"],a:1},
+    {type:"order",words:["Had","I","known","I","would","have","told","you"],a:"Had I known I would have told you"},
+    {type:"fill",q:"It's essential that everyone ___ (be) informed.",a:["be"]}
+  ],
+  C2:[
+    {type:"mc",q:"___ the rising costs, the project succeeded.",o:["Despite of","Notwithstanding","However"],a:1},
+    {type:"order",words:["Little","did","they","know","what","awaited","them"],a:"Little did they know what awaited them"},
+    {type:"fill",q:"Were it not for your help, we ___ (fail). ",a:["would have failed"]},
+    {type:"mc",q:"His plan, ___ risky, ultimately paid off.",o:["despite","albeit","although"],a:1},
+    {type:"fill",q:"Such ___ (be) the impact that sales doubled.",a:["was"]},
+    {type:"order",words:["Therein","lies","the","real","problem"],a:"Therein lies the real problem"},
+    {type:"mc",q:"Hardly ___ when the phone rang.",o:["I had arrived","had I arrived","I arrived"],a:1},
+    {type:"fill",q:"No sooner had he left ___ it started raining.",a:["than"]}
+  ]
+};
+let ggList=[], ggIdx=0, ggResults=[];
+function normGG(s){ return (s||"").toLowerCase().trim().replace(/[.?!,]/g,"").replace(/\s+/g," "); }
+function initGrammar(){
+  const lv=S.currentLevel; document.getElementById("ggLevel").textContent=lv+" · "+COURSE[lv].cefr;
+  ggList=GRAMMAR[lv].slice(); ggIdx=0; ggResults=[];
+  paintGG();
+}
+function paintGG(){
+  const prog=document.getElementById("ggProgress"); prog.innerHTML="";
+  ggList.forEach((_,i)=>{ const d=document.createElement("span"); d.className="gg-dot"+(ggResults[i]===true?" ok":ggResults[i]===false?" bad":i===ggIdx?" cur":""); prog.appendChild(d); });
+  const body=document.getElementById("ggBody");
+  if(ggIdx>=ggList.length){ ggSummary(); return; }
+  const ex=ggList[ggIdx];
+  if(ex.type==="mc") body.innerHTML=ggMC(ex);
+  else if(ex.type==="fill") body.innerHTML=ggFill(ex);
+  else if(ex.type==="order") body.innerHTML=ggOrder(ex);
+  wireGG(ex);
+}
+function ggMC(ex){
+  return `<div class="gg-card"><div class="muted">Elige la opción correcta · ${ggIdx+1}/${ggList.length}</div>
+    <div class="gg-q">${ex.q}</div>
+    <div id="ggOpts">${ex.o.map((o,i)=>`<button class="opt" data-i="${i}">${o}</button>`).join("")}</div>
+    <div id="ggFb" style="margin-top:10px;min-height:22px"></div></div>`;
+}
+function ggFill(ex){
+  return `<div class="gg-card"><div class="muted">Completa el hueco · ${ggIdx+1}/${ggList.length}</div>
+    <div class="gg-q">${ex.q.replace("___","<span class='blank'></span>")}</div>
+    <input class="gg-fill" id="ggInput" autocomplete="off" placeholder="escribe aquí...">
+    <div class="row" style="margin-top:12px"><button class="btn green" id="ggCheck">Comprobar</button></div>
+    <div id="ggFb" style="margin-top:10px;min-height:22px"></div></div>`;
+}
+function ggOrder(ex){
+  const shuffled=ex.words.map((w,i)=>({w,i})).sort(()=>Math.random()-0.5);
+  return `<div class="gg-card"><div class="muted">Ordena las palabras para formar la frase · ${ggIdx+1}/${ggList.length}</div>
+    <div class="chip-slot" id="ggSlot"></div>
+    <div class="chips" id="ggChips">${shuffled.map(o=>`<button class="chip" data-w="${o.w}" data-id="${o.i}">${o.w}</button>`).join("")}</div>
+    <div class="row" style="margin-top:6px"><button class="btn green" id="ggCheck">Comprobar</button><button class="btn alt" id="ggClear">Borrar</button></div>
+    <div id="ggFb" style="margin-top:10px;min-height:22px"></div></div>`;
+}
+function wireGG(ex){
+  const fb=()=>document.getElementById("ggFb");
+  const advance=()=>{ const nb=document.createElement("button"); nb.className="btn small"; nb.style.marginTop="10px"; nb.textContent=ggIdx+1>=ggList.length?"Ver resultado →":"Siguiente →"; nb.onclick=()=>{ ggIdx++; paintGG(); }; fb().appendChild(document.createElement("br")); fb().appendChild(nb); };
+  const mark=ok=>{ ggResults[ggIdx]=ok; if(ok){ S.xp+=4; save(); } };
+  if(ex.type==="mc"){
+    document.querySelectorAll("#ggOpts .opt").forEach(b=>b.onclick=()=>{
+      const i=+b.dataset.i; document.querySelectorAll("#ggOpts .opt").forEach(x=>x.disabled=true);
+      const ok=i===ex.a;
+      document.querySelector(`#ggOpts .opt[data-i="${ex.a}"]`).classList.add("correct");
+      if(!ok) b.classList.add("wrong");
+      fb().innerHTML=ok?'<span class="ok" style="font-weight:700">✅ ¡Correcto! +4 XP</span>':'<span class="err" style="font-weight:700">❌ La correcta está marcada.</span>';
+      mark(ok); advance();
+    });
+  } else if(ex.type==="fill"){
+    const check=()=>{ const inp=document.getElementById("ggInput"); const ok=ex.a.some(a=>normGG(a)===normGG(inp.value)); inp.className="gg-fill "+(ok?"good":"bad"); inp.disabled=true; document.getElementById("ggCheck").disabled=true;
+      fb().innerHTML=ok?'<span class="ok" style="font-weight:700">✅ ¡Correcto! +4 XP</span>':`<span class="err" style="font-weight:700">❌ Respuesta: <u>${ex.a[0]}</u></span>`; mark(ok); advance(); };
+    document.getElementById("ggCheck").onclick=check;
+    document.getElementById("ggInput").addEventListener("keydown",e=>{ if(e.key==="Enter") check(); });
+    document.getElementById("ggInput").focus();
+  } else if(ex.type==="order"){
+    const slot=document.getElementById("ggSlot");
+    document.querySelectorAll("#ggChips .chip").forEach(c=>c.onclick=()=>{ c.classList.add("used"); const p=c.cloneNode(true); p.classList.remove("used"); p.classList.add("placed"); p.onclick=()=>{ p.remove(); c.classList.remove("used"); }; slot.appendChild(p); });
+    document.getElementById("ggClear").onclick=()=>{ slot.innerHTML=""; document.querySelectorAll("#ggChips .chip").forEach(c=>c.classList.remove("used")); };
+    document.getElementById("ggCheck").onclick=()=>{ const built=[...slot.querySelectorAll(".chip")].map(c=>c.dataset.w).join(" "); const ok=normGG(built)===normGG(ex.a); document.getElementById("ggCheck").disabled=true;
+      fb().innerHTML=ok?'<span class="ok" style="font-weight:700">✅ ¡Perfecto! +4 XP</span>':`<span class="err" style="font-weight:700">❌ Correcta: <u>${ex.a}</u></span>`; if(ok) speak(ex.a,false); mark(ok); advance(); };
+  }
+}
+function ggSummary(){
+  const ok=ggResults.filter(x=>x===true).length;
+  document.getElementById("ggBody").innerHTML=`<div class="gg-card" style="text-align:center">
+    <div class="score-big ${ok>=ggList.length*0.7?'ok':'err'}">${ok}/${ggList.length}</div>
+    <p>${ok>=ggList.length*0.7?'¡Muy bien! Dominas la gramática de este nivel. 💪':'Sigue practicando, vas mejorando. 🔁'}</p>
+    <button class="btn green" onclick="initGrammar()">🔁 Repetir ejercicios</button></div>`;
+}
+
+/* ============================================================
+   13) DIÁLOGOS REALES (escucha + roleplay)
+   ============================================================ */
+const DIALOGS={
+  B1:[
+    {title:"Tu primer día", lines:[
+      {sp:"Boss",en:"Welcome to the team! Let me show you around.",es:"¡Bienvenido al equipo! Deja que te enseñe esto."},
+      {sp:"Tú",me:true,en:"Thank you. I'm really excited to start.",es:"Gracias. Tengo muchas ganas de empezar."},
+      {sp:"Boss",en:"Great. Your desk is over here, next to Sarah.",es:"Genial. Tu mesa está aquí, al lado de Sarah."},
+      {sp:"Tú",me:true,en:"Perfect. What should I do first?",es:"Perfecto. ¿Qué debería hacer primero?"},
+      {sp:"Boss",en:"First, check your email and read the welcome guide.",es:"Primero, mira tu correo y lee la guía de bienvenida."},
+      {sp:"Tú",me:true,en:"Okay, I'll do that right now.",es:"Vale, lo haré ahora mismo."}
+    ]},
+    {title:"Pedir ayuda", lines:[
+      {sp:"Tú",me:true,en:"Excuse me, could you help me with something?",es:"Disculpa, ¿podrías ayudarme con una cosa?"},
+      {sp:"Mara",en:"Of course! What do you need?",es:"¡Claro! ¿Qué necesitas?"},
+      {sp:"Tú",me:true,en:"I can't find the file you sent me.",es:"No encuentro el archivo que me enviaste."},
+      {sp:"Mara",en:"No problem. I'll send it again now.",es:"No hay problema. Te lo reenvío ahora."},
+      {sp:"Tú",me:true,en:"Thanks a lot, I really appreciate it.",es:"Muchas gracias, te lo agradezco mucho."}
+    ]}
+  ],
+  B2:[
+    {title:"En una reunión", lines:[
+      {sp:"Leo",en:"So, where are we with the new campaign?",es:"Bueno, ¿cómo vamos con la nueva campaña?"},
+      {sp:"Tú",me:true,en:"We're on track, but I have some concerns about the budget.",es:"Vamos bien, pero tengo algunas dudas sobre el presupuesto."},
+      {sp:"Leo",en:"Good point. Can you explain what you mean?",es:"Buen punto. ¿Puedes explicar a qué te refieres?"},
+      {sp:"Tú",me:true,en:"If we add more ads, we'll go over budget.",es:"Si añadimos más anuncios, nos pasaremos del presupuesto."},
+      {sp:"Leo",en:"I see. Let's prioritize the most effective ones.",es:"Entiendo. Prioricemos los más efectivos."},
+      {sp:"Tú",me:true,en:"Agreed. I'll prepare a revised plan.",es:"De acuerdo. Prepararé un plan revisado."}
+    ]},
+    {title:"Atender una queja", lines:[
+      {sp:"Cliente",en:"Hello, my order arrived damaged and I'm not happy.",es:"Hola, mi pedido llegó dañado y no estoy contento."},
+      {sp:"Tú",me:true,en:"I'm very sorry to hear that. Let me help you.",es:"Lamento mucho oír eso. Déjeme ayudarle."},
+      {sp:"Cliente",en:"I'd like a replacement as soon as possible.",es:"Me gustaría un reemplazo lo antes posible."},
+      {sp:"Tú",me:true,en:"Absolutely. I'll arrange a new delivery today.",es:"Por supuesto. Gestionaré un nuevo envío hoy."},
+      {sp:"Cliente",en:"Thank you, that's very kind.",es:"Gracias, es muy amable."}
+    ]}
+  ],
+  C1:[
+    {title:"Negociar un plazo", lines:[
+      {sp:"PM",en:"We need this delivered by Friday. Is that feasible?",es:"Necesitamos entregar esto el viernes. ¿Es viable?"},
+      {sp:"Tú",me:true,en:"To be honest, that timeline is quite tight.",es:"Para ser sincero, ese plazo es bastante ajustado."},
+      {sp:"PM",en:"What would you suggest instead?",es:"¿Qué propondrías en su lugar?"},
+      {sp:"Tú",me:true,en:"If we push it to Monday, I can guarantee quality.",es:"Si lo movemos al lunes, puedo garantizar la calidad."},
+      {sp:"PM",en:"That's reasonable. Let's go with Monday.",es:"Es razonable. Vamos con el lunes."},
+      {sp:"Tú",me:true,en:"Thanks for understanding. I'll keep you updated.",es:"Gracias por entenderlo. Te mantendré informado."}
+    ]},
+    {title:"Dar feedback", lines:[
+      {sp:"Tú",me:true,en:"Overall, your presentation was strong and well-structured.",es:"En general, tu presentación fue sólida y bien estructurada."},
+      {sp:"Sam",en:"Thank you. Is there anything I could improve?",es:"Gracias. ¿Hay algo que pueda mejorar?"},
+      {sp:"Tú",me:true,en:"You might want to slow down on the data slides.",es:"Quizá quieras ir más despacio en las diapositivas de datos."},
+      {sp:"Sam",en:"That's fair. I tend to rush when I'm nervous.",es:"Es justo. Tiendo a acelerar cuando estoy nervioso."},
+      {sp:"Tú",me:true,en:"With a bit more practice, it'll be excellent.",es:"Con un poco más de práctica, será excelente."}
+    ]}
+  ],
+  C2:[
+    {title:"Una conversación difícil", lines:[
+      {sp:"Dir",en:"I'll be candid: results have fallen short this quarter.",es:"Seré franco: los resultados se han quedado cortos este trimestre."},
+      {sp:"Tú",me:true,en:"I acknowledge that, and I take responsibility for it.",es:"Lo reconozco, y asumo la responsabilidad."},
+      {sp:"Dir",en:"What's your plan to turn things around?",es:"¿Cuál es tu plan para darle la vuelta?"},
+      {sp:"Tú",me:true,en:"I've identified the root cause and drafted a recovery plan.",es:"He identificado la causa raíz y he redactado un plan de recuperación."},
+      {sp:"Dir",en:"Good. I want to see measurable progress within a month.",es:"Bien. Quiero ver progreso medible en un mes."},
+      {sp:"Tú",me:true,en:"Understood. I'll send you weekly updates from now on.",es:"Entendido. Te enviaré informes semanales a partir de ahora."}
+    ]},
+    {title:"Defender una idea", lines:[
+      {sp:"Board",en:"Why should we invest in this rather than the safe option?",es:"¿Por qué deberíamos invertir en esto en vez de la opción segura?"},
+      {sp:"Tú",me:true,en:"Because the upside far outweighs the calculated risk.",es:"Porque el beneficio potencial supera con creces el riesgo calculado."},
+      {sp:"Board",en:"That's a bold claim. Can you substantiate it?",es:"Es una afirmación atrevida. ¿Puedes fundamentarla?"},
+      {sp:"Tú",me:true,en:"The market data and our pilot results both support it.",es:"Los datos del mercado y los resultados de nuestro piloto lo respaldan."},
+      {sp:"Board",en:"Compelling. Walk us through the numbers.",es:"Convincente. Explícanos los números."}
+    ]}
+  ]
+};
+let dlgList=[], curDlg=0, dlgPlaying=false, dlgRoleMode=false;
+function initDialogos(){
+  const lv=S.currentLevel; dlgList=DIALOGS[lv]||[]; curDlg=0; dlgRoleMode=false;
+  document.getElementById("dlgRole").classList.remove("on");
+  renderDialogBtns(); paintDialog();
+  document.getElementById("dlgNote").textContent="Nivel "+lv+" · pulsa cualquier línea (🔊/🐢) para oírla";
+}
+function renderDialogBtns(){
+  const c=document.getElementById("dialogBtns"); c.innerHTML="";
+  dlgList.forEach((d,i)=>{ const b=document.createElement("button"); b.className="btn small "+(i===curDlg?"":"alt"); b.textContent="🎬 "+d.title;
+    b.onclick=()=>{ stopDialog(); curDlg=i; renderDialogBtns(); paintDialog(); }; c.appendChild(b); });
+}
+function paintDialog(){
+  const box=document.getElementById("dialogBox"); box.innerHTML="";
+  const d=dlgList[curDlg]; if(!d){ box.textContent="No hay diálogos para este nivel."; return; }
+  d.lines.forEach((ln,i)=>{
+    const div=document.createElement("div"); div.className="dialog-line"+(ln.me?" me":"")+(dlgRoleMode&&ln.me?"":""); div.dataset.i=i;
+    div.innerHTML=`<div class="who">${ln.sp}</div>
+      <div class="body">
+        <div class="en ${dlgRoleMode&&ln.me?'hidden-text':''}">${ln.en}</div>
+        <div class="es">${ln.es}</div>
+        <div class="ctl">
+          <button class="btn small alt">🔊</button>
+          <button class="btn small" style="background:var(--warn);color:#222">🐢</button>
+          ${ln.me?'<button class="btn small green">🎤 Decir</button>':''}
+        </div>
+      </div>`;
+    const btns=div.querySelectorAll(".ctl button");
+    btns[0].onclick=()=>speak(ln.en,false);
+    btns[1].onclick=()=>speak(ln.en,true);
+    if(ln.me&&btns[2]){ btns[2].onclick=()=>roleSay(div,ln,btns[2]); }
+    box.appendChild(div);
+  });
+}
+function roleSay(div,ln,btn){
+  if(activeMic){ activeMic.stop(); if(btn) btn.textContent="⏳..."; return; }
+  const enEl=div.querySelector(".en");
+  let fb=div.querySelector(".rolefb"); if(!fb){ fb=document.createElement("div"); fb.className="rolefb"; fb.style.fontSize="13px"; fb.style.marginTop="4px"; div.querySelector(".body").appendChild(fb); }
+  micToggle(heard=>{
+    if(btn) btn.textContent="🎤 Decir";
+    if(!heard){ fb.innerHTML='<span class="muted">No te entendí, inténtalo otra vez.</span>'; return; }
+    const score=similarity(heard,ln.en);
+    enEl.classList.remove("hidden-text");
+    let tag=score>=80?'<span class="ok">✅ '+score+'%</span>':score>=50?'<span style="color:var(--warn)">🟡 '+score+'%</span>':'<span class="err">❌ '+score+'%</span>';
+    fb.innerHTML=tag+' · te oí: "<i>'+heard+'</i>"';
+    if(score>=80){ S.xp+=3; save(); }
+  }, st=>{ if(btn) btn.textContent="⏹ Parar"; fb.innerHTML='<span class="muted">'+st+'</span>'; });
+}
+function playDialog(){
+  const d=dlgList[curDlg]; if(!d) return;
+  dlgPlaying=true;
+  const lines=[...document.querySelectorAll("#dialogBox .dialog-line")];
+  let i=0;
+  const step=()=>{
+    if(!dlgPlaying||i>=d.lines.length){ lines.forEach(l=>l.classList.remove("playing")); return; }
+    lines.forEach(l=>l.classList.remove("playing"));
+    if(lines[i]){ lines[i].classList.add("playing"); lines[i].scrollIntoView({block:"center",behavior:"smooth"}); }
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(d.lines[i].en);
+    const v=pickVoice(); if(v){u.voice=v;u.lang=v.lang;} else u.lang="en-US"; u.rate=0.95;
+    u.onend=()=>{ i++; if(dlgPlaying) setTimeout(step,350); };
+    speechSynthesis.speak(u);
+  };
+  step();
+}
+function stopDialog(){ dlgPlaying=false; try{ speechSynthesis.cancel(); }catch(e){} document.querySelectorAll("#dialogBox .dialog-line").forEach(l=>l.classList.remove("playing")); }
+document.getElementById("dlgPlay").onclick=playDialog;
+document.getElementById("dlgStop").onclick=stopDialog;
+document.getElementById("dlgEs").onclick=()=>document.querySelectorAll("#dialogBox .dialog-line").forEach(l=>l.classList.toggle("show-es"));
+document.getElementById("dlgRole").onclick=function(){ dlgRoleMode=!dlgRoleMode; this.classList.toggle("on",dlgRoleMode); stopDialog(); paintDialog(); toast(dlgRoleMode?"Modo papel: tus líneas están ocultas, ¡dilas tú! 🎤":"Modo papel desactivado"); };
+
+/* ============================================================
+   HEADER + TOAST + INIT
+   ============================================================ */
+function refreshHeader(){
+  document.getElementById("streak").textContent=S.streak;
+  document.getElementById("xp").textContent=S.xp;
+  document.getElementById("curLevel").textContent=S.currentLevel;
+}
+let toastT;
+function toast(msg,ms=2600){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),ms); }
+
+/* ============================================================
+   TEMA (claro/oscuro) + MENÚ LATERAL
+   ============================================================ */
+function applyTheme(){
+  document.body.classList.toggle("light", S.theme==="light");
+  document.getElementById("themeBtn").textContent = S.theme==="light" ? "☀️" : "🌙";
+}
+document.getElementById("themeBtn").onclick=()=>{ S.theme = S.theme==="light"?"dark":"light"; save(); applyTheme(); };
+function openDrawer(){ document.getElementById("sidebar").classList.add("open"); document.getElementById("overlay").classList.add("show"); }
+function closeDrawer(){ document.getElementById("sidebar").classList.remove("open"); document.getElementById("overlay").classList.remove("show"); }
+document.getElementById("hamb").onclick=openDrawer;
+document.getElementById("overlay").onclick=closeDrawer;
+applyTheme();
+
+refreshHeader(); renderHome();
+</script>
+</body>
+</html>
