@@ -1051,13 +1051,20 @@ function pickVoice(){
   for(const p of pref){ const v=voices.find(x=>(x.name||"").toLowerCase().includes(p) && /^en/i.test(v.lang)); if(v) return v; }
   return voices.find(v=>/en[-_]US/i.test(v.lang)) || voices.find(v=>/en[-_]GB/i.test(v.lang)) || voices.find(v=>/^en/i.test(v.lang)) || voices[0];
 }
+// Bug conocido de iOS/Safari: hablar justo después de cancel() a veces se pierde en silencio para siempre.
+// Solución: solo cancelar si hay algo sonando/pendiente, y esperar un pelín antes de hablar.
+function speakSafely(u){
+  try{
+    if(speechSynthesis.speaking || speechSynthesis.pending){ speechSynthesis.cancel(); setTimeout(()=>speechSynthesis.speak(u), 80); }
+    else speechSynthesis.speak(u);
+  }catch(e){}
+}
 function speak(text, slow=false){
   if(!('speechSynthesis' in window)){ toast("Tu navegador no soporta voz"); return; }
-  speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   const v = pickVoice(); if(v){ u.voice=v; u.lang=v.lang; } else u.lang="en-US";
   u.rate = slow ? S.slowRate : 1; u.pitch=1;
-  speechSynthesis.speak(u);
+  speakSafely(u);
 }
 
 /* ============================================================
@@ -1679,18 +1686,19 @@ async function geminiSpeak(text, cb, cancelled, onStart){
 }
 function browserSpeakThen(text,slow,cb){
   if(!('speechSynthesis' in window)){ cb&&cb(); return; }
-  speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(text);
   const v=callPickVoice(); if(v){u.voice=v;u.lang=v.lang;} else u.lang="en-US";
   u.rate = slow ? S.slowRate : callRate();
   let done=false;
-  const finish=()=>{ if(done) return; done=true; clearTimeout(safety); if(callActive) cb&&cb(); };
+  // Otro bug de iOS: a veces pausa la síntesis de voz sola a mitad de frase; la "despertamos" cada 5s.
+  const kick=setInterval(()=>{ try{ if(speechSynthesis.speaking && speechSynthesis.paused) speechSynthesis.resume(); }catch(e){} }, 5000);
+  const finish=()=>{ if(done) return; done=true; clearTimeout(safety); clearInterval(kick); if(callActive) cb&&cb(); };
   u.onend=finish;
   u.onerror=finish;
   // Red de seguridad: en algunos iPhone/Safari "onend" no se dispara nunca (silencio, foco perdido...).
   // Sin esto, la conversación se quedaría congelada para siempre esperando a que "termine" de hablar.
   const safety=setTimeout(finish, Math.min(20000, Math.max(4000, text.length*90)));
-  speechSynthesis.speak(u);
+  speakSafely(u);
 }
 function speakThen(text,slow,cb){
   // Voz: Gemini IA (si hay clave y no está limitada) o la del dispositivo. Sencillo y fiable.
