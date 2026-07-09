@@ -1652,10 +1652,10 @@ function ensureTtsCtx(){
 function stopGeminiSpeak(){ try{ ttsSources.forEach(s=>{ try{ s.onended=null; s.stop(); }catch(e){} }); }catch(e){} ttsSources=[]; }
 async function geminiSpeak(text, cb, cancelled, onStart){
   try{
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${encodeURIComponent(S.apiKey)}`,{
+    const res=await fetchTimeout(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${encodeURIComponent(S.apiKey)}`,{
       method:"POST",headers:{"content-type":"application/json"},
       body:JSON.stringify({contents:[{parts:[{text}]}],generationConfig:{responseModalities:["AUDIO"],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:"Kore"}}}}})
-    });
+    }, 10000);
     if(!res.ok){ if(res.status===429 && !ttsRateLimited){ ttsRateLimited=true; toast("Voz IA en pausa 1 min (límite gratis). Voz del móvil mientras tanto."); setTimeout(()=>{ ttsRateLimited=false; }, 70000); } return false; }
     const d=await res.json();
     const part=(((d.candidates||[])[0]||{}).content||{}).parts||[];
@@ -1683,7 +1683,13 @@ function browserSpeakThen(text,slow,cb){
   const u=new SpeechSynthesisUtterance(text);
   const v=callPickVoice(); if(v){u.voice=v;u.lang=v.lang;} else u.lang="en-US";
   u.rate = slow ? S.slowRate : callRate();
-  u.onend=()=>{ if(callActive) cb&&cb(); };
+  let done=false;
+  const finish=()=>{ if(done) return; done=true; clearTimeout(safety); if(callActive) cb&&cb(); };
+  u.onend=finish;
+  u.onerror=finish;
+  // Red de seguridad: en algunos iPhone/Safari "onend" no se dispara nunca (silencio, foco perdido...).
+  // Sin esto, la conversación se quedaría congelada para siempre esperando a que "termine" de hablar.
+  const safety=setTimeout(finish, Math.min(20000, Math.max(4000, text.length*90)));
   speechSynthesis.speak(u);
 }
 function speakThen(text,slow,cb){
