@@ -649,6 +649,8 @@
         <span id="slowRateVal" class="muted">0.55x</span>
       </div>
       <button class="btn small alt" id="testVoice">Probar voz</button>
+      <button class="btn small alt" id="voiceDiagBtn">🔍 Diagnóstico de voz</button>
+      <pre id="voiceDiagOut" class="muted" style="white-space:pre-wrap;font-size:12px;margin-top:10px;display:none;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px"></pre>
       <div class="tip-box" style="margin-top:12px;font-size:13px">
         📱 <b>¿Voz robótica en el iPhone?</b> Descarga una voz humana (gratis, una vez):<br>
         Ajustes del iPhone → <b>Accesibilidad</b> → <b>Contenido hablado</b> → <b>Voces</b> → <b>Inglés (English)</b> → elige una (ej. <i>Ava, Evan, Samantha, Zoe</i>) y pulsa para <b>descargarla</b>. Luego vuelve aquí, ábrela en el desplegable de arriba y pulsa "Probar voz". Suenan mucho más naturales.
@@ -2029,6 +2031,30 @@ document.getElementById("humanVoiceSel").onchange=e=>{
 };
 document.getElementById("slowRate").oninput=e=>{ S.slowRate=+e.target.value; document.getElementById("slowRateVal").textContent=S.slowRate+"x"; save(); };
 document.getElementById("testVoice").onclick=()=>{ speak("Hello! Welcome to your English course.",false); setTimeout(()=>speak("Hello! Welcome to your English course.",true),1600); };
+function runVoiceDiag(){
+  const out=document.getElementById("voiceDiagOut");
+  out.style.display="block";
+  const lines=[]; const t0=performance.now();
+  const log=(s)=>{ lines.push(`[${((performance.now()-t0)/1000).toFixed(2)}s] ${s}`); out.textContent=lines.join("\n"); };
+  if(!('speechSynthesis' in window)){ log("❌ speechSynthesis NO existe en este navegador."); return; }
+  log("✅ speechSynthesis existe en este navegador");
+  const vs=speechSynthesis.getVoices();
+  log(`Voces del sistema encontradas: ${vs.length} (inglés: ${vs.filter(v=>/^en/i.test(v.lang)).length})`);
+  log(`Estado inicial → speaking:${speechSynthesis.speaking} pending:${speechSynthesis.pending} paused:${speechSynthesis.paused}`);
+  const u=new SpeechSynthesisUtterance("Testing one two three, can you hear this?");
+  const v=pickVoice();
+  if(v){ u.voice=v; u.lang=v.lang; log(`Voz elegida: "${v.name}" (${v.lang})`); }
+  else { u.lang="en-US"; log("⚠️ No se encontró ninguna voz en la lista, usando lang=en-US por defecto"); }
+  u.onstart=()=>log("✅ onstart — el navegador dice que EMPEZÓ a hablar");
+  u.onend=()=>log("✅ onend — el navegador dice que TERMINÓ de hablar");
+  u.onerror=(e)=>log(`❌ onerror — código: "${e.error}"`);
+  u.onpause=()=>log("⏸️ onpause — se pausó sola");
+  u.onresume=()=>log("▶️ onresume — se reanudó");
+  log("Llamando a speechSynthesis.speak() ahora...");
+  speakSafely(u);
+  setTimeout(()=>{ log(`Estado a los 6s → speaking:${speechSynthesis.speaking} pending:${speechSynthesis.pending} paused:${speechSynthesis.paused}`); }, 6000);
+}
+document.getElementById("voiceDiagBtn").onclick=runVoiceDiag;
 function aiModels(){
   return (S.provider==="anthropic")
     ? [["claude-haiku-4-5-20251001","Claude Haiku 4.5 (económico)"],["claude-sonnet-4-6","Claude Sonnet 4.6 (mejor)"]]
