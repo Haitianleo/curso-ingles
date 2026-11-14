@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12131a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f5f1e6" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="PasaStickers">
+<meta name="description" content="Guarda stickers de cualquier app y pásalos a WhatsApp, Telegram, Discord o Instagram.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>PasaStickers</title>
+<style>
+  :root{
+    --bg:#12131a; --surface:#1b1d28; --surface2:#262938; --line:#353a50;
+    --text:#f4f1e8; --muted:#a8a7b8; --accent:#ffd23f; --on-accent:#1a1505;
+    --danger:#ff7b7b; --warn:#ffb454;
+    --check-a:#2b2e3e; --check-b:#20222e;
+    --shadow:0 18px 50px rgba(0,0,0,.5);
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f5f1e6; --surface:#fffdf8; --surface2:#efe8d8; --line:#d9d0ba;
+      --text:#1d1a14; --muted:#676256; --accent:#ffcb1f; --on-accent:#1a1505;
+      --danger:#c23535; --warn:#9a5b00;
+      --check-a:#e6dfcf; --check-b:#f8f4ea;
+      --shadow:0 18px 50px rgba(70,55,20,.22);
+      color-scheme:light;
+    }
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;min-height:100vh;min-height:100dvh;background:var(--bg);color:var(--text);
+    font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    -webkit-tap-highlight-color:transparent;overscroll-behavior-y:contain}
+  body.locked{overflow:hidden}
+  button,input{font:inherit;color:inherit}
+  button{cursor:pointer}
+  h1,h2,h3,p{margin:0}
+  :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+  .vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip-path:inset(50%);pointer-events:none}
+  .grow{flex:1}
+  .muted{color:var(--muted)}
+
+  .wrap{max-width:560px;margin:0 auto;padding:0 16px calc(36px + env(safe-area-inset-bottom))}
+  header.top{display:flex;align-items:center;gap:10px;padding:calc(14px + env(safe-area-inset-top)) 0 14px}
+  .mark{width:34px;height:34px;flex:0 0 auto}
+  h1{font-size:22px;font-weight:800;letter-spacing:-.4px}
+  h1 b{color:var(--accent);font-weight:800}
+  @media (prefers-color-scheme: light){ h1 b{color:#b98600} }
+  h2{font-size:17px;font-weight:800;letter-spacing:-.2px}
+  h3{font-size:13px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+
+  /* Botones */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;
+    border-radius:14px;border:1px solid var(--line);background:var(--surface2);font-weight:700;text-decoration:none;
+    color:var(--text);transition:transform .08s, box-shadow .08s, opacity .15s;user-select:none;-webkit-user-select:none}
+  .btn:active{transform:translateY(2px)}
+  .btn.primary{background:var(--accent);color:var(--on-accent);border-color:transparent;box-shadow:0 3px 0 rgba(0,0,0,.32)}
+  .btn.primary:active{box-shadow:0 1px 0 rgba(0,0,0,.32)}
+  .btn.ghost{background:transparent;border-color:transparent}
+  .btn.danger{color:var(--danger)}
+  .btn.sm{min-height:40px;padding:0 14px;border-radius:12px}
+  .btn:disabled{opacity:.45;cursor:default;transform:none}
+  .round-btn{width:40px;height:40px;flex:0 0 auto;border-radius:50%;border:1px solid var(--line);background:var(--surface2);
+    font-weight:800;display:inline-flex;align-items:center;justify-content:center;font-size:16px;line-height:1}
+
+  /* Traer */
+  .bring{background:var(--surface);border:2px dashed var(--line);border-radius:22px;padding:18px}
+  .hint{color:var(--muted);font-size:14.5px;margin:6px 0 14px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .row .btn{flex:1 1 140px}
+
+  /* Biblioteca */
+  .lib-head{display:flex;align-items:baseline;gap:8px;margin:26px 2px 12px}
+  .count{color:var(--muted);font-weight:600;font-size:14px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media (min-width:480px){ .grid{grid-template-columns:repeat(4,1fr)} }
+  .st{aspect-ratio:1;border:0;padding:9px;border-radius:20px;background:var(--surface);min-width:0}
+  .st img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 3px 0 rgba(0,0,0,.26));
+    transition:transform .14s ease}
+  .st:nth-child(3n+1) img{transform:rotate(-4deg)}
+  .st:nth-child(3n+2) img{transform:rotate(2.5deg)}
+  .st:nth-child(3n) img{transform:rotate(-1.5deg)}
+  .st:active img{transform:scale(.92)}
+  .empty{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+  .empty li{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border-radius:16px;padding:14px}
+  .empty .n{flex:0 0 auto;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--on-accent);
+    font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px}
+  .empty strong{display:block}
+  .empty span{color:var(--muted);font-size:14.5px}
+
+  .checker{background-color:var(--check-b);
+    background-image:linear-gradient(45deg,var(--check-a) 25%,transparent 25%,transparent 75%,var(--check-a) 75%),
+      linear-gradient(45deg,var(--check-a) 25%,transparent 25%,transparent 75%,var(--check-a) 75%);
+    background-size:20px 20px;background-position:0 0,10px 10px}
+
+  /* Editor */
+  .editor{position:fixed;inset:0;z-index:30;background:var(--bg);display:flex;flex-direction:column;align-items:center;
+    padding:calc(8px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));overflow:auto}
+  .ed-bar{width:100%;max-width:560px;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .ed-bar strong{font-size:15px;text-align:center;flex:1;min-width:0}
+  .ed-bar .btn.ghost{padding:0 8px}
+  .stage{width:min(100%,440px);width:min(100%,440px,calc(100dvh - 350px));min-width:220px;aspect-ratio:1;border-radius:22px;overflow:hidden;
+    border:1px solid var(--line);flex:0 0 auto}
+  .stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+  .stage canvas.erase{cursor:crosshair}
+  .ed-controls{width:100%;max-width:440px;display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:14px}
+  .slider{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:700}
+  .slider span{flex:0 0 78px;color:var(--muted)}
+  .slider input{flex:1 1 0;width:0;min-width:0;accent-color:var(--accent);height:28px}
+  .seg{display:flex;background:var(--surface2);border-radius:13px;padding:4px;gap:4px}
+  .seg button{flex:1;min-height:38px;border:0;background:transparent;border-radius:10px;font-weight:700;font-size:14px;
+    color:var(--muted);padding:0 6px}
+  .seg button.on{background:var(--text);color:var(--bg)}
+  .row2{display:flex;gap:12px;align-items:center}
+  .row2 .seg{flex:1;min-width:0}
+  .switch{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:14px;cursor:pointer;user-select:none;-webkit-user-select:none}
+  .switch input{position:absolute;opacity:0;width:1px;height:1px}
+  .switch i{width:44px;height:26px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);position:relative;flex:0 0 auto;transition:background .15s}
+  .switch i::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--muted);transition:transform .15s, background .15s}
+  .switch input:checked + i{background:var(--accent);border-color:transparent}
+  .switch input:checked + i::after{transform:translateX(18px);background:var(--on-accent)}
+  .switch input:focus-visible + i{outline:3px solid var(--accent);outline-offset:2px}
+  .erase-panel{background:var(--surface);border-radius:16px;padding:12px 14px;display:grid;gap:8px}
+  .erase-panel p{font-size:14px;color:var(--muted)}
+  .erase-panel .line{display:flex;gap:12px;align-items:center}
+  .erase-panel .slider{flex:1;min-width:0}
+
+  /* Hoja inferior */
+  .backdrop{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.55)}
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;margin:0 auto;max-width:560px;max-height:92vh;max-height:92dvh;
+    overflow:auto;background:var(--surface);border-radius:26px 26px 0 0;box-shadow:var(--shadow);
+    padding:8px 18px calc(22px + env(safe-area-inset-bottom));animation:up .22s ease-out}
+  .sheet:focus{outline:none}
+  @keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+  .grab{width:44px;height:5px;border-radius:99px;background:var(--line);margin:2px auto 10px}
+  .sh-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .sh-head h2{flex:1;min-width:0;font-size:19px}
+  .preview{width:min(62vw,230px);aspect-ratio:1;margin:0 auto 18px;border-radius:22px;border:1px solid var(--line);padding:12px}
+  .preview img,.mini img{display:block;width:100%;height:100%;object-fit:contain}
+  .plats{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:12px 0 16px}
+  .plat{border:0;background:transparent;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:7px;
+    font-size:12.5px;font-weight:700;border-radius:14px;min-width:0}
+  .plat:active .pico{transform:scale(.92)}
+  .pico{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .1s;
+    box-shadow:0 3px 0 rgba(0,0,0,.28)}
+  .pico svg{width:28px;height:28px;display:block}
+  .pico.whatsapp{background:#25d366}
+  .pico.telegram{background:#2aabee}
+  .pico.discord{background:#5865f2}
+  .pico.instagram{background:linear-gradient(45deg,#f9ce34,#ee2a7b 55%,#6228d7)}
+  .pico.other{background:var(--surface2);border:1px solid var(--line);color:var(--text)}
+  .ready{display:flex;gap:14px;align-items:center;background:var(--surface2);border-radius:18px;padding:12px;margin-bottom:14px}
+  .mini{width:74px;height:74px;flex:0 0 auto;border-radius:14px;padding:6px}
+  .ready strong{display:block;font-size:15px}
+  .ready span{font-size:13.5px}
+  .ready span.bad{color:var(--warn)}
+  .acts{display:grid;gap:10px;margin-bottom:6px}
+  .acts .pair{display:flex;gap:10px}
+  .acts .pair .btn{flex:1;min-width:0;padding:0 10px}
+  .steps{list-style:none;counter-reset:s;margin:18px 0 0;padding:0;display:grid;gap:12px}
+  .steps li{counter-increment:s;position:relative;padding-left:40px;font-size:15px}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:-2px;width:28px;height:28px;border-radius:50%;
+    background:var(--surface2);border:1px solid var(--line);font-weight:800;font-size:13.5px;display:flex;align-items:center;justify-content:center}
+  .note{margin-top:16px;padding:12px 14px;border-radius:14px;background:var(--surface2);font-size:14px;color:var(--muted)}
+  .help h3{margin:18px 0 6px}
+  .help p{font-size:15px}
+  .help p + p{margin-top:8px}
+  .center{display:flex;justify-content:center;margin-top:8px}
+
+  .toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translate(-50%,20px);z-index:60;
+    max-width:min(92vw,440px);background:var(--text);color:var(--bg);padding:12px 16px;border-radius:14px;font-size:14.5px;
+    font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;text-align:center;box-shadow:var(--shadow)}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <svg class="mark" viewBox="0 0 512 512" aria-hidden="true">
+      <rect width="512" height="512" rx="120" fill="#ffd23f"/>
+      <g transform="rotate(-8 256 256)">
+        <path d="M150 112h212a38 38 0 0 1 38 38v150L300 400H150a38 38 0 0 1-38-38V150a38 38 0 0 1 38-38z" fill="#fff"/>
+        <path d="M400 300h-62a38 38 0 0 0-38 38v62z" fill="#d9cfb4"/>
+        <circle cx="206" cy="222" r="20" fill="#1a1505"/><circle cx="306" cy="222" r="20" fill="#1a1505"/>
+        <path d="M196 284q60 54 120 0" fill="none" stroke="#1a1505" stroke-width="20" stroke-linecap="round"/>
+      </g>
+    </svg>
+    <h1>Pasa<b>Stickers</b></h1>
+    <span class="grow"></span>
+    <button class="btn sm" id="installBtn" hidden>Instalar</button>
+    <button class="round-btn" id="helpBtn" aria-label="Cómo funciona">?</button>
+  </header>
+
+  <section class="bring" aria-labelledby="bringTitle">
+    <h2 id="bringTitle">Trae un sticker</h2>
+    <p class="hint" id="hint"></p>
+    <div class="row">
+      <button class="btn primary" id="pasteBtn">Pegar imagen</button>
+      <button class="btn" id="pickBtn">Elegir foto</button>
+    </div>
+    <input class="vh" id="fileIn" type="file" accept="image/*" multiple tabindex="-1" aria-hidden="true">
+  </section>
+
+  <section aria-labelledby="libTitle">
+    <div class="lib-head"><h2 id="libTitle">Tus stickers</h2><span class="count" id="count"></span></div>
+    <div class="grid" id="grid"></div>
+    <ol class="empty" id="empty">
+      <li><span class="n">1</span><div><strong>Trae</strong><span>Pega, elige o comparte la imagen desde otra app.</span></div></li>
+      <li><span class="n">2</span><div><strong>Recorta</strong><span>Encuadra el sticker y quítale el fondo.</span></div></li>
+      <li><span class="n">3</span><div><strong>Pasa</strong><span>Agrégalo a WhatsApp, Telegram, Discord o Instagram.</span></div></li>
+    </ol>
+  </section>
+</div>
+
+<div class="editor" id="editor" role="dialog" aria-modal="true" aria-label="Recortar sticker" hidden>
+  <div class="ed-bar">
+    <button class="btn ghost sm" id="edCancel">Cancelar</button>
+    <strong>Recorta tu sticker</strong>
+    <button class="btn primary sm" id="edSave">Guardar</button>
+  </div>
+  <div class="stage checker"><canvas id="view" width="512" height="512" aria-label="Vista previa: arrastra para mover y pellizca para acercar"></canvas></div>
+  <div class="ed-controls">
+    <label class="slider"><span>Zoom</span><input type="range" id="zoom" min="0" max="1000" value="0"></label>
+    <div class="seg" id="shapeSeg" role="group" aria-label="Forma">
+      <button data-shape="square" class="on" aria-pressed="true">Cuadrado</button>
+      <button data-shape="round" aria-pressed="false">Redondeado</button>
+      <button data-shape="circle" aria-pressed="false">Círculo</button>
+    </div>
+    <div class="row2">
+      <div class="seg" id="modeSeg" role="group" aria-label="Herramienta">
+        <button data-mode="move" class="on" aria-pressed="true">Mover</button>
+        <button data-mode="erase" aria-pressed="false">Quitar fondo</button>
+      </div>
+      <label class="switch"><input type="checkbox" id="border"><i></i><span>Borde</span></label>
+    </div>
+    <div class="erase-panel" id="erasePanel" hidden>
+      <p>Toca el color de fondo que quieres borrar. Puedes tocar varias zonas.</p>
+      <div class="line">
+        <label class="slider"><span>Tolerancia</span><input type="range" id="tol" min="8" max="110" value="36"></label>
+        <button class="btn sm" id="undoBtn" disabled>Deshacer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="backdrop" id="backdrop" hidden></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" tabindex="-1" hidden>
+  <div class="grab"></div>
+  <div id="sheetBody"></div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<noscript><p style="padding:20px">PasaStickers necesita JavaScript para funcionar.</p></noscript>
+
+<script>
+(() => {
+'use strict';
+
+/* ───────── Utilidades ───────── */
+const $ = (s, r = document) => r.querySelector(s);
+const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+const canvasBlob = (c, type, q) => new Promise(res => c.toBlob(res, type, q));
+const toBuffer = (blob) => new Response(blob).arrayBuffer();
+
+const UA = navigator.userAgent;
+const isIOS = /iPhone|iPad|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isAndroid = /Android/i.test(UA);
+const isStandalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 4200);
+}
+
+/* ───────── Guardado (IndexedDB) ───────── */
+const Store = (() => {
+  let dbp = null;
+  const open = () => dbp || (dbp = new Promise((res, rej) => {
+    const rq = indexedDB.open('pasastickers', 1);
+    rq.onupgradeneeded = () => rq.result.createObjectStore('stickers', { keyPath: 'id' });
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror = () => rej(rq.error);
+  }));
+  const run = async (mode, fn) => {
+    const db = await open();
+    return new Promise((res, rej) => {
+      const tx = db.transaction('stickers', mode);
+      const rq = fn(tx.objectStore('stickers'));
+      tx.oncomplete = () => res(rq.result);
+      tx.onerror = tx.onabort = () => rej(tx.error);
+    });
+  };
+  const safe = (p, fallback) => p.catch(() => fallback);
+  return {
+    all: () => safe(run('readonly', s => s.getAll()), []),
+    put: (v) => safe(run('readwrite', s => s.put(v)).then(() => true), false),
+    del: (id) => safe(run('readwrite', s => s.delete(id)).then(() => true), false),
+  };
+})();
+
+let stickers = [];
+const urls = new Map();
+function urlFor(st) {
+  let u = urls.get(st.id);
+  if (!u) { u = URL.createObjectURL(new Blob([st.png], { type: 'image/png' })); urls.set(st.id, u); }
+  return u;
+}
+
+function renderGrid() {
+  const grid = $('#grid');
+  grid.textContent = '';
+  for (const st of stickers) {
+    const b = document.createElement('button');
+    b.className = 'st';
+    b.setAttribute('aria-label', 'Abrir sticker');
+    const im = new Image();
+    im.alt = '';
+    im.draggable = false;
+    im.src = urlFor(st);
+    b.appendChild(im);
+    b.addEventListener('click', () => openDetail(st));
+    grid.appendChild(b);
+  }
+  $('#empty').hidden = stickers.length > 0;
+  $('#count').textContent = stickers.length ? String(stickers.length) : '';
+}
+
+/* ───────── Capas (editor / hoja) y botón «atrás» ─────────
+   Mientras haya algo abierto existe una sola entrada extra en el historial,
+   así el gesto «atrás» de Android cierra la capa en vez de salir de la app. */
+const editorEl = $('#editor'), sheetEl = $('#sheet'), backdropEl = $('#backdrop');
+let hasEntry = false, backPending = false;
+const anyOpen = () => !editorEl.hidden || !sheetEl.hidden;
+function layersChanged() {
+  const open = anyOpen();
+  document.body.classList.toggle('locked', open);
+  if (open && !hasEntry) {
+    hasEntry = true;
+    if (!backPending) history.pushState({ pasa: 1 }, '');
+  } else if (!open && hasEntry) {
+    hasEntry = false;
+    backPending = true;
+    history.back();
+  }
+}
+addEventListener('popstate', () => {
+  if (backPending) {
+    backPending = false;
+    if (hasEntry) history.pushState({ pasa: 1 }, ''); // se abrió otra capa mientras volvíamos
+    return;
+  }
+  if (hasEntry) {
+    hasEntry = false;
+    pending.length = 0;
+    hideEditor();
+    hideSheet();
+    document.body.classList.remove('locked');
+  }
+});
+
+/* ───────── Traer una imagen ───────── */
+const MAX_PIXELS = 4e6;   // suficiente para una captura de pantalla completa
+const pending = [];       // imágenes en cola cuando llegan varias a la vez
+
+async function decode(blob) {
+  if ('createImageBitmap' in window) {
+    try { return await createImageBitmap(blob); } catch (e) { /* probamos con <img> */ }
+  }
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(blob);
+    const im = new Image();
+    im.onload = () => { URL.revokeObjectURL(url); res(im); };
+    im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('decode')); };
+    im.src = url;
+  });
+}
+
+async function importBlob(blob) {
+  let bmp;
+  try { bmp = await decode(blob); }
+  catch (e) {
+    toast('No pude abrir esa imagen. Prueba con una captura de pantalla.');
+    if (pending.length) importBlob(pending.shift());
+    return;
+  }
+  const w = bmp.naturalWidth || bmp.width, h = bmp.naturalHeight || bmp.height;
+  if (!w || !h) { toast('Esa imagen está vacía.'); return; }
+  const k = Math.min(1, Math.sqrt(MAX_PIXELS / (w * h)));
+  const c = mk(Math.max(1, Math.round(w * k)), Math.max(1, Math.round(h * k)));
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(bmp, 0, 0, c.width, c.height);
+  if (bmp.close) bmp.close();
+  openEditor(c, g);
+}
+
+function importFiles(list) {
+  const imgs = [...list].filter(f => (f.type || '').startsWith('image/') || /\.(png|jpe?g|webp|gif|heic|avif)$/i.test(f.name || ''));
+  if (!imgs.length) { toast('Eso no es una imagen.'); return; }
+  pending.push(...imgs.slice(1));
+  importBlob(imgs[0]);
+}
+
+async function pasteFromClipboard() {
+  try {
+    const items = await navigator.clipboard.read();
+    for (const it of items) {
+      const type = it.types.find(t => t.startsWith('image/'));
+      if (type) { importBlob(await it.getType(type)); return; }
+    }
+    toast('No hay ninguna imagen copiada. En la otra app mantén pulsada la imagen y elige «Copiar».');
+  } catch (e) {
+    toast('No pude leer el portapapeles. Usa «Elegir foto».');
+  }
+}
+
+/* ───────── Editor ───────── */
+const S = 512;            // tamaño de trabajo del sticker
+const BORDER = 12;        // grosor del borde blanco
+const view = $('#view'), vg = view.getContext('2d');
+const layerA = mk(S, S), ga = layerA.getContext('2d');
+const layerB = mk(S, S), gb = layerB.getContext('2d');
+const E = { src: null, sctx: null, scale: 1, x: 0, y: 0, min: 1, max: 1, shape: 'square', border: false, mode: 'move', tol: 36, undo: [], maxUndo: 3 };
+
+function shapePath(g, x, y, s, shape) {
+  g.beginPath();
+  if (shape === 'circle') { g.arc(x + s / 2, y + s / 2, s / 2, 0, Math.PI * 2); return; }
+  if (shape === 'round') {
+    const r = s * 0.2;
+    g.moveTo(x + r, y);
+    g.arcTo(x + s, y, x + s, y + s, r);
+    g.arcTo(x + s, y + s, x, y + s, r);
+    g.arcTo(x, y + s, x, y, r);
+    g.arcTo(x, y, x + s, y, r);
+    g.closePath();
+    return;
+  }
+  g.rect(x, y, s, s);
+}
+
+/* Con borde, el contenido se encoge un poco para que el borde no se corte. */
+const insetOf = () => (E.border ? BORDER + 2 : 0);
+
+function compose(out) {
+  const inset = insetOf(), inner = S - inset * 2, f = inner / S;
+  ga.clearRect(0, 0, S, S);
+  ga.save();
+  shapePath(ga, inset, inset, inner, E.shape);
+  ga.clip();
+  ga.translate(S / 2 + E.x * f, S / 2 + E.y * f);
+  ga.scale(E.scale * f, E.scale * f);
+  ga.imageSmoothingEnabled = true;
+  ga.imageSmoothingQuality = 'high';
+  ga.drawImage(E.src, -E.src.width / 2, -E.src.height / 2);
+  ga.restore();
+
+  out.clearRect(0, 0, S, S);
+  if (E.border) {
+    gb.globalCompositeOperation = 'source-over';
+    gb.clearRect(0, 0, S, S);
+    gb.drawImage(layerA, 0, 0);
+    gb.globalCompositeOperation = 'source-in';
+    gb.fillStyle = '#fff';
+    gb.fillRect(0, 0, S, S);
+    gb.globalCompositeOperation = 'source-over';
+    for (let i = 0; i < 24; i++) {
+      const a = i * Math.PI / 12;
+      out.drawImage(layerB, Math.cos(a) * BORDER, Math.sin(a) * BORDER);
+    }
+  }
+  out.drawImage(layerA, 0, 0);
+}
+
+let raf = 0;
+function draw() {
+  if (raf) return;
+  raf = requestAnimationFrame(() => { raf = 0; if (E.src) compose(vg); });
+}
+
+const zoomEl = $('#zoom');
+const scaleFromSlider = (v) => E.min * Math.pow(E.max / E.min, v / 1000);
+const sliderFromScale = (s) => Math.round(1000 * Math.log(s / E.min) / Math.log(E.max / E.min));
+
+function clampPan() {
+  const mx = E.src.width * E.scale / 2 + S / 2 - 48, my = E.src.height * E.scale / 2 + S / 2 - 48;
+  E.x = Math.max(-mx, Math.min(mx, E.x));
+  E.y = Math.max(-my, Math.min(my, E.y));
+}
+
+/* Acerca o aleja manteniendo fijo el punto (px, py), medido desde el centro. */
+function zoomTo(scale, px = 0, py = 0) {
+  const s = Math.max(E.min, Math.min(E.max, scale));
+  const k = s / E.scale;
+  E.x = px - (px - E.x) * k;
+  E.y = py - (py - E.y) * k;
+  E.scale = s;
+  clampPan();
+  zoomEl.value = sliderFromScale(s);
+  draw();
+}
+
+function setSeg(id, attr, value) {
+  for (const b of $(id).children) {
+    const on = b.dataset[attr] === value;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+}
+
+function setMode(mode) {
+  E.mode = mode;
+  setSeg('#modeSeg', 'mode', mode);
+  $('#erasePanel').hidden = mode !== 'erase';
+  view.classList.toggle('erase', mode === 'erase');
+}
+
+function openEditor(src, sctx) {
+  E.src = src; E.sctx = sctx;
+  const contain = S / Math.max(src.width, src.height), cover = S / Math.min(src.width, src.height);
+  E.min = contain * 0.5; E.max = cover * 16;
+  E.scale = contain; E.x = 0; E.y = 0;
+  E.shape = 'square'; E.border = false; E.undo = [];
+  E.maxUndo = Math.max(1, Math.min(8, Math.floor(48e6 / (src.width * src.height * 4))));
+  setSeg('#shapeSeg', 'shape', 'square');
+  $('#border').checked = false;
+  $('#undoBtn').disabled = true;
+  setMode('move');
+  zoomEl.value = sliderFromScale(E.scale);
+  hideSheet();
+  editorEl.hidden = false;
+  editorEl.scrollTop = 0;
+  layersChanged();
+  draw();
+}
+
+function hideEditor() {
+  editorEl.hidden = true;
+  E.src = null; E.sctx = null; E.undo = [];
+}
+
+function cancelEditor() {
+  pending.length = 0;
+  hideEditor();
+  layersChanged();
+}
+
+/* Gestos: un dedo mueve, dos dedos acercan; en «Quitar fondo» un toque borra. */
+const pts = new Map();
+let tap = null;
+const viewRatio = () => S / view.getBoundingClientRect().width;
+
+view.addEventListener('pointerdown', (e) => {
+  try { view.setPointerCapture(e.pointerId); } catch (err) { /* sin captura también funciona */ }
+  pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  tap = pts.size === 1 ? { x: e.clientX, y: e.clientY, t: performance.now() } : null;
+});
+view.addEventListener('pointermove', (e) => {
+  const prev = pts.get(e.pointerId);
+  if (!prev || !E.src) return;
+  const cur = { x: e.clientX, y: e.clientY };
+  const r = viewRatio();
+  if (tap && (E.mode !== 'erase' || Math.hypot(cur.x - tap.x, cur.y - tap.y) > 9)) tap = null;
+  if (pts.size === 1) {
+    if (!tap) { E.x += (cur.x - prev.x) * r; E.y += (cur.y - prev.y) * r; clampPan(); draw(); }
+  } else if (pts.size === 2) {
+    let other;
+    for (const [id, p] of pts) if (id !== e.pointerId) other = p;
+    const before = Math.hypot(prev.x - other.x, prev.y - other.y);
+    const after = Math.hypot(cur.x - other.x, cur.y - other.y);
+    const box = view.getBoundingClientRect();
+    const mx = ((cur.x + other.x) / 2 - box.left) * r - S / 2;
+    const my = ((cur.y + other.y) / 2 - box.top) * r - S / 2;
+    E.x += (cur.x - prev.x) * r / 2;
+    E.y += (cur.y - prev.y) * r / 2;
+    if (before > 0) zoomTo(E.scale * after / before, mx, my);
+  }
+  pts.set(e.pointerId, cur);
+});
+function pointerEnd(e) {
+  if (!pts.has(e.pointerId)) return;
+  pts.delete(e.pointerId);
+  if (e.type === 'pointerup' && tap && E.mode === 'erase' && performance.now() - tap.t < 600) eraseAt(e.clientX, e.clientY);
+  tap = null;
+}
+view.addEventListener('pointerup', pointerEnd);
+view.addEventListener('pointercancel', pointerEnd);
+view.addEventListener('wheel', (e) => {
+  if (!E.src) return;
+  e.preventDefault();
+  const box = view.getBoundingClientRect(), r = viewRatio();
+  zoomTo(E.scale * Math.exp(-e.deltaY * 0.0015), (e.clientX - box.left) * r - S / 2, (e.clientY - box.top) * r - S / 2);
+}, { passive: false });
+
+zoomEl.addEventListener('input', () => { if (E.src) zoomTo(scaleFromSlider(+zoomEl.value)); });
+$('#shapeSeg').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-shape]');
+  if (!b) return;
+  E.shape = b.dataset.shape;
+  setSeg('#shapeSeg', 'shape', E.shape);
+  draw();
+});
+$('#modeSeg').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-mode]');
+  if (b) setMode(b.dataset.mode);
+});
+$('#border').addEventListener('change', (e) => { E.border = e.target.checked; draw(); });
+$('#tol').addEventListener('input', (e) => { E.tol = +e.target.value; });
+$('#edCancel').addEventListener('click', cancelEditor);
+
+/* Quitar fondo: borra la zona de color parecido conectada al punto tocado. */
+function floodErase(img, x, y, tol) {
+  const w = img.width, h = img.height, d = img.data;
+  const s = (y * w + x) * 4, r0 = d[s], g0 = d[s + 1], b0 = d[s + 2];
+  const t2 = tol * tol, soft = t2 * 4;
+  const seen = new Uint8Array(w * h), stack = new Int32Array(w * h);
+  let sp = 0, n = 0;
+  stack[sp++] = y * w + x; seen[y * w + x] = 1;
+  while (sp) {
+    const p = stack[--sp], i = p * 4;
+    if (d[i + 3] === 0) continue;
+    const dr = d[i] - r0, dg = d[i + 1] - g0, db = d[i + 2] - b0, dist = dr * dr + dg * dg + db * db;
+    if (dist > t2) {
+      /* Píxel del borde: si aún se parece al fondo, se suaviza para no dejar halo. */
+      if (dist < soft) d[i + 3] = Math.round(d[i + 3] * (0.25 + 0.75 * (dist - t2) / (soft - t2)));
+      continue;
+    }
+    d[i + 3] = 0; n++;
+    const px = p % w;
+    if (px > 0 && !seen[p - 1]) { seen[p - 1] = 1; stack[sp++] = p - 1; }
+    if (px < w - 1 && !seen[p + 1]) { seen[p + 1] = 1; stack[sp++] = p + 1; }
+    if (p >= w && !seen[p - w]) { seen[p - w] = 1; stack[sp++] = p - w; }
+    if (p < w * (h - 1) && !seen[p + w]) { seen[p + w] = 1; stack[sp++] = p + w; }
+  }
+  return n;
+}
+
+function eraseAt(clientX, clientY) {
+  const box = view.getBoundingClientRect();
+  const px = (clientX - box.left) * S / box.width, py = (clientY - box.top) * S / box.height;
+  const f = (S - insetOf() * 2) / S, w = E.src.width, h = E.src.height;
+  const sx = Math.floor(((px - S / 2) / f - E.x) / E.scale + w / 2);
+  const sy = Math.floor(((py - S / 2) / f - E.y) / E.scale + h / 2);
+  if (sx < 0 || sy < 0 || sx >= w || sy >= h) { toast('Toca sobre la imagen.'); return; }
+  const img = E.sctx.getImageData(0, 0, w, h);
+  if (img.data[(sy * w + sx) * 4 + 3] < 8) { toast('Esa zona ya está transparente.'); return; }
+  const before = new Uint8ClampedArray(img.data);
+  floodErase(img, sx, sy, E.tol);
+  E.sctx.putImageData(img, 0, 0);
+  E.undo.push(before);
+  if (E.undo.length > E.maxUndo) E.undo.shift();
+  $('#undoBtn').disabled = false;
+  draw();
+}
+
+$('#undoBtn').addEventListener('click', () => {
+  const data = E.undo.pop();
+  if (!data) return;
+  E.sctx.putImageData(new ImageData(data, E.src.width, E.src.height), 0, 0);
+  $('#undoBtn').disabled = E.undo.length === 0;
+  draw();
+});
+
+$('#edSave').addEventListener('click', async () => {
+  if (!E.src) return;
+  const c = mk(S, S), g = c.getContext('2d');
+  compose(g);
+  const d = g.getImageData(0, 0, S, S).data;
+  let visible = false;
+  for (let i = 3; i < d.length; i += 16) if (d[i] > 8) { visible = true; break; }
+  if (!visible) { toast('El sticker quedó vacío. Mueve la imagen dentro del cuadro.'); return; }
+  const png = await toBuffer(await canvasBlob(c, 'image/png'));
+  const st = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: Date.now(), png };
+  const saved = await Store.put(st);
+  stickers.unshift(st);
+  renderGrid();
+  if (pending.length) {
+    toast('Guardado. Vamos con la siguiente imagen.');
+    importBlob(pending.shift());
+  } else {
+    openDetail(st);     // la hoja se abre antes de cerrar el editor: una sola entrada de historial
+    hideEditor();
+    if (!saved) toast('No pude guardarlo en este teléfono (¿modo privado?). Úsalo ahora, antes de cerrar.');
+  }
+});
+
+/* ───────── Exportar a cada plataforma ───────── */
+const ICON = {
+  whatsapp: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 3a9 9 0 0 0-7.7 13.7L3 21l4.5-1.2A9 9 0 1 0 12 3z"/><path fill="#25d366" d="M9.3 7.6c-.5 0-1.3.6-1.3 1.9 0 2.4 3.3 5.900 6.200 6.300 1 .1 2-.7 2.200-1.500.1-.4-.1-.6-.4-.8l-1.500-.8c-.3-.1-.6-.1-.8.2l-.5.7c-.2.2-.4.2-.7.1-1-.5-2-1.500-2.500-2.500-.1-.3 0-.5.2-.7l.5-.6c.2-.2.2-.5.1-.8l-.7-1.600c-.2-.3-.4-.4-.8-.4z"/></svg>',
+  telegram: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M20.700 4.300 3.600 11c-.800.3-.800 1.400.1 1.600l4.300 1.300 1.700 5c.2.700 1.100.9 1.600.3l2.300-2.500 4.200 3.100c.6.4 1.400.1 1.500-.6l2.700-13.700c.2-.8-.6-1.500-1.300-1.200zM9.700 14.400l7.400-6-5.900 6.900-.3 2.900z"/></svg>',
+  discord: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M8.400 5.500C6.800 5.800 5.500 6.300 4.500 7 2.900 9.700 2.300 13 2.600 16.700c1.500 1.200 3.200 1.900 4.900 2.300l1-1.800c-.6-.2-1.200-.5-1.700-.9l.4-.3c3.100 1.400 6.500 1.400 9.600 0l.4.3c-.5.4-1.100.7-1.700.9l1 1.800c1.700-.4 3.400-1.100 4.900-2.300.4-4.200-.5-7.300-1.900-9.700-1-.7-2.300-1.200-3.900-1.500l-.6 1.300a13 13 0 0 0-6 0zM9 14.600c-.9 0-1.600-.8-1.600-1.800S8.100 11 9 11s1.600.8 1.600 1.800S9.900 14.600 9 14.600zm6 0c-.9 0-1.600-.8-1.600-1.800S14.100 11 15 11s1.600.8 1.600 1.800-.7 1.800-1.600 1.800z"/></svg>',
+  instagram: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#fff" stroke-width="2"><rect x="3.500" y="3.500" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.200" cy="6.800" r="1.100" fill="#fff" stroke="none"/></svg>',
+  other: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4"/><path d="m7.500 8 4.500-4.500L16.500 8"/><path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>',
+};
+
+const PLATFORMS = {
+  whatsapp: {
+    name: 'WhatsApp', fmt: 'webp', size: 512, max: 100 * 1024,
+    actions: [{ act: 'share', label: 'Enviar a WhatsApp', primary: true }, { act: 'download', label: 'Guardar imagen' }],
+    steps: [
+      'Toca «Enviar a WhatsApp» y elige WhatsApp en el menú.',
+      'Mándalo a un chat. Sirve tu propio chat («Tú»): así nadie más lo ve.',
+      'Toca el sticker dentro del chat y elige «Añadir a favoritos». Queda guardado en tus stickers.',
+    ],
+    note: '¿Llegó como foto y no como sticker? Toca «Guardar imagen» y, en WhatsApp, abre Stickers → Crear y elige esa imagen.',
+  },
+  telegram: {
+    name: 'Telegram', fmt: 'webp', size: 512, max: 512 * 1024,
+    actions: [{ act: 'share', label: 'Enviar a Telegram', primary: true }, { act: 'download', label: 'Guardar archivo' }, { act: 'link', label: 'Abrir @Stickers', href: 'https://t.me/Stickers' }],
+    steps: [
+      'Toca «Enviar a Telegram» y elige Telegram en el menú.',
+      'Mándalo a «Mensajes guardados». Telegram muestra los archivos WebP como sticker.',
+      'Mantén pulsado el sticker y añádelo a tus favoritos.',
+    ],
+    note: 'Para armar un paquete completo: toca «Guardar archivo», abre el bot oficial @Stickers, escribe /newpack y envíale ese archivo.',
+  },
+  discord: {
+    name: 'Discord', fmt: 'png', size: 320, max: 512 * 1024,
+    actions: [{ act: 'download', label: 'Guardar imagen', primary: true }, { act: 'share', label: 'Enviar a un chat' }],
+    steps: [
+      'Toca «Guardar imagen».',
+      'En Discord entra a tu servidor → Ajustes del servidor → Stickers → Subir sticker.',
+      'Elige la imagen guardada y ponle nombre y un emoji relacionado.',
+    ],
+    note: 'Para subir stickers a un servidor necesitas permiso para gestionar expresiones. Si no lo tienes, usa «Enviar a un chat» y mándalo como imagen.',
+  },
+  instagram: {
+    name: 'Instagram', fmt: 'png', size: 512, max: Infinity,
+    actions: [{ act: 'copy', label: 'Copiar sticker', primary: true }, { act: 'download', label: 'Guardar imagen' }],
+    steps: [
+      'Toca «Copiar sticker».',
+      'En Instagram crea una historia y elige tu foto o video de fondo.',
+      'Toca «Aa», mantén pulsado el cuadro de texto y elige «Pegar». El sticker aparece encima y lo puedes mover.',
+    ],
+    note: 'Otra forma: toca «Guardar imagen» y, en la historia, abre Stickers → Foto para elegirla de tu galería.',
+  },
+  other: {
+    name: 'otras apps', short: 'Otras', fmt: 'png', size: 512, max: Infinity,
+    actions: [{ act: 'share', label: 'Compartir…', primary: true }, { act: 'copy', label: 'Copiar' }, { act: 'download', label: 'Guardar imagen' }],
+    steps: [
+      '«Compartir…» abre el menú del teléfono: elige Messenger, Signal, X, correo o la app que quieras.',
+      'También puedes copiarlo y pegarlo, o guardarlo en tu galería.',
+    ],
+  },
+};
+
+/* WebP: primero el codificador del navegador; si no sabe (Safari), el de WebAssembly. */
+const QUALITIES = [92, 84, 75, 65, 52, 40, 28, 16];
+const WEBP_OPTS = {
+  quality: 75, target_size: 0, target_PSNR: 0, method: 4, sns_strength: 50, filter_strength: 60, filter_sharpness: 0,
+  filter_type: 1, partitions: 0, segments: 4, pass: 1, show_compressed: 0, preprocessing: 0, autofilter: 0,
+  partition_limit: 0, alpha_compression: 1, alpha_filtering: 1, alpha_quality: 100, lossless: 0, exact: 0, image_hint: 0,
+  emulate_jpeg_size: 0, thread_level: 0, low_memory: 0, near_lossless: 100, use_delta_palette: 0, use_sharp_yuv: 0,
+};
+let nativeWebp = null, wasmModule = null;
+const loadWasm = () => wasmModule || (wasmModule = import('./vendor/webp_enc.js').then(m => m.default()).catch((e) => { wasmModule = null; throw e; }));
+
+async function encodeWebp(canvas, max) {
+  let best = null;
+  if (nativeWebp !== false) {
+    for (const q of QUALITIES) {
+      const b = await canvasBlob(canvas, 'image/webp', q / 100);
+      if (!b || b.type !== 'image/webp') { nativeWebp = false; break; }
+      nativeWebp = true; best = b;
+      if (b.size <= max) return b;
+    }
+    if (best) return best;
+  }
+  try {
+    const mod = await loadWasm();
+    const id = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+    for (const q of QUALITIES) {
+      const out = mod.encode(id.data, id.width, id.height, { ...WEBP_OPTS, quality: q });
+      if (!out) throw new Error('webp');
+      best = new Blob([out], { type: 'image/webp' });
+      if (best.size <= max) return best;
+    }
+    return best;
+  } catch (e) {
+    return canvasBlob(canvas, 'image/png');   // último recurso: PNG
+  }
+}
+
+async function buildFile(st, p) {
+  const img = await decode(new Blob([st.png], { type: 'image/png' }));
+  const c = mk(p.size, p.size), g = c.getContext('2d');
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(img, 0, 0, p.size, p.size);
+  if (img.close) img.close();
+  const blob = p.fmt === 'webp' ? await encodeWebp(c, p.max) : await canvasBlob(c, 'image/png');
+  const ext = blob.type === 'image/webp' ? 'webp' : 'png';
+  return new File([blob], 'sticker-' + st.id + '.' + ext, { type: blob.type });
+}
+
+function download(file) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(file);
+  a.download = file.name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+const canShare = (file) => !!(navigator.share && navigator.canShare && navigator.canShare({ files: [file] }));
+
+/* ───────── Hoja inferior ───────── */
+const body = $('#sheetBody');
+let cur = null, ready = null, prepToken = 0;
+
+function showSheet(html, label) {
+  ready = null; prepToken++;
+  body.innerHTML = html;
+  sheetEl.setAttribute('aria-label', label);
+  sheetEl.hidden = false;
+  backdropEl.hidden = false;
+  sheetEl.scrollTop = 0;
+  layersChanged();
+  sheetEl.focus({ preventScroll: true });
+}
+function hideSheet() {
+  sheetEl.hidden = true;
+  backdropEl.hidden = true;
+  body.textContent = '';
+  cur = null; ready = null; prepToken++;
+}
+function closeSheet() { hideSheet(); layersChanged(); }
+
+const closeBtn = '<button class="round-btn" data-act="close" aria-label="Cerrar">✕</button>';
+
+function openDetail(st) {
+  const plats = Object.keys(PLATFORMS).map(k =>
+    '<button class="plat" data-plat="' + k + '"><span class="pico ' + k + '">' + ICON[k] + '</span><span>' + (PLATFORMS[k].short || PLATFORMS[k].name) + '</span></button>'
+  ).join('');
+  showSheet(
+    '<div class="sh-head"><h2>Tu sticker</h2>' + closeBtn + '</div>' +
+    '<div class="preview checker"><img src="' + urlFor(st) + '" alt="Vista previa del sticker"></div>' +
+    '<h3>Agregar a…</h3><div class="plats">' + plats + '</div>' +
+    '<div class="center"><button class="btn ghost danger sm" data-act="delete">Eliminar sticker</button></div>',
+    'Tu sticker');
+  cur = st;
+}
+
+async function openPlatform(key) {
+  const p = PLATFORMS[key], st = cur;
+  if (!st) return;
+  const btn = (a) => a.act === 'link'
+    ? '<a class="btn" href="' + a.href + '" target="_blank" rel="noopener">' + a.label + '</a>'
+    : '<button class="btn' + (a.primary ? ' primary' : '') + '" data-do="' + a.act + '" disabled>' + a.label + '</button>';
+  const [first, ...rest] = p.actions;
+  showSheet(
+    '<div class="sh-head"><button class="round-btn" data-act="back" aria-label="Volver">←</button><h2>Agregar a ' + p.name + '</h2>' + closeBtn + '</div>' +
+    '<div class="ready"><div class="mini checker"><img src="' + urlFor(st) + '" alt=""></div><div><strong id="spec">Preparando…</strong><span class="muted" id="specNote"></span></div></div>' +
+    '<div class="acts">' + btn(first) + (rest.length ? '<div class="pair">' + rest.map(btn).join('') + '</div>' : '') + '</div>' +
+    '<ol class="steps">' + p.steps.map(s => '<li>' + s + '</li>').join('') + '</ol>' +
+    (p.note ? '<p class="note">' + p.note + '</p>' : ''),
+    'Agregar a ' + p.name);
+  cur = st;
+  const token = ++prepToken;
+  let file;
+  try { file = await buildFile(st, p); }
+  catch (e) { if (token === prepToken) $('#spec').textContent = 'No pude preparar el archivo.'; return; }
+  if (token !== prepToken) return;
+  ready = file;
+
+  const isWebp = file.type === 'image/webp';
+  $('#spec').textContent = (isWebp ? 'WebP' : 'PNG') + ' · ' + p.size + ' × ' + p.size + ' px · ' + Math.max(1, Math.round(file.size / 1024)) + ' KB';
+  const note = $('#specNote');
+  if (p.fmt === 'webp' && !isWebp) { note.textContent = 'Este navegador no pudo crear WebP; va como PNG.'; note.className = 'bad'; }
+  else if (file.size > p.max) { note.textContent = 'Pesa más de lo que acepta ' + p.name + '.'; note.className = 'bad'; }
+  else note.textContent = 'Listo, en el formato de ' + (key === 'other' ? 'sticker' : p.name) + '.';
+
+  const shareOk = canShare(file), copyOk = !!(navigator.clipboard && navigator.clipboard.write && window.ClipboardItem);
+  for (const b of body.querySelectorAll('[data-do]')) {
+    b.disabled = false;
+    if (b.dataset.do === 'share' && !shareOk) b.hidden = true;
+    if (b.dataset.do === 'copy' && !copyOk) b.hidden = true;
+  }
+  /* Si la acción principal no existe en este navegador, «Guardar» pasa a ser la principal. */
+  const visible = [...body.querySelectorAll('[data-do]')].filter(b => !b.hidden);
+  if (visible.length && !visible.some(b => b.classList.contains('primary'))) {
+    const dl = visible.find(b => b.dataset.do === 'download') || visible[0];
+    dl.classList.add('primary');
+    $('.acts').prepend(dl);
+    note.textContent = 'Este navegador no puede ' + (first.act === 'copy' ? 'copiar imágenes' : 'compartir archivos') + ': guárdalo y envíalo desde la app.';
+  }
+}
+
+function doAction(act) {
+  const file = ready;
+  if (!file) return;
+  if (act === 'download') { download(file); toast('Guardado en tus descargas.'); return; }
+  if (act === 'share') {
+    navigator.share({ files: [file] }).catch((err) => {
+      if (err && err.name === 'AbortError') return;
+      download(file);
+      toast('No se abrió «Compartir», así que lo guardé en tus descargas.');
+    });
+    return;
+  }
+  if (act === 'copy') {
+    navigator.clipboard.write([new ClipboardItem({ 'image/png': file })])
+      .then(() => toast('Copiado. Ahora pégalo donde quieras.'))
+      .catch(() => { download(file); toast('No pude copiarlo, así que lo guardé en tus descargas.'); });
+  }
+}
+
+body.addEventListener('click', async (e) => {
+  const t = e.target.closest('[data-act],[data-plat],[data-do]');
+  if (!t) return;
+  if (t.dataset.plat) { openPlatform(t.dataset.plat); return; }
+  if (t.dataset.do) { doAction(t.dataset.do); return; }
+  const act = t.dataset.act;
+  if (act === 'close') closeSheet();
+  else if (act === 'back') { if (cur) openDetail(cur); }
+  else if (act === 'pick') { closeSheet(); $('#fileIn').click(); }
+  else if (act === 'delete') {
+    if (!t.dataset.armed) { t.dataset.armed = '1'; t.textContent = 'Toca otra vez para eliminar'; return; }
+    const st = cur;
+    stickers = stickers.filter(s => s.id !== st.id);
+    const u = urls.get(st.id);
+    if (u) { URL.revokeObjectURL(u); urls.delete(st.id); }
+    closeSheet();
+    renderGrid();
+    await Store.del(st.id);
+    toast('Sticker eliminado.');
+  }
+});
+backdropEl.addEventListener('click', closeSheet);
+addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (!sheetEl.hidden) closeSheet();
+  else if (!editorEl.hidden) cancelEditor();
+});
+
+function openHelp() {
+  showSheet(
+    '<div class="sh-head"><h2>Cómo funciona</h2>' + closeBtn + '</div><div class="help">' +
+    '<p>PasaStickers convierte cualquier imagen en un sticker y la deja en el formato exacto de cada app.</p>' +
+    '<h3>Desde Discord, Telegram, X, la galería…</h3>' +
+    '<p><strong>Android:</strong> instala PasaStickers (menú ⋮ del navegador → «Instalar app»). Después, en la otra app, mantén pulsada la imagen → Compartir → PasaStickers.</p>' +
+    '<p><strong>iPhone:</strong> mantén pulsada la imagen → Copiar. Vuelve aquí y toca «Pegar imagen».</p>' +
+    '<h3>Reels, historias y publicaciones de Instagram</h3>' +
+    '<p>Instagram no deja sacar la imagen: solo comparte el enlace. Haz una captura de pantalla donde se vea el sticker, elígela aquí y recórtala con dos dedos.</p>' +
+    '<h3>Quitar el fondo</h3>' +
+    '<p>En el editor toca «Quitar fondo» y luego toca el color que sobra. Sube la tolerancia si quedan restos; bájala si se borra de más.</p>' +
+    '<h3>Tus stickers</h3>' +
+    '<p>Se guardan solo en este teléfono. Nada se sube a internet. Los stickers animados se guardan como imagen fija.</p>' +
+    '</div>',
+    'Cómo funciona');
+}
+
+function openLinkNotice() {
+  showSheet(
+    '<div class="sh-head"><h2>Solo llegó un enlace</h2>' + closeBtn + '</div><div class="help">' +
+    '<p>Esa app compartió el enlace de la publicación, no la imagen. Instagram hace esto con reels, historias y publicaciones.</p>' +
+    '<p>Haz una captura de pantalla donde se vea el sticker y elígela aquí. Luego la recortas con dos dedos.</p>' +
+    '</div><div class="acts" style="margin-top:16px"><button class="btn primary" data-act="pick">Elegir captura</button></div>',
+    'Solo llegó un enlace');
+}
+
+/* ───────── Lo que llega por «Compartir» (Android) ───────── */
+async function checkInbox() {
+  if (!new URLSearchParams(location.search).has('recibido')) return;
+  history.replaceState(null, '', location.pathname);
+  try {
+    const inbox = await caches.open('pasa-inbox');
+    const metaRes = await inbox.match('inbox/meta');
+    if (!metaRes) return;
+    const meta = await metaRes.json();
+    const blobs = [];
+    for (let i = 0; i < meta.files; i++) {
+      const r = await inbox.match('inbox/file-' + i);
+      if (r) blobs.push(await r.blob());
+    }
+    for (const k of await inbox.keys()) await inbox.delete(k);
+    if (blobs.length) { pending.push(...blobs.slice(1)); importBlob(blobs[0]); }
+    else openLinkNotice();
+  } catch (e) { /* sin buzón no hay nada que abrir */ }
+}
+
+/* ───────── Arranque ───────── */
+$('#hint').textContent =
+  isIOS ? 'En la otra app mantén pulsada la imagen y elige «Copiar»; luego toca «Pegar imagen». Para reels e historias, usa una captura de pantalla.'
+  : isAndroid && isStandalone ? 'En la otra app mantén pulsada la imagen → Compartir → PasaStickers. Para reels e historias, usa una captura de pantalla.'
+  : isAndroid ? 'Instala la app para que aparezca en el menú «Compartir» de Discord, Telegram y demás. Para reels e historias, usa una captura de pantalla.'
+  : 'Pega una imagen (Ctrl+V), arrástrala aquí o elígela de tus archivos.';
+
+if (!(navigator.clipboard && navigator.clipboard.read)) {
+  $('#pasteBtn').hidden = true;
+  $('#pickBtn').classList.add('primary');
+}
+$('#pasteBtn').addEventListener('click', pasteFromClipboard);
+$('#pickBtn').addEventListener('click', () => $('#fileIn').click());
+$('#fileIn').addEventListener('change', (e) => {
+  const files = [...e.target.files];
+  e.target.value = '';
+  if (files.length) importFiles(files);
+});
+$('#helpBtn').addEventListener('click', openHelp);
+
+addEventListener('paste', (e) => {
+  const files = e.clipboardData && e.clipboardData.files;
+  if (files && files.length) { e.preventDefault(); importFiles(files); }
+});
+addEventListener('dragover', (e) => e.preventDefault());
+addEventListener('drop', (e) => {
+  e.preventDefault();
+  if (e.dataTransfer && e.dataTransfer.files.length) importFiles(e.dataTransfer.files);
+});
+
+let installEvent = null;
+addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  installEvent = e;
+  $('#installBtn').hidden = false;
+});
+$('#installBtn').addEventListener('click', async () => {
+  if (!installEvent) return;
+  installEvent.prompt();
+  await installEvent.userChoice.catch(() => {});
+  installEvent = null;
+  $('#installBtn').hidden = true;
+});
+addEventListener('appinstalled', () => { $('#installBtn').hidden = true; });
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
+(async () => {
+  stickers = (await Store.all()).sort((a, b) => b.t - a.t);
+  renderGrid();
+  checkInbox();
+})();
+
+})();
+</script>
+</body>
+</html>
