@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12131a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f5f1e6" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="PasaStickers">
+<meta name="description" content="Guarda stickers de cualquier app y pásalos a WhatsApp, Telegram, Discord o Instagram.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>PasaStickers</title>
+<style>
+  :root{
+    --bg:#12131a; --surface:#1b1d28; --surface2:#262938; --line:#353a50;
+    --text:#f4f1e8; --muted:#a8a7b8; --accent:#ffd23f; --on-accent:#1a1505;
+    --danger:#ff7b7b; --warn:#ffb454;
+    --check-a:#2b2e3e; --check-b:#20222e;
+    --shadow:0 18px 50px rgba(0,0,0,.5);
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f5f1e6; --surface:#fffdf8; --surface2:#efe8d8; --line:#d9d0ba;
+      --text:#1d1a14; --muted:#676256; --accent:#ffcb1f; --on-accent:#1a1505;
+      --danger:#c23535; --warn:#9a5b00;
+      --check-a:#e6dfcf; --check-b:#f8f4ea;
+      --shadow:0 18px 50px rgba(70,55,20,.22);
+      color-scheme:light;
+    }
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;min-height:100vh;min-height:100dvh;background:var(--bg);color:var(--text);
+    font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    -webkit-tap-highlight-color:transparent;overscroll-behavior-y:contain}
+  body.locked{overflow:hidden}
+  button,input{font:inherit;color:inherit}
+  button{cursor:pointer}
+  h1,h2,h3,p{margin:0}
+  :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+  .vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip-path:inset(50%);pointer-events:none}
+  .grow{flex:1}
+  .muted{color:var(--muted)}
+
+  .wrap{max-width:560px;margin:0 auto;padding:0 16px calc(36px + env(safe-area-inset-bottom))}
+  header.top{display:flex;align-items:center;gap:10px;padding:calc(14px + env(safe-area-inset-top)) 0 14px}
+  .mark{width:34px;height:34px;flex:0 0 auto}
+  h1{font-size:22px;font-weight:800;letter-spacing:-.4px}
+  h1 b{color:var(--accent);font-weight:800}
+  @media (prefers-color-scheme: light){ h1 b{color:#b98600} }
+  h2{font-size:17px;font-weight:800;letter-spacing:-.2px}
+  h3{font-size:13px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+
+  /* Botones */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;
+    border-radius:14px;border:1px solid var(--line);background:var(--surface2);font-weight:700;text-decoration:none;
+    color:var(--text);transition:transform .08s, box-shadow .08s, opacity .15s;user-select:none;-webkit-user-select:none}
+  .btn:active{transform:translateY(2px)}
+  .btn.primary{background:var(--accent);color:var(--on-accent);border-color:transparent;box-shadow:0 3px 0 rgba(0,0,0,.32)}
+  .btn.primary:active{box-shadow:0 1px 0 rgba(0,0,0,.32)}
+  .btn.ghost{background:transparent;border-color:transparent}
+  .btn.danger{color:var(--danger)}
+  .btn.sm{min-height:40px;padding:0 14px;border-radius:12px}
+  .btn:disabled{opacity:.45;cursor:default;transform:none}
+  .round-btn{width:40px;height:40px;flex:0 0 auto;border-radius:50%;border:1px solid var(--line);background:var(--surface2);
+    font-weight:800;display:inline-flex;align-items:center;justify-content:center;font-size:16px;line-height:1}
+
+  /* Traer */
+  .bring{background:var(--surface);border:2px dashed var(--line);border-radius:22px;padding:18px}
+  .hint{color:var(--muted);font-size:14.5px;margin:6px 0 14px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .row .btn{flex:1 1 140px}
+  .row .btn.primary{flex:1 1 100%}
+
+  /* Biblioteca */
+  .lib-head{display:flex;align-items:baseline;gap:8px;margin:26px 2px 12px}
+  .count{color:var(--muted);font-weight:600;font-size:14px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media (min-width:480px){ .grid{grid-template-columns:repeat(4,1fr)} }
+  .st{aspect-ratio:1;border:0;padding:9px;border-radius:20px;background:var(--surface);min-width:0;position:relative}
+  .badge{position:absolute;right:7px;bottom:7px;background:var(--text);color:var(--bg);font-size:10.5px;font-weight:800;
+    letter-spacing:.5px;border-radius:6px;padding:2px 6px}
+  .st img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 3px 0 rgba(0,0,0,.26));
+    transition:transform .14s ease}
+  .st:nth-child(3n+1) img{transform:rotate(-4deg)}
+  .st:nth-child(3n+2) img{transform:rotate(2.5deg)}
+  .st:nth-child(3n) img{transform:rotate(-1.5deg)}
+  .st:active img{transform:scale(.92)}
+  .empty{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+  .empty li{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border-radius:16px;padding:14px}
+  .empty .n{flex:0 0 auto;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--on-accent);
+    font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px}
+  .empty strong{display:block}
+  .empty span{color:var(--muted);font-size:14.5px}
+
+  .checker{background-color:var(--check-b);
+    background-image:linear-gradient(45deg,var(--check-a) 25%,transparent 25%,transparent 75%,var(--check-a) 75%),
+      linear-gradient(45deg,var(--check-a) 25%,transparent 25%,transparent 75%,var(--check-a) 75%);
+    background-size:20px 20px;background-position:0 0,10px 10px}
+
+  /* Editor */
+  .editor{position:fixed;inset:0;z-index:30;background:var(--bg);display:flex;flex-direction:column;align-items:center;
+    padding:calc(8px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));overflow:auto}
+  .ed-bar{width:100%;max-width:560px;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .ed-bar strong{font-size:15px;text-align:center;flex:1;min-width:0}
+  .ed-bar .btn.ghost{padding:0 8px}
+  .stage{width:min(100%,440px);width:min(100%,440px,calc(100dvh - 350px));min-width:220px;aspect-ratio:1;border-radius:22px;overflow:hidden;
+    border:1px solid var(--line);flex:0 0 auto}
+  .stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+  .stage canvas.erase{cursor:crosshair}
+  .ed-controls{width:100%;max-width:440px;display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:14px}
+  .slider{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:700}
+  .slider span{flex:0 0 78px;color:var(--muted)}
+  .slider input{flex:1 1 0;width:0;min-width:0;accent-color:var(--accent);height:28px}
+  .seg{display:flex;background:var(--surface2);border-radius:13px;padding:4px;gap:4px}
+  .seg button{flex:1;min-height:38px;border:0;background:transparent;border-radius:10px;font-weight:700;font-size:14px;
+    color:var(--muted);padding:0 6px}
+  .seg button.on{background:var(--text);color:var(--bg)}
+  .row2{display:flex;gap:12px;align-items:center}
+  .row2 .seg{flex:1;min-width:0}
+  .switch{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:14px;cursor:pointer;user-select:none;-webkit-user-select:none}
+  .switch input{position:absolute;opacity:0;width:1px;height:1px}
+  .switch i{width:44px;height:26px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);position:relative;flex:0 0 auto;transition:background .15s}
+  .switch i::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--muted);transition:transform .15s, background .15s}
+  .switch input:checked + i{background:var(--accent);border-color:transparent}
+  .switch input:checked + i::after{transform:translateX(18px);background:var(--on-accent)}
+  .switch input:focus-visible + i{outline:3px solid var(--accent);outline-offset:2px}
+  .erase-panel{background:var(--surface);border-radius:16px;padding:12px 14px;display:grid;gap:8px}
+  .erase-panel p{font-size:14px;color:var(--muted)}
+  .erase-panel .line{display:flex;gap:12px;align-items:center}
+  .erase-panel .slider{flex:1;min-width:0}
+
+  /* Captura de pantalla: tocar el sticker */
+  .picker{position:fixed;inset:0;z-index:30;background:var(--bg);display:flex;flex-direction:column;align-items:center;
+    padding:calc(8px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom))}
+  .pk-stage{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;border-radius:14px}
+  .pk-stage canvas{display:block;max-width:100%;max-height:100%;border-radius:14px;cursor:pointer}
+  .pk-box{position:absolute;border:3px solid var(--accent);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.5);pointer-events:none}
+  .pk-hint{margin-top:10px;font-size:14.5px;color:var(--muted);text-align:center}
+  .pk-stage video{display:block;max-width:100%;max-height:100%;border-radius:14px;background:#000;cursor:pointer}
+  #clHint{min-height:2.9em;max-width:440px}
+  #clHint.work{color:var(--text);font-weight:700}
+  .bar-gap{width:72px;flex:0 0 auto}
+
+  /* Hoja inferior */
+  .backdrop{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.55)}
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;margin:0 auto;max-width:560px;max-height:92vh;max-height:92dvh;
+    overflow:auto;background:var(--surface);border-radius:26px 26px 0 0;box-shadow:var(--shadow);
+    padding:8px 18px calc(22px + env(safe-area-inset-bottom));animation:up .22s ease-out}
+  .sheet:focus{outline:none}
+  @keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+  .grab{width:44px;height:5px;border-radius:99px;background:var(--line);margin:2px auto 10px}
+  .sh-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .sh-head h2{flex:1;min-width:0;font-size:19px}
+  .preview{width:min(62vw,230px);aspect-ratio:1;margin:0 auto 18px;border-radius:22px;border:1px solid var(--line);padding:12px}
+  .preview img,.mini img{display:block;width:100%;height:100%;object-fit:contain}
+  .plats{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:12px 0 16px}
+  .plat{border:0;background:transparent;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:7px;
+    font-size:12.5px;font-weight:700;border-radius:14px;min-width:0}
+  .plat:active .pico{transform:scale(.92)}
+  .pico{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .1s;
+    box-shadow:0 3px 0 rgba(0,0,0,.28)}
+  .pico svg{width:28px;height:28px;display:block}
+  .pico.whatsapp{background:#25d366}
+  .pico.telegram{background:#2aabee}
+  .pico.discord{background:#5865f2}
+  .pico.instagram{background:linear-gradient(45deg,#f9ce34,#ee2a7b 55%,#6228d7)}
+  .pico.other{background:var(--surface2);border:1px solid var(--line);color:var(--text)}
+  .ready{display:flex;gap:14px;align-items:center;background:var(--surface2);border-radius:18px;padding:12px;margin-bottom:14px}
+  .mini{width:74px;height:74px;flex:0 0 auto;border-radius:14px;padding:6px}
+  .ready strong{display:block;font-size:15px}
+  .ready span{font-size:13.5px}
+  .ready span.bad{color:var(--warn)}
+  .acts{display:grid;gap:10px;margin-bottom:6px}
+  .acts .pair{display:flex;gap:10px}
+  .acts .pair .btn{flex:1;min-width:0;padding:0 10px}
+  .steps{list-style:none;counter-reset:s;margin:18px 0 0;padding:0;display:grid;gap:12px}
+  .steps li{counter-increment:s;position:relative;padding-left:40px;font-size:15px}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:-2px;width:28px;height:28px;border-radius:50%;
+    background:var(--surface2);border:1px solid var(--line);font-weight:800;font-size:13.5px;display:flex;align-items:center;justify-content:center}
+  .note{margin-top:16px;padding:12px 14px;border-radius:14px;background:var(--surface2);font-size:14px;color:var(--muted)}
+  .help h3{margin:18px 0 6px}
+  .help p{font-size:15px}
+  .help p + p{margin-top:8px}
+  .center{display:flex;justify-content:center;gap:6px;margin-top:8px;flex-wrap:wrap}
+
+  .toast{position:fixed;left:16px;right:16px;margin:0 auto;width:fit-content;bottom:calc(22px + env(safe-area-inset-bottom));
+    transform:translateY(20px);z-index:60;max-width:440px;background:var(--text);color:var(--bg);padding:12px 16px;border-radius:14px;font-size:14.5px;
+    font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;text-align:center;box-shadow:var(--shadow)}
+  .toast.show{opacity:1;transform:none}
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <svg class="mark" viewBox="0 0 512 512" aria-hidden="true">
+      <rect width="512" height="512" rx="120" fill="#ffd23f"/>
+      <g transform="rotate(-8 256 256)">
+        <path d="M150 112h212a38 38 0 0 1 38 38v150L300 400H150a38 38 0 0 1-38-38V150a38 38 0 0 1 38-38z" fill="#fff"/>
+        <path d="M400 300h-62a38 38 0 0 0-38 38v62z" fill="#d9cfb4"/>
+        <circle cx="206" cy="222" r="20" fill="#1a1505"/><circle cx="306" cy="222" r="20" fill="#1a1505"/>
+        <path d="M196 284q60 54 120 0" fill="none" stroke="#1a1505" stroke-width="20" stroke-linecap="round"/>
+      </g>
+    </svg>
+    <h1>Pasa<b>Stickers</b></h1>
+    <span class="grow"></span>
+    <button class="btn sm" id="installBtn" hidden>Instalar</button>
+    <button class="round-btn" id="helpBtn" aria-label="Cómo funciona">?</button>
+  </header>
+
+  <section class="bring" aria-labelledby="bringTitle">
+    <h2 id="bringTitle">Trae un sticker</h2>
+    <p class="hint" id="hint"></p>
+    <div class="row">
+      <button class="btn primary" id="pickBtn">Elegir captura o video</button>
+      <button class="btn" id="pasteBtn">Pegar imagen</button>
+    </div>
+    <input class="vh" id="fileIn" type="file" accept="image/*,video/*" multiple tabindex="-1" aria-hidden="true">
+  </section>
+
+  <section aria-labelledby="libTitle">
+    <div class="lib-head"><h2 id="libTitle">Tus stickers</h2><span class="count" id="count"></span></div>
+    <div class="grid" id="grid"></div>
+    <ol class="empty" id="empty">
+      <li><span class="n">1</span><div><strong>Captura</strong><span>Haz una captura de pantalla donde se vea el sticker, o graba la pantalla si se mueve.</span></div></li>
+      <li><span class="n">2</span><div><strong>Toca</strong><span>Elige la captura o el video aquí y toca el sticker: se recorta solo.</span></div></li>
+      <li><span class="n">3</span><div><strong>Pasa</strong><span>Agrégalo a WhatsApp, Telegram, Discord o Instagram.</span></div></li>
+    </ol>
+  </section>
+</div>
+
+<div class="picker" id="picker" role="dialog" aria-modal="true" aria-label="Elegir el sticker en la captura" hidden>
+  <div class="ed-bar">
+    <button class="btn ghost sm" id="pkClose">Listo</button>
+    <strong>Toca el sticker</strong>
+    <button class="btn sm" id="pkManual">A mano</button>
+  </div>
+  <div class="pk-stage" id="pkStage"></div>
+  <p class="pk-hint">Toca el sticker que quieres pasar. Si no lo recorta bien, usa «A mano».</p>
+</div>
+
+<div class="picker" id="clip" role="dialog" aria-modal="true" aria-label="Crear sticker animado" hidden>
+  <div class="ed-bar">
+    <button class="btn ghost sm" id="clClose">Cerrar</button>
+    <strong>Sticker animado</strong>
+    <span class="bar-gap"></span>
+  </div>
+  <div class="pk-stage" id="clStage"><video id="clVideo" muted playsinline webkit-playsinline preload="auto"></video></div>
+  <p class="pk-hint" id="clHint" role="status"></p>
+</div>
+
+<div class="editor" id="editor" role="dialog" aria-modal="true" aria-label="Recortar sticker" hidden>
+  <div class="ed-bar">
+    <button class="btn ghost sm" id="edCancel">Cancelar</button>
+    <strong>Recorta tu sticker</strong>
+    <button class="btn primary sm" id="edSave">Guardar</button>
+  </div>
+  <div class="stage checker"><canvas id="view" width="512" height="512" aria-label="Vista previa: arrastra para mover y pellizca para acercar"></canvas></div>
+  <div class="ed-controls">
+    <label class="slider"><span>Zoom</span><input type="range" id="zoom" min="0" max="1000" value="0"></label>
+    <div class="seg" id="shapeSeg" role="group" aria-label="Forma">
+      <button data-shape="square" class="on" aria-pressed="true">Cuadrado</button>
+      <button data-shape="round" aria-pressed="false">Redondeado</button>
+      <button data-shape="circle" aria-pressed="false">Círculo</button>
+    </div>
+    <div class="row2">
+      <div class="seg" id="modeSeg" role="group" aria-label="Herramienta">
+        <button data-mode="move" class="on" aria-pressed="true">Mover</button>
+        <button data-mode="erase" aria-pressed="false">Quitar fondo</button>
+      </div>
+      <label class="switch"><input type="checkbox" id="border"><i></i><span>Borde</span></label>
+    </div>
+    <div class="erase-panel" id="erasePanel" hidden>
+      <p>Toca el color de fondo que quieres borrar. Puedes tocar varias zonas.</p>
+      <div class="line">
+        <label class="slider"><span>Tolerancia</span><input type="range" id="tol" min="8" max="110" value="36"></label>
+        <button class="btn sm" id="undoBtn" disabled>Deshacer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="backdrop" id="backdrop" hidden></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" tabindex="-1" hidden>
+  <div class="grab"></div>
+  <div id="sheetBody"></div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<noscript><p style="padding:20px">PasaStickers necesita JavaScript para funcionar.</p></noscript>
+
+<script>
+(() => {
+'use strict';
+
+/* ───────── Utilidades ───────── */
+const $ = (s, r = document) => r.querySelector(s);
+const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+const canvasBlob = (c, type, q) => new Promise(res => c.toBlob(res, type, q));
+const toBuffer = (blob) => new Response(blob).arrayBuffer();
+
+const UA = navigator.userAgent;
+const isIOS = /iPhone|iPad|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isAndroid = /Android/i.test(UA);
+const isStandalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 4200);
+}
+
+/* ───────── Guardado (IndexedDB) ───────── */
+const Store = (() => {
+  let dbp = null;
+  const open = () => dbp || (dbp = new Promise((res, rej) => {
+    const rq = indexedDB.open('pasastickers', 1);
+    rq.onupgradeneeded = () => rq.result.createObjectStore('stickers', { keyPath: 'id' });
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror = () => rej(rq.error);
+  }));
+  const run = async (mode, fn) => {
+    const db = await open();
+    return new Promise((res, rej) => {
+      const tx = db.transaction('stickers', mode);
+      const rq = fn(tx.objectStore('stickers'));
+      tx.oncomplete = () => res(rq.result);
+      tx.onerror = tx.onabort = () => rej(tx.error);
+    });
+  };
+  const safe = (p, fallback) => p.catch(() => fallback);
+  return {
+    all: () => safe(run('readonly', s => s.getAll()), []),
+    put: (v) => safe(run('readwrite', s => s.put(v)).then(() => true), false),
+    del: (id) => safe(run('readwrite', s => s.delete(id)).then(() => true), false),
+  };
+})();
+
+let stickers = [];
+const urls = new Map();
+function urlFor(st) {
+  let u = urls.get(st.id);
+  if (!u) { u = URL.createObjectURL(new Blob([st.png], { type: 'image/png' })); urls.set(st.id, u); }
+  return u;
+}
+/* Los animados guardan además el WebP animado y el GIF; la vista previa usa el WebP. */
+function liveUrlFor(st) {
+  if (!st.anim) return urlFor(st);
+  let u = urls.get(st.id + ':anim');
+  if (!u) { u = URL.createObjectURL(new Blob([st.anim.webp], { type: 'image/webp' })); urls.set(st.id + ':anim', u); }
+  return u;
+}
+
+function renderGrid() {
+  const grid = $('#grid');
+  grid.textContent = '';
+  for (const st of stickers) {
+    const b = document.createElement('button');
+    b.className = 'st';
+    b.setAttribute('aria-label', 'Abrir sticker');
+    const im = new Image();
+    im.alt = '';
+    im.draggable = false;
+    im.src = urlFor(st);
+    b.appendChild(im);
+    if (st.anim) {
+      const tag = document.createElement('span');
+      tag.className = 'badge';
+      tag.textContent = 'GIF';
+      b.appendChild(tag);
+      b.setAttribute('aria-label', 'Abrir sticker animado');
+    }
+    b.addEventListener('click', () => openDetail(st));
+    grid.appendChild(b);
+  }
+  $('#empty').hidden = stickers.length > 0;
+  $('#count').textContent = stickers.length ? String(stickers.length) : '';
+}
+
+async function addSticker(png, replaceId, anim) {
+  if (replaceId) await removeSticker(replaceId);
+  const st = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: Date.now(), png };
+  if (anim) st.anim = anim;
+  const saved = await Store.put(st);
+  stickers.unshift(st);
+  renderGrid();
+  if (!saved) toast('No pude guardarlo en este teléfono (¿modo privado?). Úsalo ahora, antes de cerrar.');
+  return st;
+}
+function removeSticker(id) {
+  stickers = stickers.filter(s => s.id !== id);
+  for (const k of [id, id + ':anim']) {
+    const u = urls.get(k);
+    if (u) { URL.revokeObjectURL(u); urls.delete(k); }
+  }
+  renderGrid();
+  return Store.del(id);
+}
+
+/* ───────── Capas (selector / editor / hoja) y botón «atrás» ─────────
+   Mientras haya algo abierto existe una sola entrada extra en el historial,
+   así el gesto «atrás» de Android cierra la capa en vez de salir de la app. */
+const editorEl = $('#editor'), pickerEl = $('#picker'), clipEl = $('#clip'), sheetEl = $('#sheet'), backdropEl = $('#backdrop');
+let hasEntry = false, backPending = false;
+const anyOpen = () => !editorEl.hidden || !pickerEl.hidden || !clipEl.hidden || !sheetEl.hidden;
+function layersChanged() {
+  const open = anyOpen();
+  document.body.classList.toggle('locked', open);
+  if (open && !hasEntry) {
+    hasEntry = true;
+    if (!backPending) history.pushState({ pasa: 1 }, '');
+  } else if (!open && hasEntry) {
+    hasEntry = false;
+    backPending = true;
+    history.back();
+  }
+}
+addEventListener('popstate', () => {
+  if (backPending) {
+    backPending = false;
+    if (hasEntry) history.pushState({ pasa: 1 }, ''); // se abrió otra capa mientras volvíamos
+    return;
+  }
+  if (hasEntry) {
+    hasEntry = false;
+    pending.length = 0;
+    hideEditor();
+    hidePicker();
+    hideClip();
+    hideSheet();
+    document.body.classList.remove('locked');
+  }
+});
+
+/* ───────── Traer una imagen ───────── */
+const MAX_PIXELS = 4e6;   // suficiente para una captura de pantalla completa
+const pending = [];       // imágenes en cola cuando llegan varias a la vez
+
+async function decode(blob) {
+  if ('createImageBitmap' in window) {
+    try { return await createImageBitmap(blob); } catch (e) { /* probamos con <img> */ }
+  }
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(blob);
+    const im = new Image();
+    im.onload = () => { URL.revokeObjectURL(url); res(im); };
+    im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('decode')); };
+    im.src = url;
+  });
+}
+
+async function importBlob(blob) {
+  let bmp;
+  try { bmp = await decode(blob); }
+  catch (e) {
+    toast('No pude abrir esa imagen. Prueba con una captura de pantalla.');
+    if (pending.length) importBlob(pending.shift());
+    return;
+  }
+  const w = bmp.naturalWidth || bmp.width, h = bmp.naturalHeight || bmp.height;
+  if (!w || !h) { toast('Esa imagen está vacía.'); return; }
+  const k = Math.min(1, Math.sqrt(MAX_PIXELS / (w * h)));
+  const c = mk(Math.max(1, Math.round(w * k)), Math.max(1, Math.round(h * k)));
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(bmp, 0, 0, c.width, c.height);
+  if (bmp.close) bmp.close();
+  if (looksLikeScreenshot(c.width, c.height, blob.type)) openPicker(c, g);
+  else openEditor(c, g);
+}
+
+const isVideo = (f) => (f.type || '').startsWith('video/') || /\.(mp4|mov|m4v|webm)$/i.test(f.name || '');
+
+function importFiles(list) {
+  const video = [...list].find(isVideo);
+  if (video) { pending.length = 0; openClip(video); return; }
+  const imgs = [...list].filter(f => (f.type || '').startsWith('image/') || /\.(png|jpe?g|webp|gif|heic|avif)$/i.test(f.name || ''));
+  if (!imgs.length) { toast('Eso no es una imagen ni un video.'); return; }
+  pending.push(...imgs.slice(1));
+  importBlob(imgs[0]);
+}
+
+async function pasteFromClipboard() {
+  try {
+    const items = await navigator.clipboard.read();
+    for (const it of items) {
+      const type = it.types.find(t => t.startsWith('image/'));
+      if (type) { importBlob(await it.getType(type)); return; }
+    }
+    toast('No hay ninguna imagen copiada. En la otra app mantén pulsada la imagen y elige «Copiar».');
+  } catch (e) {
+    toast('No pude leer el portapapeles. Usa «Elegir captura o video».');
+  }
+}
+
+/* ───────── Captura de pantalla: se toca el sticker y se recorta solo ─────────
+   En una captura, el fondo de cada fila es el color que tiene esa fila en los
+   bordes de la pantalla. Desde el punto tocado se hace crecer un rectángulo
+   hasta que por los cuatro lados solo queda fondo. */
+const S = 512;            // tamaño de trabajo del sticker
+const pkStage = $('#pkStage');
+const P = { src: null, sctx: null, img: null, busy: false };
+const looksLikeScreenshot = (w, h, type) => h / w >= 1.9 || (h / w >= 1.6 && type === 'image/png');
+const BG_T2 = 3 * 16 * 16;
+const dist2 = (a, i, b, j) => { const r = a[i] - b[j], g = a[i + 1] - b[j + 1], bl = a[i + 2] - b[j + 2]; return r * r + g * g + bl * bl; };
+
+function findSticker(img, tx, ty) {
+  const w = img.width, h = img.height, d = img.data;
+  const isBg = (x, y) => { const i = (y * w + x) * 4, row = y * w * 4; return dist2(d, i, d, row + 8) <= BG_T2 || dist2(d, i, d, row + (w - 3) * 4) <= BG_T2; };
+  const rowDirty = (y, xa, xb) => { let n = 0; const lim = Math.max(2, (xb - xa + 1) * 0.02); for (let x = xa; x <= xb; x++) if (!isBg(x, y) && ++n > lim) return true; return false; };
+  const colDirty = (x, ya, yb) => { let n = 0; const lim = Math.max(2, (yb - ya + 1) * 0.02); for (let y = ya; y <= yb; y++) if (!isBg(x, y) && ++n > lim) return true; return false; };
+  const gap = Math.max(3, Math.round(w * 0.006)), seed = Math.round(w * 0.02);
+  let x0 = Math.max(0, tx - seed), x1 = Math.min(w - 1, tx + seed), y0 = Math.max(0, ty - seed), y1 = Math.min(h - 1, ty + seed);
+  for (let grew = true, guard = 0; grew && guard < 20000; guard++) {
+    grew = false;
+    for (let k = 1; k <= gap && y0 - k >= 0; k++) if (rowDirty(y0 - k, x0, x1)) { y0 -= k; grew = true; break; }
+    for (let k = 1; k <= gap && y1 + k < h; k++) if (rowDirty(y1 + k, x0, x1)) { y1 += k; grew = true; break; }
+    for (let k = 1; k <= gap && x0 - k >= 0; k++) if (colDirty(x0 - k, y0, y1)) { x0 -= k; grew = true; break; }
+    for (let k = 1; k <= gap && x1 + k < w; k++) if (colDirty(x1 + k, y0, y1)) { x1 += k; grew = true; break; }
+  }
+  while (y0 < y1 && !rowDirty(y0, x0, x1)) y0++;
+  while (y1 > y0 && !rowDirty(y1, x0, x1)) y1--;
+  while (x0 < x1 && !colDirty(x0, y0, y1)) x0++;
+  while (x1 > x0 && !colDirty(x1, y0, y1)) x1--;
+  const rw = x1 - x0 + 1, rh = y1 - y0 + 1;
+  if (rw < w * 0.06 || rh < w * 0.06) return null;      // demasiado chico: se tocó fondo o texto suelto
+  if (rw > w * 0.97 && rh > h * 0.9) return null;       // casi toda la pantalla: no hay borde que seguir
+  return { x: x0, y: y0, w: rw, h: rh };
+}
+
+/* Recorta y vuelve transparentes las esquinas redondeadas que dejan ver el fondo de la app.
+   Se descarta además un filo de 1-2 px: ahí el sticker está mezclado con el fondo. */
+function cropSticker(img, rect, edge) {
+  const e = edge || Math.max(1, Math.round(img.width * 0.0015));
+  const r = rect.w > e * 12 && rect.h > e * 12 ? { x: rect.x + e, y: rect.y + e, w: rect.w - e * 2, h: rect.h - e * 2 } : rect;
+  const c = mk(r.w, r.h), g = c.getContext('2d', { willReadFrequently: true });
+  g.putImageData(img, -r.x, -r.y, r.x, r.y, r.w, r.h);
+  const cd = g.getImageData(0, 0, r.w, r.h), d = cd.data, o = img.data, W = img.width;
+  const R = Math.max(4, Math.round(Math.min(r.w, r.h) * 0.09));
+  const isBg = (x, y) => { const i = (y * r.w + x) * 4, row = (r.y + y) * W * 4; return dist2(d, i, o, row + 8) <= BG_T2 || dist2(d, i, o, row + (W - 3) * 4) <= BG_T2; };
+  for (const [cx, cy, sx, sy] of [[0, 0, 1, 1], [r.w - 1, 0, -1, 1], [0, r.h - 1, 1, -1], [r.w - 1, r.h - 1, -1, -1]]) {
+    const seen = new Uint8Array(R * R), stack = [0], hit = [];
+    seen[0] = 1;
+    while (stack.length) {
+      const p = stack.pop(), u = p % R, v = (p / R) | 0, x = cx + sx * u, y = cy + sy * v;
+      if (!isBg(x, y)) continue;
+      hit.push(y * r.w + x);
+      if (u + 1 < R && !seen[p + 1]) { seen[p + 1] = 1; stack.push(p + 1); }
+      if (v + 1 < R && !seen[p + R]) { seen[p + R] = 1; stack.push(p + R); }
+      if (u > 0 && !seen[p - 1]) { seen[p - 1] = 1; stack.push(p - 1); }
+      if (v > 0 && !seen[p - R]) { seen[p - R] = 1; stack.push(p - R); }
+    }
+    /* Una esquina redondeada borra poco; si se borraría casi todo el cuadro, es parte del dibujo. */
+    if (hit.length > R * R * 0.5) continue;
+    for (const q of hit) {
+      const qx = q % r.w, qy = (q / r.w) | 0;
+      for (let dy = -e; dy <= e; dy++) for (let dx = -e; dx <= e; dx++) {
+        const x = qx + dx, y = qy + dy;
+        if (x >= 0 && y >= 0 && x < r.w && y < r.h) d[(y * r.w + x) * 4 + 3] = 0;
+      }
+    }
+  }
+  g.putImageData(cd, 0, 0);
+  return { canvas: c, rect: r };
+}
+
+async function stickerPng(c) {
+  const out = mk(S, S), g = out.getContext('2d');
+  const k = S / Math.max(c.width, c.height), w = c.width * k, h = c.height * k;
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(c, (S - w) / 2, (S - h) / 2, w, h);
+  return toBuffer(await canvasBlob(out, 'image/png'));
+}
+
+function openPicker(src, sctx) {
+  hideEditor();
+  hideClip();
+  hideSheet();
+  P.src = src; P.sctx = sctx; P.img = null; P.busy = false;
+  pkStage.textContent = '';
+  pkStage.appendChild(src);
+  pickerEl.hidden = false;
+  fitPicker();
+  layersChanged();
+}
+/* La captura se ajusta entera al espacio libre, sin depender de cómo cada navegador resuelve max-height. */
+function fitPicker() {
+  if (!P.src || pickerEl.hidden) return;
+  const r = pkStage.getBoundingClientRect(), k = Math.min(r.width / P.src.width, r.height / P.src.height);
+  if (k > 0) { P.src.style.width = Math.floor(P.src.width * k) + 'px'; P.src.style.height = Math.floor(P.src.height * k) + 'px'; }
+}
+addEventListener('resize', fitPicker);
+function hidePicker() {
+  pickerEl.hidden = true;
+  pkStage.textContent = '';
+  P.src = null; P.sctx = null; P.img = null; P.busy = false;
+}
+
+pkStage.addEventListener('click', (e) => {
+  if (!P.src || P.busy || e.target !== P.src) return;
+  const box = P.src.getBoundingClientRect(), sb = pkStage.getBoundingClientRect();
+  const tx = Math.floor((e.clientX - box.left) * P.src.width / box.width);
+  const ty = Math.floor((e.clientY - box.top) * P.src.height / box.height);
+  if (!P.img) P.img = P.sctx.getImageData(0, 0, P.src.width, P.src.height);
+  const r = findSticker(P.img, tx, ty);
+  if (!r) { toast('No encontré el borde de ese sticker. Toca justo encima o usa «A mano».'); return; }
+  const k = box.width / P.src.width, mark = document.createElement('div');
+  mark.className = 'pk-box';
+  mark.style.cssText = 'left:' + (box.left - sb.left + r.x * k - 3) + 'px;top:' + (box.top - sb.top + r.y * k - 3) + 'px;width:' + (r.w * k + 6) + 'px;height:' + (r.h * k + 6) + 'px';
+  pkStage.appendChild(mark);
+  P.busy = true;
+  const crop = cropSticker(P.img, r).canvas;
+  setTimeout(async () => {
+    mark.remove();
+    if (pickerEl.hidden) return;          // se cerró mientras tanto
+    P.busy = false;
+    openDetail(await addSticker(await stickerPng(crop)));
+  }, 320);
+});
+$('#pkClose').addEventListener('click', () => { pending.length = 0; hidePicker(); layersChanged(); });
+$('#pkManual').addEventListener('click', () => {
+  const src = P.src, sctx = P.sctx;
+  if (!src) return;
+  hidePicker();
+  openEditor(src, sctx);
+});
+
+/* ───────── Stickers animados: desde una grabación de pantalla ─────────
+   Se toca el sticker en el video y la app hace el resto: mira esa zona mientras el
+   video corre, detecta cuándo la animación vuelve a empezar y guarda una vuelta
+   completa como WebP animado y como GIF. */
+const clStage = $('#clStage'), clVideo = $('#clVideo');
+const C = { url: null, rect: null, mask: null, mark: null, busy: false };
+const CLIP_HINT = 'Toca el sticker mientras se ve en el video. Lo demás es automático.';
+const STEP = 0.1;         // un cuadro cada 0,1 s de video
+const MAX_FRAMES = 80;    // se miran 8 s como mucho: alcanza para vueltas de hasta 4 s
+const SIG = 24;           // cada cuadro se resume en 24×24 puntos para compararlos rápido
+const once = (el, ev, ms) => new Promise((res) => {
+  const done = () => { el.removeEventListener(ev, done); clearTimeout(t); res(); };
+  const t = setTimeout(done, ms);
+  el.addEventListener(ev, done);
+});
+const tick = () => new Promise((res) => setTimeout(res));
+const secs = (v) => String(Math.round(v * 10) / 10).replace('.', ',') + ' s';
+const clipTotal = () => (isFinite(clVideo.duration) ? clVideo.duration : 0);
+function clipStatus(msg, working) {
+  const el = $('#clHint');
+  el.textContent = msg;
+  el.classList.toggle('work', !!working);
+}
+
+function resetClip() {
+  clVideo.pause();
+  clVideo.removeAttribute('src');
+  clVideo.load();
+  if (C.url) URL.revokeObjectURL(C.url);
+  if (C.mark) C.mark.remove();
+  Object.assign(C, { url: null, rect: null, mask: null, mark: null, busy: false });
+  clipStatus(CLIP_HINT);
+}
+function hideClip() {
+  if (clipEl.hidden) return;
+  clipEl.hidden = true;
+  resetClip();
+}
+function closeClip() { hideClip(); layersChanged(); }
+
+async function openClip(blob) {
+  hideEditor();
+  hidePicker();
+  hideSheet();
+  resetClip();
+  const url = C.url = URL.createObjectURL(blob);
+  clipEl.hidden = false;
+  layersChanged();
+  clVideo.src = url;
+  clVideo.load();
+  if (clVideo.readyState < 1) await once(clVideo, 'loadedmetadata', 10000);
+  if (C.url !== url) return;                       // se cerró o se eligió otro mientras cargaba
+  if (!clVideo.videoWidth) { toast('No pude abrir ese video.'); closeClip(); return; }
+  if (!isFinite(clVideo.duration)) {               // hay videos que no traen la duración hasta recorrerlos
+    clVideo.currentTime = 1e7;
+    await once(clVideo, 'durationchange', 4000);
+    clVideo.currentTime = 0;
+    await once(clVideo, 'seeked', 2000);
+    if (C.url !== url) return;
+  }
+  fitClip();
+  clVideo.play().catch(() => {});
+}
+
+function placeMark() {
+  if (!C.mark || !C.rect) return;
+  const box = clVideo.getBoundingClientRect(), sb = clStage.getBoundingClientRect(), k = box.width / clVideo.videoWidth, r = C.rect;
+  C.mark.style.cssText = 'left:' + (box.left - sb.left + r.x * k - 3) + 'px;top:' + (box.top - sb.top + r.y * k - 3) + 'px;width:' + (r.w * k + 6) + 'px;height:' + (r.h * k + 6) + 'px';
+}
+function fitClip() {
+  if (clipEl.hidden || !clVideo.videoWidth) return;
+  const r = clStage.getBoundingClientRect(), k = Math.min(r.width / clVideo.videoWidth, r.height / clVideo.videoHeight);
+  if (k > 0) { clVideo.style.width = Math.floor(clVideo.videoWidth * k) + 'px'; clVideo.style.height = Math.floor(clVideo.videoHeight * k) + 'px'; }
+  placeMark();
+}
+addEventListener('resize', fitClip);
+/* El espacio libre también cambia cuando crece el texto de abajo: se vuelve a ajustar. */
+if (window.ResizeObserver) {
+  new ResizeObserver(() => fitClip()).observe(clStage);
+  new ResizeObserver(() => fitPicker()).observe(pkStage);
+}
+
+/* Antes de tocar nada, el video se repite entero para que dé tiempo a ver el sticker. */
+clVideo.addEventListener('ended', () => {
+  if (C.busy || clipEl.hidden) return;
+  clVideo.currentTime = 0;
+  clVideo.play().catch(() => {});
+});
+$('#clClose').addEventListener('click', closeClip);
+
+clVideo.addEventListener('click', (e) => {
+  if (C.busy || !clVideo.videoWidth) return;
+  if (clVideo.readyState < 2) { clVideo.play().catch(() => {}); return; }
+  const box = clVideo.getBoundingClientRect(), w = clVideo.videoWidth, h = clVideo.videoHeight;
+  const c = mk(w, h), g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(clVideo, 0, 0, w, h);
+  const img = g.getImageData(0, 0, w, h);
+  const found = findSticker(img, Math.floor((e.clientX - box.left) * w / box.width), Math.floor((e.clientY - box.top) * h / box.height));
+  if (!found) { toast('No encontré el borde de ese sticker. Toca justo encima.'); return; }
+  /* En video el filo se descarta más ancho: la compresión ensucia los bordes. */
+  const crop = cropSticker(img, found, Math.max(2, Math.round(w * 0.004)));
+  C.rect = crop.rect; C.mask = crop.canvas;
+  if (!C.mark) { C.mark = document.createElement('div'); C.mark.className = 'pk-box'; clStage.appendChild(C.mark); }
+  placeMark();
+  makeAnimated(clVideo.currentTime);
+});
+
+/* Diferencia entre dos cuadros resumidos (0 = iguales). */
+function sigDiff(a, b) {
+  let s = 0;
+  for (let i = 0; i < a.length; i += 4) {
+    const r = a[i] - b[i], g = a[i + 1] - b[i + 1], bl = a[i + 2] - b[i + 2];
+    s += r * r + g * g + bl * bl;
+  }
+  return Math.sqrt(s / (a.length / 4 * 3));
+}
+
+/* ¿Cada cuántos cuadros se repite la animación? Para cada separación L se mide cuánto
+   se parece cada cuadro al que viene L cuadros después. La vuelta es la separación más
+   corta en la que vuelven a coincidir después de haber sido distintos.
+   Devuelve { period }, { still: true } si nada se mueve, o null si no se repite. */
+function findLoop(sigs) {
+  const n = sigs.length, maxL = n >> 1;
+  if (maxL < 4) return null;
+  const score = new Float32Array(maxL + 1);
+  let top = 0;
+  for (let L = 1; L <= maxL; L++) {
+    const d = [];
+    for (let i = 0; i + L < n; i++) d.push(sigDiff(sigs[i], sigs[i + L]));
+    d.sort((x, y) => x - y);
+    score[L] = d[d.length >> 1];                  // mediana: aguanta cuadros sucios al principio o al final
+    if (score[L] > top) top = score[L];
+  }
+  if (top < 2.5) return { still: true };
+  let peak = Math.max(score[1], score[2], score[3]);
+  for (let L = 4; L <= maxL; L++) {
+    const v = score[L];
+    const low = v <= Math.max(3, top * 0.35), valley = v <= score[L - 1] && (L === maxL || v <= score[L + 1]);
+    if (low && valley && peak >= v * 2 + 1) return { period: L };
+    if (v > peak) peak = v;
+  }
+  return null;
+}
+
+/* Elige en qué cuadro empieza la vuelta: donde mejor coincide con la vuelta siguiente,
+   y a igualdad, lo más cerca del momento en que se tocó. */
+function loopStart(sigs, period, near) {
+  let best = 0, bestCost = Infinity;
+  for (let i0 = 0; i0 + period * 2 <= sigs.length; i0++) {
+    let worst = 0;
+    for (let i = i0; i < i0 + period; i++) worst = Math.max(worst, sigDiff(sigs[i], sigs[i + period]));
+    const cost = worst + Math.abs(i0 - near) * 0.02;
+    if (cost < bestCost) { bestCost = cost; best = i0; }
+  }
+  return best;
+}
+
+/* Reproduce el video desde donde se tocó, toma un cuadro de la zona cada 0,1 s y se
+   detiene en cuanto ve la animación repetirse. Devuelve la vuelta completa. */
+async function captureLoop(t0, gone) {
+  const v = clVideo, r = C.rect, mask = C.mask, total = clipTotal();
+  const end = total ? Math.min(total, t0 + MAX_FRAMES * STEP) : t0 + MAX_FRAMES * STEP;
+  const from = end - t0 >= 4 ? t0 : Math.max(0, end - MAX_FRAMES * STEP);   // si queda poco video, se mira también lo anterior
+  const k = S / Math.max(r.w, r.h), dw = Math.max(2, Math.round(r.w * k)), dh = Math.max(2, Math.round(r.h * k)), dx = (S - dw) >> 1, dy = (S - dh) >> 1;
+  const c = mk(S, S), g = c.getContext('2d', { willReadFrequently: true });
+  const sc = mk(SIG, SIG), sg = sc.getContext('2d', { willReadFrequently: true });
+  g.imageSmoothingQuality = 'high';
+  const frames = [], sigs = [];
+  const grab = () => {
+    g.globalCompositeOperation = 'source-over';
+    g.clearRect(0, 0, S, S);
+    g.drawImage(v, r.x, r.y, r.w, r.h, dx, dy, dw, dh);
+    g.globalCompositeOperation = 'destination-in';
+    g.drawImage(mask, dx, dy, dw, dh);
+    frames.push(g.getImageData(0, 0, S, S));
+    sg.clearRect(0, 0, SIG, SIG);
+    sg.drawImage(c, dx, dy, dw, dh, 0, 0, SIG, SIG);
+    sigs.push(sg.getImageData(0, 0, SIG, SIG).data);
+  };
+  let found = null;
+  v.pause();
+  v.currentTime = from;
+  await once(v, 'seeked', 2500);
+  await v.play().catch(() => {});
+  await new Promise((resolve) => {
+    const began = performance.now(), limit = ((end - from) * 2 + 4) * 1000;
+    let nextT = from, checked = 0;
+    const loop = () => {
+      if (gone()) return resolve();
+      const t = v.currentTime;
+      while (t >= nextT && frames.length < MAX_FRAMES) { grab(); nextT += STEP; }
+      const n = frames.length;
+      if (n >= 16 && n % 4 === 0 && n !== checked) {
+        checked = n;
+        const res = findLoop(sigs);
+        /* Para cortar antes de tiempo se piden tres vueltas vistas, o 3 s sin ningún movimiento. */
+        if (res && ((res.period && n >= res.period * 3) || (res.still && n >= 30))) { found = res; return resolve(); }
+      }
+      if (n >= MAX_FRAMES || t >= end - 0.02 || v.ended || v.paused || performance.now() - began > limit) return resolve();
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  });
+  v.pause();
+  /* Si el navegador no dejó reproducir, se salta de cuadro en cuadro. */
+  if (frames.length < 2 && !gone()) {
+    frames.length = 0; sigs.length = 0;
+    const count = Math.min(MAX_FRAMES, Math.max(2, Math.floor((end - from) / STEP)));
+    for (let i = 0; i < count && !gone(); i++) {
+      v.currentTime = Math.min(from + i * STEP, Math.max(0, end - 0.05));
+      await once(v, 'seeked', 2500);
+      grab();
+    }
+  }
+  if (gone() || !frames.length) return { frames: [] };
+  const res = found || findLoop(sigs) || {};
+  const tapped = Math.max(0, Math.min(frames.length - 1, Math.round((t0 - from) / STEP)));
+  if (res.still) return { still: frames[tapped] };
+  let first, count;
+  if (res.period) { first = loopStart(sigs, res.period, tapped); count = res.period; }
+  else { count = Math.min(50, frames.length); first = Math.min(tapped, frames.length - count); }   // sin vuelta clara: 5 s como mucho
+  return { loop: !!res.period, frames: frames.slice(first, first + count).map((img) => ({ img, ms: STEP * 1000 })) };
+}
+
+async function makeAnimated(t0) {
+  const url = C.url;
+  const gone = () => C.url !== url || clipEl.hidden;
+  C.busy = true;
+  clipStatus('Mirando el sticker para ver cuánto dura…', true);
+  try {
+    const got = await captureLoop(t0, gone);
+    if (gone()) return;
+    if (got.still) {
+      const c = mk(S, S);
+      c.getContext('2d').putImageData(got.still, 0, 0);
+      const st = await addSticker(await toBuffer(await canvasBlob(c, 'image/png')));
+      hideClip();
+      openDetail(st);
+      toast('Ese sticker no se mueve en la grabación, así que lo guardé como imagen fija.');
+      return;
+    }
+    const frames = got.frames;
+    if (frames.length < 2) throw new Error('frames');
+    clipStatus('Creando el sticker…', true);
+    await tick();
+    const webp = await animatedWebp(frames, 500 * 1024, (p) => clipStatus('Creando el sticker… ' + Math.round(p * 100) + ' %', true));
+    if (gone()) return;
+    clipStatus('Creando el GIF…', true);
+    await tick();
+    const gif = await animatedGif(frames, 320);
+    if (gone()) return;
+    const poster = mk(S, S);
+    poster.getContext('2d').putImageData(frames[0].img, 0, 0);
+    const png = await toBuffer(await canvasBlob(poster, 'image/png'));
+    const ms = frames.reduce((n, f) => n + f.ms, 0);
+    const st = await addSticker(png, null, { webp: webp.buffer, gif, n: frames.length, ms });
+    hideClip();
+    openDetail(st);
+    toast(got.loop ? 'Listo: una vuelta completa, ' + secs(ms / 1000) + '.' : 'No vi que se repitiera, así que guardé ' + secs(ms / 1000) + '.');
+  } catch (err) {
+    if (gone()) return;
+    C.busy = false;
+    if (C.mark) { C.mark.remove(); C.mark = null; }
+    C.rect = null; C.mask = null;
+    clipStatus(CLIP_HINT);
+    toast('No pude crear el sticker animado. Toca el sticker otra vez.');
+    clVideo.play().catch(() => {});
+  }
+}
+
+/* Un cuadro en WebP: con el navegador si sabe, y si no con WebAssembly. */
+async function webpBytes(img, q, scratch) {
+  if (nativeWebp !== false) {
+    scratch.getContext('2d').putImageData(img, 0, 0);
+    const b = await canvasBlob(scratch, 'image/webp', q / 100);
+    if (b && b.type === 'image/webp') { nativeWebp = true; return new Uint8Array(await toBuffer(b)); }
+    nativeWebp = false;
+  }
+  const mod = await loadWasm();
+  const out = mod.encode(img.data, img.width, img.height, { ...WEBP_OPTS, quality: q });
+  if (!out) throw new Error('webp');
+  return out.slice();
+}
+
+/* De un archivo WebP suelto se sacan solo los trozos de imagen (y su transparencia). */
+function webpImageChunks(u8) {
+  const out = [];
+  for (let p = 12; p + 8 <= u8.length;) {
+    const id = String.fromCharCode(u8[p], u8[p + 1], u8[p + 2], u8[p + 3]);
+    const size = (u8[p + 4] | (u8[p + 5] << 8) | (u8[p + 6] << 16) | (u8[p + 7] << 24)) >>> 0;
+    if (id === 'ALPH' || id === 'VP8 ' || id === 'VP8L') {
+      const chunk = new Uint8Array(8 + size + (size & 1));
+      chunk.set(u8.subarray(p, Math.min(u8.length, p + 8 + size)));
+      out.push(chunk);
+    }
+    p += 8 + size + (size & 1);
+  }
+  return out;
+}
+
+/* Contenedor WebP animado: cabecera VP8X + ANIM y un bloque ANMF por cuadro. */
+function muxWebp(frames, size) {
+  const u24 = (a, o, v) => { a[o] = v & 255; a[o + 1] = (v >> 8) & 255; a[o + 2] = (v >> 16) & 255; };
+  const u32 = (a, o, v) => { u24(a, o, v); a[o + 3] = (v >>> 24) & 255; };
+  const tag = (a, o, s) => { for (let i = 0; i < 4; i++) a[o + i] = s.charCodeAt(i); };
+  const head = new Uint8Array(44);
+  tag(head, 0, 'RIFF'); tag(head, 8, 'WEBP');
+  tag(head, 12, 'VP8X'); u32(head, 16, 10); head[20] = 0x02 | 0x10; u24(head, 24, size - 1); u24(head, 27, size - 1);
+  tag(head, 30, 'ANIM'); u32(head, 34, 6);        // fondo transparente y repetición infinita (ceros)
+  const parts = [head];
+  for (const f of frames) {
+    const len = f.chunks.reduce((n, ch) => n + ch.length, 0), fh = new Uint8Array(24);
+    tag(fh, 0, 'ANMF'); u32(fh, 4, 16 + len);
+    u24(fh, 14, size - 1); u24(fh, 17, size - 1); u24(fh, 20, f.ms);
+    fh[23] = 0x02;                                // cada cuadro reemplaza al anterior, sin mezclar
+    parts.push(fh, ...f.chunks);
+  }
+  const total = parts.reduce((n, p) => n + p.length, 0), out = new Uint8Array(total);
+  let o = 0;
+  for (const p of parts) { out.set(p, o); o += p.length; }
+  u32(out, 4, total - 8);
+  return out;
+}
+
+/* WebP animado dentro del peso máximo: baja la calidad y, si no alcanza, quita cuadros. */
+async function animatedWebp(frames, max, progress) {
+  const scratch = mk(S, S);
+  let list = frames, q = 50;
+  const probe = [list[0], list[list.length >> 1], list[list.length - 1]];
+  let est = 0;
+  for (const f of probe) est += (await webpBytes(f.img, q, scratch)).length;
+  est = est / probe.length * list.length;
+  if (est > max) q = Math.max(8, Math.round(q * max / est * 0.85));
+  for (let pass = 0; ; pass++) {
+    const enc = [];
+    for (let i = 0; i < list.length; i++) {
+      enc.push({ chunks: webpImageChunks(await webpBytes(list[i].img, q, scratch)), ms: list[i].ms });
+      if (i % 3 === 2) { progress((i + 1) / list.length); await tick(); }
+    }
+    const out = muxWebp(enc, S);
+    if (out.length <= max || pass >= 4) return out;
+    if (q > 10) q = Math.max(8, Math.round(q * max / out.length * 0.8));
+    else if (list.length > 6) {
+      const half = [];
+      for (let i = 0; i < list.length; i += 2) half.push({ img: list[i].img, ms: list[i].ms + (list[i + 1] ? list[i + 1].ms : 0) });
+      list = half;
+    } else return out;
+  }
+}
+
+let gifLib = null;
+const loadGif = () => gifLib || (gifLib = import('./vendor/gifenc.js').catch((e) => { gifLib = null; throw e; }));
+
+/* GIF: 255 colores por cuadro y un índice reservado para lo transparente. */
+async function animatedGif(frames, size) {
+  const { GIFEncoder, quantize, applyPalette } = await loadGif();
+  const gif = GIFEncoder();
+  const a = mk(S, S), ag = a.getContext('2d'), b = mk(size, size), bg = b.getContext('2d', { willReadFrequently: true });
+  bg.imageSmoothingQuality = 'high';
+  for (let i = 0; i < frames.length; i++) {
+    ag.putImageData(frames[i].img, 0, 0);
+    bg.clearRect(0, 0, size, size);
+    bg.drawImage(a, 0, 0, size, size);
+    const rgba = bg.getImageData(0, 0, size, size).data;
+    let clear = 0;
+    for (let j = 3; j < rgba.length; j += 4) if (rgba[j] < 128) clear++;
+    let solid = rgba;
+    if (clear) {
+      solid = new Uint8ClampedArray(rgba.length - clear * 4);
+      for (let j = 0, o = 0; j < rgba.length; j += 4) if (rgba[j + 3] >= 128) { solid[o] = rgba[j]; solid[o + 1] = rgba[j + 1]; solid[o + 2] = rgba[j + 2]; solid[o + 3] = 255; o += 4; }
+    }
+    const palette = solid.length ? quantize(solid, clear ? 255 : 256, { format: 'rgb565' }) : [[0, 0, 0]];
+    const index = applyPalette(rgba, palette, 'rgb565');
+    if (clear) {
+      for (let j = 0; j < index.length; j++) if (rgba[j * 4 + 3] < 128) index[j] = palette.length;
+      palette.push([0, 0, 0]);
+    }
+    gif.writeFrame(index, size, size, { palette, delay: frames[i].ms, transparent: clear > 0, transparentIndex: clear ? palette.length - 1 : 0, dispose: clear ? 2 : -1 });
+    if (i % 3 === 2) await tick();
+  }
+  gif.finish();
+  return gif.bytes().slice().buffer;
+}
+
+/* ───────── Editor ───────── */
+const BORDER = 12;        // grosor del borde blanco
+const view = $('#view'), vg = view.getContext('2d');
+const layerA = mk(S, S), ga = layerA.getContext('2d');
+const layerB = mk(S, S), gb = layerB.getContext('2d');
+const E = { src: null, sctx: null, scale: 1, x: 0, y: 0, min: 1, max: 1, shape: 'square', border: false, mode: 'move', tol: 36, undo: [], maxUndo: 3, replaceId: null };
+
+function shapePath(g, x, y, s, shape) {
+  g.beginPath();
+  if (shape === 'circle') { g.arc(x + s / 2, y + s / 2, s / 2, 0, Math.PI * 2); return; }
+  if (shape === 'round') {
+    const r = s * 0.2;
+    g.moveTo(x + r, y);
+    g.arcTo(x + s, y, x + s, y + s, r);
+    g.arcTo(x + s, y + s, x, y + s, r);
+    g.arcTo(x, y + s, x, y, r);
+    g.arcTo(x, y, x + s, y, r);
+    g.closePath();
+    return;
+  }
+  g.rect(x, y, s, s);
+}
+
+/* Con borde, el contenido se encoge un poco para que el borde no se corte. */
+const insetOf = () => (E.border ? BORDER + 2 : 0);
+
+function compose(out) {
+  const inset = insetOf(), inner = S - inset * 2, f = inner / S;
+  ga.clearRect(0, 0, S, S);
+  ga.save();
+  shapePath(ga, inset, inset, inner, E.shape);
+  ga.clip();
+  ga.translate(S / 2 + E.x * f, S / 2 + E.y * f);
+  ga.scale(E.scale * f, E.scale * f);
+  ga.imageSmoothingEnabled = true;
+  ga.imageSmoothingQuality = 'high';
+  ga.drawImage(E.src, -E.src.width / 2, -E.src.height / 2);
+  ga.restore();
+
+  out.clearRect(0, 0, S, S);
+  if (E.border) {
+    gb.globalCompositeOperation = 'source-over';
+    gb.clearRect(0, 0, S, S);
+    gb.drawImage(layerA, 0, 0);
+    gb.globalCompositeOperation = 'source-in';
+    gb.fillStyle = '#fff';
+    gb.fillRect(0, 0, S, S);
+    gb.globalCompositeOperation = 'source-over';
+    for (let i = 0; i < 24; i++) {
+      const a = i * Math.PI / 12;
+      out.drawImage(layerB, Math.cos(a) * BORDER, Math.sin(a) * BORDER);
+    }
+  }
+  out.drawImage(layerA, 0, 0);
+}
+
+let raf = 0;
+function draw() {
+  if (raf) return;
+  raf = requestAnimationFrame(() => { raf = 0; if (E.src) compose(vg); });
+}
+
+const zoomEl = $('#zoom');
+const scaleFromSlider = (v) => E.min * Math.pow(E.max / E.min, v / 1000);
+const sliderFromScale = (s) => Math.round(1000 * Math.log(s / E.min) / Math.log(E.max / E.min));
+
+function clampPan() {
+  const mx = E.src.width * E.scale / 2 + S / 2 - 48, my = E.src.height * E.scale / 2 + S / 2 - 48;
+  E.x = Math.max(-mx, Math.min(mx, E.x));
+  E.y = Math.max(-my, Math.min(my, E.y));
+}
+
+/* Acerca o aleja manteniendo fijo el punto (px, py), medido desde el centro. */
+function zoomTo(scale, px = 0, py = 0) {
+  const s = Math.max(E.min, Math.min(E.max, scale));
+  const k = s / E.scale;
+  E.x = px - (px - E.x) * k;
+  E.y = py - (py - E.y) * k;
+  E.scale = s;
+  clampPan();
+  zoomEl.value = sliderFromScale(s);
+  draw();
+}
+
+function setSeg(id, attr, value) {
+  for (const b of $(id).children) {
+    const on = b.dataset[attr] === value;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+}
+
+function setMode(mode) {
+  E.mode = mode;
+  setSeg('#modeSeg', 'mode', mode);
+  $('#erasePanel').hidden = mode !== 'erase';
+  view.classList.toggle('erase', mode === 'erase');
+}
+
+function openEditor(src, sctx, replaceId) {
+  E.src = src; E.sctx = sctx; E.replaceId = replaceId || null;
+  const contain = S / Math.max(src.width, src.height), cover = S / Math.min(src.width, src.height);
+  E.min = contain * 0.5; E.max = cover * 16;
+  E.scale = contain; E.x = 0; E.y = 0;
+  E.shape = 'square'; E.border = false; E.undo = [];
+  E.maxUndo = Math.max(1, Math.min(8, Math.floor(48e6 / (src.width * src.height * 4))));
+  setSeg('#shapeSeg', 'shape', 'square');
+  $('#border').checked = false;
+  $('#undoBtn').disabled = true;
+  setMode('move');
+  zoomEl.value = sliderFromScale(E.scale);
+  hideSheet();
+  hideClip();
+  editorEl.hidden = false;
+  editorEl.scrollTop = 0;
+  layersChanged();
+  draw();
+}
+
+function hideEditor() {
+  editorEl.hidden = true;
+  E.src = null; E.sctx = null; E.undo = [];
+}
+
+function cancelEditor() {
+  pending.length = 0;
+  hideEditor();
+  layersChanged();
+}
+
+/* Gestos: un dedo mueve, dos dedos acercan; en «Quitar fondo» un toque borra. */
+const pts = new Map();
+let tap = null;
+const viewRatio = () => S / view.getBoundingClientRect().width;
+
+view.addEventListener('pointerdown', (e) => {
+  try { view.setPointerCapture(e.pointerId); } catch (err) { /* sin captura también funciona */ }
+  pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  tap = pts.size === 1 ? { x: e.clientX, y: e.clientY, t: performance.now() } : null;
+});
+view.addEventListener('pointermove', (e) => {
+  const prev = pts.get(e.pointerId);
+  if (!prev || !E.src) return;
+  const cur = { x: e.clientX, y: e.clientY };
+  const r = viewRatio();
+  if (tap && (E.mode !== 'erase' || Math.hypot(cur.x - tap.x, cur.y - tap.y) > 9)) tap = null;
+  if (pts.size === 1) {
+    if (!tap) { E.x += (cur.x - prev.x) * r; E.y += (cur.y - prev.y) * r; clampPan(); draw(); }
+  } else if (pts.size === 2) {
+    let other;
+    for (const [id, p] of pts) if (id !== e.pointerId) other = p;
+    const before = Math.hypot(prev.x - other.x, prev.y - other.y);
+    const after = Math.hypot(cur.x - other.x, cur.y - other.y);
+    const box = view.getBoundingClientRect();
+    const mx = ((cur.x + other.x) / 2 - box.left) * r - S / 2;
+    const my = ((cur.y + other.y) / 2 - box.top) * r - S / 2;
+    E.x += (cur.x - prev.x) * r / 2;
+    E.y += (cur.y - prev.y) * r / 2;
+    if (before > 0) zoomTo(E.scale * after / before, mx, my);
+  }
+  pts.set(e.pointerId, cur);
+});
+function pointerEnd(e) {
+  if (!pts.has(e.pointerId)) return;
+  pts.delete(e.pointerId);
+  if (e.type === 'pointerup' && tap && E.mode === 'erase' && performance.now() - tap.t < 600) eraseAt(e.clientX, e.clientY);
+  tap = null;
+}
+view.addEventListener('pointerup', pointerEnd);
+view.addEventListener('pointercancel', pointerEnd);
+view.addEventListener('wheel', (e) => {
+  if (!E.src) return;
+  e.preventDefault();
+  const box = view.getBoundingClientRect(), r = viewRatio();
+  zoomTo(E.scale * Math.exp(-e.deltaY * 0.0015), (e.clientX - box.left) * r - S / 2, (e.clientY - box.top) * r - S / 2);
+}, { passive: false });
+
+zoomEl.addEventListener('input', () => { if (E.src) zoomTo(scaleFromSlider(+zoomEl.value)); });
+$('#shapeSeg').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-shape]');
+  if (!b) return;
+  E.shape = b.dataset.shape;
+  setSeg('#shapeSeg', 'shape', E.shape);
+  draw();
+});
+$('#modeSeg').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-mode]');
+  if (b) setMode(b.dataset.mode);
+});
+$('#border').addEventListener('change', (e) => { E.border = e.target.checked; draw(); });
+$('#tol').addEventListener('input', (e) => { E.tol = +e.target.value; });
+$('#edCancel').addEventListener('click', cancelEditor);
+
+/* Quitar fondo: borra la zona de color parecido conectada al punto tocado. */
+function floodErase(img, x, y, tol) {
+  const w = img.width, h = img.height, d = img.data;
+  const s = (y * w + x) * 4, r0 = d[s], g0 = d[s + 1], b0 = d[s + 2];
+  const t2 = tol * tol, soft = t2 * 4;
+  const seen = new Uint8Array(w * h), stack = new Int32Array(w * h);
+  let sp = 0, n = 0;
+  stack[sp++] = y * w + x; seen[y * w + x] = 1;
+  while (sp) {
+    const p = stack[--sp], i = p * 4;
+    if (d[i + 3] === 0) continue;
+    const dr = d[i] - r0, dg = d[i + 1] - g0, db = d[i + 2] - b0, dist = dr * dr + dg * dg + db * db;
+    if (dist > t2) {
+      /* Píxel del borde: si aún se parece al fondo, se suaviza para no dejar halo. */
+      if (dist < soft) d[i + 3] = Math.round(d[i + 3] * (0.25 + 0.75 * (dist - t2) / (soft - t2)));
+      continue;
+    }
+    d[i + 3] = 0; n++;
+    const px = p % w;
+    if (px > 0 && !seen[p - 1]) { seen[p - 1] = 1; stack[sp++] = p - 1; }
+    if (px < w - 1 && !seen[p + 1]) { seen[p + 1] = 1; stack[sp++] = p + 1; }
+    if (p >= w && !seen[p - w]) { seen[p - w] = 1; stack[sp++] = p - w; }
+    if (p < w * (h - 1) && !seen[p + w]) { seen[p + w] = 1; stack[sp++] = p + w; }
+  }
+  return n;
+}
+
+function eraseAt(clientX, clientY) {
+  const box = view.getBoundingClientRect();
+  const px = (clientX - box.left) * S / box.width, py = (clientY - box.top) * S / box.height;
+  const f = (S - insetOf() * 2) / S, w = E.src.width, h = E.src.height;
+  const sx = Math.floor(((px - S / 2) / f - E.x) / E.scale + w / 2);
+  const sy = Math.floor(((py - S / 2) / f - E.y) / E.scale + h / 2);
+  if (sx < 0 || sy < 0 || sx >= w || sy >= h) { toast('Toca sobre la imagen.'); return; }
+  const img = E.sctx.getImageData(0, 0, w, h);
+  if (img.data[(sy * w + sx) * 4 + 3] < 8) { toast('Esa zona ya está transparente.'); return; }
+  const before = new Uint8ClampedArray(img.data);
+  floodErase(img, sx, sy, E.tol);
+  E.sctx.putImageData(img, 0, 0);
+  E.undo.push(before);
+  if (E.undo.length > E.maxUndo) E.undo.shift();
+  $('#undoBtn').disabled = false;
+  draw();
+}
+
+$('#undoBtn').addEventListener('click', () => {
+  const data = E.undo.pop();
+  if (!data) return;
+  E.sctx.putImageData(new ImageData(data, E.src.width, E.src.height), 0, 0);
+  $('#undoBtn').disabled = E.undo.length === 0;
+  draw();
+});
+
+$('#edSave').addEventListener('click', async () => {
+  if (!E.src) return;
+  const c = mk(S, S), g = c.getContext('2d');
+  compose(g);
+  const d = g.getImageData(0, 0, S, S).data;
+  let visible = false;
+  for (let i = 3; i < d.length; i += 16) if (d[i] > 8) { visible = true; break; }
+  if (!visible) { toast('El sticker quedó vacío. Mueve la imagen dentro del cuadro.'); return; }
+  const st = await addSticker(await toBuffer(await canvasBlob(c, 'image/png')), E.replaceId);
+  if (pending.length) {
+    toast('Guardado. Vamos con la siguiente imagen.');
+    importBlob(pending.shift());
+  } else {
+    openDetail(st);     // la hoja se abre antes de cerrar el editor: una sola entrada de historial
+    hideEditor();
+  }
+});
+
+/* ───────── Exportar a cada plataforma ───────── */
+const ICON = {
+  whatsapp: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 3a9 9 0 0 0-7.7 13.7L3 21l4.5-1.2A9 9 0 1 0 12 3z"/><path fill="#25d366" d="M9.3 7.6c-.5 0-1.3.6-1.3 1.9 0 2.4 3.3 5.900 6.200 6.300 1 .1 2-.7 2.200-1.500.1-.4-.1-.6-.4-.8l-1.500-.8c-.3-.1-.6-.1-.8.2l-.5.7c-.2.2-.4.2-.7.1-1-.5-2-1.500-2.500-2.500-.1-.3 0-.5.2-.7l.5-.6c.2-.2.2-.5.1-.8l-.7-1.600c-.2-.3-.4-.4-.8-.4z"/></svg>',
+  telegram: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M20.700 4.300 3.600 11c-.800.3-.800 1.400.1 1.600l4.300 1.300 1.700 5c.2.700 1.100.9 1.600.3l2.300-2.500 4.200 3.100c.6.4 1.400.1 1.500-.6l2.700-13.700c.2-.8-.6-1.500-1.300-1.200zM9.700 14.400l7.400-6-5.900 6.900-.3 2.900z"/></svg>',
+  discord: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M8.400 5.500C6.800 5.800 5.500 6.300 4.500 7 2.900 9.700 2.300 13 2.600 16.700c1.500 1.200 3.200 1.900 4.900 2.300l1-1.800c-.6-.2-1.200-.5-1.700-.9l.4-.3c3.100 1.400 6.500 1.400 9.600 0l.4.3c-.5.4-1.100.7-1.700.9l1 1.800c1.700-.4 3.400-1.100 4.900-2.300.4-4.200-.5-7.300-1.900-9.700-1-.7-2.300-1.200-3.900-1.500l-.6 1.300a13 13 0 0 0-6 0zM9 14.600c-.9 0-1.600-.8-1.600-1.800S8.100 11 9 11s1.600.8 1.600 1.800S9.900 14.600 9 14.600zm6 0c-.9 0-1.600-.8-1.600-1.800S14.100 11 15 11s1.600.8 1.600 1.800-.7 1.800-1.600 1.800z"/></svg>',
+  instagram: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#fff" stroke-width="2"><rect x="3.500" y="3.500" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.200" cy="6.800" r="1.100" fill="#fff" stroke="none"/></svg>',
+  other: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4"/><path d="m7.500 8 4.500-4.500L16.500 8"/><path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>',
+};
+
+const PLATFORMS = {
+  whatsapp: {
+    name: 'WhatsApp', fmt: 'webp', size: 512, max: 100 * 1024,
+    actions: [{ act: 'share', label: 'Enviar a WhatsApp', primary: true }, { act: 'download', label: 'Guardar imagen' }],
+    steps: [
+      'Toca «Enviar a WhatsApp» y elige WhatsApp en el menú.',
+      'Mándalo a un chat. Sirve tu propio chat («Tú»): así nadie más lo ve.',
+      'Toca el sticker dentro del chat y elige «Añadir a favoritos». Queda guardado en tus stickers.',
+    ],
+    note: '¿Llegó como foto y no como sticker? Toca «Guardar imagen» y, en WhatsApp, abre Stickers → Crear y elige esa imagen.',
+  },
+  telegram: {
+    name: 'Telegram', fmt: 'webp', size: 512, max: 512 * 1024,
+    actions: [{ act: 'share', label: 'Enviar a Telegram', primary: true }, { act: 'download', label: 'Guardar archivo' }, { act: 'link', label: 'Abrir @Stickers', href: 'https://t.me/Stickers' }],
+    steps: [
+      'Toca «Enviar a Telegram» y elige Telegram en el menú.',
+      'Mándalo a «Mensajes guardados». Telegram muestra los archivos WebP como sticker.',
+      'Mantén pulsado el sticker y añádelo a tus favoritos.',
+    ],
+    note: 'Para armar un paquete completo: toca «Guardar archivo», abre el bot oficial @Stickers, escribe /newpack y envíale ese archivo.',
+  },
+  discord: {
+    name: 'Discord', fmt: 'png', size: 320, max: 512 * 1024,
+    actions: [{ act: 'download', label: 'Guardar imagen', primary: true }, { act: 'share', label: 'Enviar a un chat' }],
+    steps: [
+      'Toca «Guardar imagen».',
+      'En Discord entra a tu servidor → Ajustes del servidor → Stickers → Subir sticker.',
+      'Elige la imagen guardada y ponle nombre y un emoji relacionado.',
+    ],
+    note: 'Para subir stickers a un servidor necesitas permiso para gestionar expresiones. Si no lo tienes, usa «Enviar a un chat» y mándalo como imagen.',
+  },
+  instagram: {
+    name: 'Instagram', fmt: 'png', size: 512, max: Infinity,
+    actions: [{ act: 'copy', label: 'Copiar sticker', primary: true }, { act: 'download', label: 'Guardar imagen' }],
+    steps: [
+      'Toca «Copiar sticker».',
+      'En Instagram crea una historia y elige tu foto o video de fondo.',
+      'Toca «Aa», mantén pulsado el cuadro de texto y elige «Pegar». El sticker aparece encima y lo puedes mover.',
+    ],
+    note: 'Otra forma: toca «Guardar imagen» y, en la historia, abre Stickers → Foto para elegirla de tu galería.',
+  },
+  other: {
+    name: 'otras apps', short: 'Otras', fmt: 'png', size: 512, max: Infinity,
+    actions: [{ act: 'share', label: 'Compartir…', primary: true }, { act: 'copy', label: 'Copiar' }, { act: 'download', label: 'Guardar imagen' }],
+    steps: [
+      '«Compartir…» abre el menú del teléfono: elige Messenger, Signal, X, correo o la app que quieras.',
+      'También puedes copiarlo y pegarlo, o guardarlo en tu galería.',
+    ],
+  },
+};
+
+/* Los animados salen en dos archivos: WebP animado (sticker) y GIF (sirve en todas partes). */
+const ANIM_PLATFORMS = {
+  whatsapp: {
+    name: 'WhatsApp', max: 500 * 1024,
+    actions: [{ act: 'share', use: 'webp', label: 'Enviar a WhatsApp', primary: true }, { act: 'share', use: 'gif', label: 'Enviar como GIF' }, { act: 'download', use: 'webp', label: 'Guardar' }],
+    steps: [
+      'Toca «Enviar a WhatsApp» y elige WhatsApp en el menú.',
+      'Mándalo a un chat. Sirve tu propio chat («Tú»).',
+      'Si se mueve dentro del chat, tócalo y elige «Añadir a favoritos».',
+    ],
+    note: '¿Llegó quieto o como foto? Usa «Enviar como GIF»: se mueve igual, pero WhatsApp lo guarda entre tus GIF y no entre tus stickers.',
+  },
+  telegram: {
+    name: 'Telegram',
+    actions: [{ act: 'share', use: 'gif', label: 'Enviar a Telegram', primary: true }, { act: 'download', use: 'gif', label: 'Guardar GIF' }],
+    steps: [
+      'Toca «Enviar a Telegram» y elige Telegram en el menú.',
+      'Mándalo a «Mensajes guardados».',
+      'Mantén pulsado el GIF y elige «Guardar GIF». Queda en tu pestaña de GIF para usarlo en cualquier chat.',
+    ],
+  },
+  discord: {
+    name: 'Discord',
+    actions: [{ act: 'share', use: 'gif', label: 'Enviar a Discord', primary: true }, { act: 'download', use: 'gif', label: 'Guardar GIF' }],
+    steps: [
+      'Toca «Enviar a Discord» y elige el chat o canal.',
+      'Se envía como GIF y se reproduce solo.',
+      'Para tenerlo a mano, márcalo como favorito dentro de Discord.',
+    ],
+  },
+  other: {
+    name: 'otras apps', short: 'Otras',
+    actions: [{ act: 'share', use: 'gif', label: 'Compartir GIF…', primary: true }, { act: 'download', use: 'gif', label: 'Guardar GIF' }],
+    steps: [
+      '«Compartir GIF…» abre el menú del teléfono: elige la app que quieras.',
+      'El GIF se reproduce en casi todas las apps de mensajes.',
+    ],
+  },
+};
+const animFiles = (st) => ({
+  webp: new File([st.anim.webp], 'sticker-' + st.id + '.webp', { type: 'image/webp' }),
+  gif: new File([st.anim.gif], 'sticker-' + st.id + '.gif', { type: 'image/gif' }),
+});
+
+/* WebP: primero el codificador del navegador; si no sabe (Safari), el de WebAssembly. */
+const QUALITIES = [92, 84, 75, 65, 52, 40, 28, 16];
+const WEBP_OPTS = {
+  quality: 75, target_size: 0, target_PSNR: 0, method: 4, sns_strength: 50, filter_strength: 60, filter_sharpness: 0,
+  filter_type: 1, partitions: 0, segments: 4, pass: 1, show_compressed: 0, preprocessing: 0, autofilter: 0,
+  partition_limit: 0, alpha_compression: 1, alpha_filtering: 1, alpha_quality: 100, lossless: 0, exact: 0, image_hint: 0,
+  emulate_jpeg_size: 0, thread_level: 0, low_memory: 0, near_lossless: 100, use_delta_palette: 0, use_sharp_yuv: 0,
+};
+let nativeWebp = null, wasmModule = null;
+const loadWasm = () => wasmModule || (wasmModule = import('./vendor/webp_enc.js').then(m => m.default()).catch((e) => { wasmModule = null; throw e; }));
+
+async function encodeWebp(canvas, max) {
+  let best = null;
+  if (nativeWebp !== false) {
+    for (const q of QUALITIES) {
+      const b = await canvasBlob(canvas, 'image/webp', q / 100);
+      if (!b || b.type !== 'image/webp') { nativeWebp = false; break; }
+      nativeWebp = true; best = b;
+      if (b.size <= max) return b;
+    }
+    if (best) return best;
+  }
+  try {
+    const mod = await loadWasm();
+    const id = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+    for (const q of QUALITIES) {
+      const out = mod.encode(id.data, id.width, id.height, { ...WEBP_OPTS, quality: q });
+      if (!out) throw new Error('webp');
+      best = new Blob([out], { type: 'image/webp' });
+      if (best.size <= max) return best;
+    }
+    return best;
+  } catch (e) {
+    return canvasBlob(canvas, 'image/png');   // último recurso: PNG
+  }
+}
+
+async function buildFile(st, p) {
+  const img = await decode(new Blob([st.png], { type: 'image/png' }));
+  const c = mk(p.size, p.size), g = c.getContext('2d');
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(img, 0, 0, p.size, p.size);
+  if (img.close) img.close();
+  const blob = p.fmt === 'webp' ? await encodeWebp(c, p.max) : await canvasBlob(c, 'image/png');
+  const ext = blob.type === 'image/webp' ? 'webp' : 'png';
+  return new File([blob], 'sticker-' + st.id + '.' + ext, { type: blob.type });
+}
+
+function download(file) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(file);
+  a.download = file.name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+const canShare = (file) => !!(navigator.share && navigator.canShare && navigator.canShare({ files: [file] }));
+
+/* ───────── Hoja inferior ───────── */
+const body = $('#sheetBody');
+let cur = null, ready = null, prepToken = 0;
+
+function showSheet(html, label) {
+  ready = null; prepToken++;
+  body.innerHTML = html;
+  sheetEl.setAttribute('aria-label', label);
+  sheetEl.hidden = false;
+  backdropEl.hidden = false;
+  sheetEl.scrollTop = 0;
+  layersChanged();
+  sheetEl.focus({ preventScroll: true });
+}
+function hideSheet() {
+  sheetEl.hidden = true;
+  backdropEl.hidden = true;
+  body.textContent = '';
+  cur = null; ready = null; prepToken++;
+}
+function closeSheet() { hideSheet(); layersChanged(); }
+
+const closeBtn = '<button class="round-btn" data-act="close" aria-label="Cerrar">✕</button>';
+
+function openDetail(st) {
+  const set = st.anim ? ANIM_PLATFORMS : PLATFORMS;
+  const plats = Object.keys(set).map(k =>
+    '<button class="plat" data-plat="' + k + '"><span class="pico ' + k + '">' + ICON[k] + '</span><span>' + (set[k].short || set[k].name) + '</span></button>'
+  ).join('');
+  showSheet(
+    '<div class="sh-head"><h2>' + (st.anim ? 'Tu sticker animado' : 'Tu sticker') + '</h2>' + closeBtn + '</div>' +
+    '<div class="preview checker"><img src="' + liveUrlFor(st) + '" alt="Vista previa del sticker"></div>' +
+    '<h3>Agregar a…</h3><div class="plats" style="grid-template-columns:repeat(' + Object.keys(set).length + ',1fr)">' + plats + '</div>' +
+    '<div class="center">' + (st.anim ? '' : '<button class="btn ghost sm" data-act="edit">Retocar</button>') + '<button class="btn ghost danger sm" data-act="delete">Eliminar</button></div>',
+    'Tu sticker');
+  cur = st;
+}
+
+async function openPlatform(key) {
+  const st = cur;
+  if (!st) return;
+  const p = (st.anim ? ANIM_PLATFORMS : PLATFORMS)[key];
+  const btn = (a) => a.act === 'link'
+    ? '<a class="btn" href="' + a.href + '" target="_blank" rel="noopener">' + a.label + '</a>'
+    : '<button class="btn' + (a.primary ? ' primary' : '') + '" data-do="' + a.act + '" data-use="' + (a.use || 'main') + '" disabled>' + a.label + '</button>';
+  const [first, ...rest] = p.actions;
+  showSheet(
+    '<div class="sh-head"><button class="round-btn" data-act="back" aria-label="Volver">←</button><h2>Agregar a ' + p.name + '</h2>' + closeBtn + '</div>' +
+    '<div class="ready"><div class="mini checker"><img src="' + liveUrlFor(st) + '" alt=""></div><div><strong id="spec">Preparando…</strong><span class="muted" id="specNote"></span></div></div>' +
+    '<div class="acts">' + btn(first) + (rest.length ? '<div class="pair">' + rest.map(btn).join('') + '</div>' : '') + '</div>' +
+    '<ol class="steps">' + p.steps.map(s => '<li>' + s + '</li>').join('') + '</ol>' +
+    (p.note ? '<p class="note">' + p.note + '</p>' : ''),
+    'Agregar a ' + p.name);
+  cur = st;
+  const token = ++prepToken;
+  let files;
+  try { files = st.anim ? animFiles(st) : { main: await buildFile(st, p) }; }
+  catch (e) { if (token === prepToken) $('#spec').textContent = 'No pude preparar el archivo.'; return; }
+  if (token !== prepToken) return;
+  ready = files;
+
+  const file = files[first.use || 'main'];
+  const isWebp = file.type === 'image/webp', isGif = file.type === 'image/gif';
+  const px = st.anim ? (isGif ? 320 : S) : p.size, kb = file.size / 1024;
+  $('#spec').textContent = (isGif ? 'GIF' : isWebp ? (st.anim ? 'WebP animado' : 'WebP') : 'PNG') + ' · ' + px + ' × ' + px + ' px · ' +
+    (kb >= 1000 ? (kb / 1024).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(kb)) + ' KB');
+  const note = $('#specNote');
+  if (!st.anim && p.fmt === 'webp' && !isWebp) { note.textContent = 'Este navegador no pudo crear WebP; va como PNG.'; note.className = 'bad'; }
+  else if (p.max && file.size > p.max) { note.textContent = 'Pesa más de lo que acepta ' + p.name + '.'; note.className = 'bad'; }
+  else if (st.anim) note.textContent = st.anim.n + ' cuadros · ' + secs(st.anim.ms / 1000);
+  else note.textContent = 'Listo, en el formato de ' + (key === 'other' ? 'sticker' : p.name) + '.';
+
+  const copyOk = !!(navigator.clipboard && navigator.clipboard.write && window.ClipboardItem);
+  for (const b of body.querySelectorAll('[data-do]')) {
+    b.disabled = false;
+    if (b.dataset.do === 'share' && !canShare(files[b.dataset.use])) b.hidden = true;
+    if (b.dataset.do === 'copy' && !copyOk) b.hidden = true;
+  }
+  /* Si la acción principal no existe en este navegador, «Guardar» pasa a ser la principal. */
+  const visible = [...body.querySelectorAll('[data-do]')].filter(b => !b.hidden);
+  if (visible.length && !visible.some(b => b.classList.contains('primary'))) {
+    const dl = visible.find(b => b.dataset.do === 'download') || visible[0];
+    dl.classList.add('primary');
+    $('.acts').prepend(dl);
+    note.textContent = 'Este navegador no puede ' + (first.act === 'copy' ? 'copiar imágenes' : 'compartir archivos') + ': guárdalo y envíalo desde la app.';
+  }
+}
+
+function doAction(act, use) {
+  const file = ready && ready[use || 'main'];
+  if (!file) return;
+  if (act === 'download') { download(file); toast('Guardado en tus descargas.'); return; }
+  if (act === 'share') {
+    navigator.share({ files: [file] }).catch((err) => {
+      if (err && err.name === 'AbortError') return;
+      download(file);
+      toast('No se abrió «Compartir», así que lo guardé en tus descargas.');
+    });
+    return;
+  }
+  if (act === 'copy') {
+    navigator.clipboard.write([new ClipboardItem({ 'image/png': file })])
+      .then(() => toast('Copiado. Ahora pégalo donde quieras.'))
+      .catch(() => { download(file); toast('No pude copiarlo, así que lo guardé en tus descargas.'); });
+  }
+}
+
+body.addEventListener('click', async (e) => {
+  const t = e.target.closest('[data-act],[data-plat],[data-do]');
+  if (!t) return;
+  if (t.dataset.plat) { openPlatform(t.dataset.plat); return; }
+  if (t.dataset.do) { doAction(t.dataset.do, t.dataset.use); return; }
+  const act = t.dataset.act;
+  if (act === 'close') closeSheet();
+  else if (act === 'back') { if (cur) openDetail(cur); }
+  else if (act === 'pick') { closeSheet(); $('#fileIn').click(); }
+  else if (act === 'edit') {
+    const st = cur;
+    if (!st) return;
+    const img = await decode(new Blob([st.png], { type: 'image/png' }));
+    const c = mk(S, S), g = c.getContext('2d', { willReadFrequently: true });
+    g.drawImage(img, 0, 0, S, S);
+    if (img.close) img.close();
+    openEditor(c, g, st.id);
+  }
+  else if (act === 'delete') {
+    if (!t.dataset.armed) { t.dataset.armed = '1'; t.textContent = 'Toca otra vez para eliminar'; return; }
+    const st = cur;
+    closeSheet();
+    await removeSticker(st.id);
+    toast('Sticker eliminado.');
+  }
+});
+backdropEl.addEventListener('click', closeSheet);
+addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (!sheetEl.hidden) closeSheet();
+  else if (!editorEl.hidden) cancelEditor();
+  else if (!pickerEl.hidden) $('#pkClose').click();
+  else if (!clipEl.hidden) closeClip();
+});
+
+function openHelp() {
+  showSheet(
+    '<div class="sh-head"><h2>Cómo funciona</h2>' + closeBtn + '</div><div class="help">' +
+    '<p>PasaStickers convierte cualquier imagen en un sticker y la deja en el formato exacto de cada app.</p>' +
+    '<h3>Stickers de comentarios, reels e historias</h3>' +
+    '<p>Instagram no deja mantener pulsado un sticker para sacarlo. Haz una captura de pantalla donde se vea, toca «Elegir captura o video» y luego toca el sticker: se recorta solo y salen los botones de WhatsApp, Telegram y Discord.</p>' +
+    '<p>Si no lo recorta bien, toca «A mano» y encuádralo con dos dedos.</p>' +
+    '<h3>Los que se mueven</h3>' +
+    '<p>Graba la pantalla unos 8 segundos mientras el sticker se mueve (en iPhone: Centro de control → botón de grabar). Toca «Elegir captura o video», elige la grabación y toca el sticker.</p>' +
+    '<p>La app mira sola cuánto dura y guarda una vuelta completa, como sticker animado y como GIF. No hagas scroll mientras grabas, para que el sticker no cambie de sitio.</p>' +
+    '<h3>Desde otras apps</h3>' +
+    '<p><strong>iPhone:</strong> mantén pulsada la imagen → Copiar. Vuelve aquí y toca «Pegar imagen».</p>' +
+    '<p><strong>Android:</strong> instala PasaStickers (menú ⋮ del navegador → «Instalar app»). Después, en la otra app, mantén pulsada la imagen → Compartir → PasaStickers.</p>' +
+    '<h3>Retocar y quitar el fondo</h3>' +
+    '<p>Abre un sticker y toca «Retocar». Con «Quitar fondo» tocas el color que sobra; sube la tolerancia si quedan restos y bájala si se borra de más.</p>' +
+    '<h3>Tus stickers</h3>' +
+    '<p>Se guardan solo en este teléfono. Nada se sube a internet.</p>' +
+    '</div>',
+    'Cómo funciona');
+}
+
+function openLinkNotice() {
+  showSheet(
+    '<div class="sh-head"><h2>Solo llegó un enlace</h2>' + closeBtn + '</div><div class="help">' +
+    '<p>Esa app compartió el enlace de la publicación, no la imagen. Instagram hace esto con reels, historias y publicaciones.</p>' +
+    '<p>Haz una captura de pantalla donde se vea el sticker, elígela aquí y toca el sticker: se recorta solo.</p>' +
+    '</div><div class="acts" style="margin-top:16px"><button class="btn primary" data-act="pick">Elegir captura</button></div>',
+    'Solo llegó un enlace');
+}
+
+/* ───────── Lo que llega por «Compartir» (Android) ───────── */
+async function checkInbox() {
+  if (!new URLSearchParams(location.search).has('recibido')) return;
+  history.replaceState(null, '', location.pathname);
+  try {
+    const inbox = await caches.open('pasa-inbox');
+    const metaRes = await inbox.match('inbox/meta');
+    if (!metaRes) return;
+    const meta = await metaRes.json();
+    const blobs = [];
+    for (let i = 0; i < meta.files; i++) {
+      const r = await inbox.match('inbox/file-' + i);
+      if (r) blobs.push(await r.blob());
+    }
+    for (const k of await inbox.keys()) await inbox.delete(k);
+    const video = blobs.find(b => (b.type || '').startsWith('video/'));
+    if (video) openClip(video);
+    else if (blobs.length) { pending.push(...blobs.slice(1)); importBlob(blobs[0]); }
+    else openLinkNotice();
+  } catch (e) { /* sin buzón no hay nada que abrir */ }
+}
+
+/* ───────── Arranque ───────── */
+$('#hint').textContent =
+  isAndroid && isStandalone ? 'Haz una captura de pantalla donde se vea el sticker, elígela aquí y tócalo. Si se mueve, graba la pantalla y elige el video. Desde otras apps también sirve Compartir → PasaStickers.'
+  : isAndroid ? 'Haz una captura de pantalla donde se vea el sticker, elígela aquí y tócalo. Si se mueve, graba la pantalla y elige el video.'
+  : isIOS || navigator.maxTouchPoints > 0 ? 'Haz una captura de pantalla donde se vea el sticker, elígela aquí y tócalo. Si el sticker se mueve, graba la pantalla unos 8 segundos y elige el video.'
+  : 'Pega una imagen (Ctrl+V), arrástrala aquí o elígela de tus archivos.';
+
+if (!(navigator.clipboard && navigator.clipboard.read)) $('#pasteBtn').hidden = true;
+$('#pasteBtn').addEventListener('click', pasteFromClipboard);
+$('#pickBtn').addEventListener('click', () => $('#fileIn').click());
+$('#fileIn').addEventListener('change', (e) => {
+  const files = [...e.target.files];
+  e.target.value = '';
+  if (files.length) importFiles(files);
+});
+$('#helpBtn').addEventListener('click', openHelp);
+
+addEventListener('paste', (e) => {
+  const files = e.clipboardData && e.clipboardData.files;
+  if (files && files.length) { e.preventDefault(); importFiles(files); }
+});
+addEventListener('dragover', (e) => e.preventDefault());
+addEventListener('drop', (e) => {
+  e.preventDefault();
+  if (e.dataTransfer && e.dataTransfer.files.length) importFiles(e.dataTransfer.files);
+});
+
+let installEvent = null;
+addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  installEvent = e;
+  $('#installBtn').hidden = false;
+});
+$('#installBtn').addEventListener('click', async () => {
+  if (!installEvent) return;
+  installEvent.prompt();
+  await installEvent.userChoice.catch(() => {});
+  installEvent = null;
+  $('#installBtn').hidden = true;
+});
+addEventListener('appinstalled', () => { $('#installBtn').hidden = true; });
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
+(async () => {
+  stickers = (await Store.all()).sort((a, b) => b.t - a.t);
+  renderGrid();
+  checkInbox();
+})();
+
+})();
+</script>
+</body>
+</html>
