@@ -177,6 +177,7 @@
   .ready strong{display:block;font-size:15px}
   .ready span{font-size:13.5px}
   .ready span.bad{color:var(--warn)}
+  .modes{margin:0 0 12px}
   .acts{display:grid;gap:10px;margin-bottom:6px}
   .acts .pair{display:flex;gap:10px}
   .acts .pair .btn{flex:1;min-width:0;padding:0 10px}
@@ -884,13 +885,14 @@ async function makeAnimated(t0) {
     if (gone()) return;
     clipStatus('Creando el GIF…', true);
     await tick();
-    const gif = await animatedGif(frames, got.box);
+    const variant = isIOS ? gifMode() : 'fit';
+    const gif = await animatedGif(frames, got.box, variant);
     if (gone()) return;
     const poster = mk(S, S);
     poster.getContext('2d').putImageData(frames[0].img, 0, 0);
     const png = await toBuffer(await canvasBlob(poster, 'image/png'));
     const ms = frames.reduce((n, f) => n + f.ms, 0);
-    const st = await addSticker(png, null, { webp: webp.buffer, gif: gif.buffer, gw: gif.w, gh: gif.h, gv: GIF_V, n: frames.length, ms });
+    const st = await addSticker(png, null, { webp: webp.buffer, g: { [variant]: gif }, gv: GIF_V, n: frames.length, ms });
     hideClip();
     openDetail(st);
     toast(got.loop ? 'Listo: una vuelta completa, ' + secs(ms / 1000) + '.' : 'No vi que se repitiera, así que guardé ' + secs(ms / 1000) + '.');
@@ -990,7 +992,14 @@ const loadGif = () => gifLib || (gifLib = import('./vendor/gifenc.js').catch((e)
 
 /* Versión de cómo se arma el GIF. Si sube, los GIF ya guardados se rehacen solos
    la próxima vez que se usan. */
-const GIF_V = 2;
+const GIF_V = 3;
+
+/* Tres formas de GIF:
+   · «box»:  cuadrado, con el sticker entero y bandas negras. Para WhatsApp, que al volverlo
+             sticker lo recorta a un cuadrado y no respeta la transparencia.
+   · «fill»: cuadrado lleno: la imagen ocupa todo y se cortan los lados.
+   · «fit»:  solo el sticker, con su forma. Para las apps que muestran el GIF tal cual. */
+const gifMode = () => { try { return localStorage.getItem('pasa-gif') === 'fill' ? 'fill' : 'box'; } catch (e) { return 'box'; } };
 
 /* Zona con dibujo dentro de un cuadro de S×S, y cuántos puntos transparentes tiene. */
 function alphaBox(d) {
@@ -1015,35 +1024,38 @@ function fillColor(src, box) {
   return 'rgb(' + Math.round(r * k) + ',' + Math.round(g * k) + ',' + Math.round(b * k) + ')';
 }
 
-/* Dibuja el sticker entero y centrado dentro de un cuadrado. WhatsApp recorta los GIF a un
-   cuadrado al volverlos sticker (si no es cuadrado, le corta los lados), y un GIF no puede
-   llevar transparencia (no la respeta). Así que lo que sobra va de un color liso. */
-function squareFrame(g, src, box, size, fill) {
+function variantSize(box, variant, size) {
+  if (variant !== 'fit') return [size, size];
+  const k = size / Math.max(box.w, box.h);
+  return [Math.max(2, Math.round(box.w * k)), Math.max(2, Math.round(box.h * k))];
+}
+function paintVariant(g, src, box, variant, w, h, fill) {
   g.fillStyle = fill;
-  g.fillRect(0, 0, size, size);
-  const k = size / Math.max(box.w, box.h), w = box.w * k, h = box.h * k;
+  g.fillRect(0, 0, w, h);
+  const k = variant === 'fill' ? Math.max(w / box.w, h / box.h) : Math.min(w / box.w, h / box.h);
+  const dw = box.w * k, dh = box.h * k;
   g.imageSmoothingEnabled = true;
   g.imageSmoothingQuality = 'high';
-  g.drawImage(src, box.x, box.y, box.w, box.h, (size - w) / 2, (size - h) / 2, w, h);
+  g.drawImage(src, box.x, box.y, box.w, box.h, (w - dw) / 2, (h - dh) / 2, dw, dh);
 }
 
-async function animatedGif(frames, box) {
+async function animatedGif(frames, box, variant) {
   const { GIFEncoder, quantize, applyPalette } = await loadGif();
   const gif = GIFEncoder();
-  const size = frames.length > 30 ? 384 : S;
-  const a = mk(S, S), ag = a.getContext('2d'), b = mk(size, size), bg = b.getContext('2d', { willReadFrequently: true });
+  const [w, h] = variantSize(box, variant, frames.length > 30 ? 384 : S);
+  const a = mk(S, S), ag = a.getContext('2d'), b = mk(w, h), bg = b.getContext('2d', { willReadFrequently: true });
   ag.putImageData(frames[0].img, 0, 0);
-  const fill = fillColor(a, box);                 // el mismo color en todos los cuadros, para que no parpadee
+  const fill = variant === 'fit' ? fillColor(a, box) : '#000';   // el mismo en todos los cuadros, para que no parpadee
   for (let i = 0; i < frames.length; i++) {
     ag.putImageData(frames[i].img, 0, 0);
-    squareFrame(bg, a, box, size, fill);
-    const rgba = bg.getImageData(0, 0, size, size).data;
+    paintVariant(bg, a, box, variant, w, h, fill);
+    const rgba = bg.getImageData(0, 0, w, h).data;
     const palette = quantize(rgba, 256, { format: 'rgb565' });
-    gif.writeFrame(applyPalette(rgba, palette, 'rgb565'), size, size, { palette, delay: frames[i].ms });
+    gif.writeFrame(applyPalette(rgba, palette, 'rgb565'), w, h, { palette, delay: frames[i].ms });
     if (i % 3 === 2) await tick();
   }
   gif.finish();
-  return { buffer: gif.bytes().slice().buffer, w: size, h: size };
+  return { buf: gif.bytes().slice().buffer, w, h };
 }
 
 /* Separa los cuadros de un WebP animado hecho por esta app; cada uno sale como WebP suelto. */
@@ -1069,8 +1081,8 @@ function webpFrames(buf) {
   return out;
 }
 
-/* Rehace el GIF de un sticker animado ya guardado, a partir de su WebP animado. */
-async function rebuildGif(st) {
+/* Los cuadros de un sticker animado ya guardado, sacados de su WebP animado. */
+async function framesOf(st) {
   const parts = webpFrames(st.anim.webp);
   if (parts.length < 2) throw new Error('frames');
   const c = mk(S, S), g = c.getContext('2d', { willReadFrequently: true }), frames = [];
@@ -1081,9 +1093,23 @@ async function rebuildGif(st) {
     if (img.close) img.close();
     frames.push({ img: g.getImageData(0, 0, S, S), ms: part.ms || 100 });
   }
-  const gif = await animatedGif(frames, alphaBox(frames[0].img.data));
-  Object.assign(st.anim, { gif: gif.buffer, gw: gif.w, gh: gif.h, gv: GIF_V });
-  await Store.put(st);
+  return frames;
+}
+
+/* El GIF de un sticker animado en la forma pedida. Se arma la primera vez y queda guardado;
+   los de una versión anterior se descartan y se rehacen. */
+async function animGif(st, variant) {
+  const a = st.anim;
+  if (a.gv !== GIF_V || !a.g) {
+    a.g = {}; a.gv = GIF_V;
+    delete a.gif; delete a.gw; delete a.gh;
+  }
+  if (!a.g[variant]) {
+    const frames = await framesOf(st);
+    a.g[variant] = await animatedGif(frames, alphaBox(frames[0].img.data), variant);
+    await Store.put(st);
+  }
+  return a.g[variant];
 }
 
 /* ───────── Editor ───────── */
@@ -1413,7 +1439,7 @@ const PLATFORMS = {
 /* Los animados salen en dos archivos: WebP animado (sticker) y GIF (sirve en todas partes). */
 const ANIM_PLATFORMS = {
   whatsapp: {
-    name: 'WhatsApp', max: 500 * 1024,
+    name: 'WhatsApp', max: 500 * 1024, gif: 'box',
     actions: [{ act: 'share', use: 'webp', label: 'Enviar a WhatsApp', primary: true }, { act: 'share', use: 'gif', label: 'Enviar como GIF' }, { act: 'download', use: 'webp', label: 'Guardar' }],
     steps: [
       'Toca «Enviar a WhatsApp» y elige WhatsApp en el menú.',
@@ -1424,6 +1450,7 @@ const ANIM_PLATFORMS = {
   },
   telegram: {
     name: 'Telegram',
+    gif: 'fit',
     actions: [{ act: 'share', use: 'gif', label: 'Enviar a Telegram', primary: true }, { act: 'download', use: 'gif', label: 'Guardar GIF' }],
     steps: [
       'Toca «Enviar a Telegram» y elige Telegram en el menú.',
@@ -1433,6 +1460,7 @@ const ANIM_PLATFORMS = {
   },
   discord: {
     name: 'Discord',
+    gif: 'fit',
     actions: [{ act: 'share', use: 'gif', label: 'Enviar a Discord', primary: true }, { act: 'download', use: 'gif', label: 'Guardar GIF' }],
     steps: [
       'Toca «Enviar a Discord» y elige el chat o canal.',
@@ -1442,6 +1470,7 @@ const ANIM_PLATFORMS = {
   },
   other: {
     name: 'otras apps', short: 'Otras',
+    gif: 'fit',
     actions: [{ act: 'share', use: 'gif', label: 'Compartir GIF…', primary: true }, { act: 'download', use: 'gif', label: 'Guardar GIF' }],
     steps: [
       '«Compartir GIF…» abre el menú del teléfono: elige la app que quieras.',
@@ -1461,13 +1490,13 @@ if (isIOS) {
     'Toca el sticker y elige «Añadir a favoritos».',
   ];
   PLATFORMS.whatsapp = {
-    name: 'WhatsApp', fmt: 'png', size: 512, max: Infinity, gif: true,
+    name: 'WhatsApp', fmt: 'png', size: 512, max: Infinity, gif: 'box', modes: true,
     actions: [{ act: 'share', use: 'gif', label: 'Enviar a WhatsApp', primary: true }, { act: 'download', label: 'Guardar en Fotos' }],
     steps: viaGif,
     note: 'Otra forma, que conserva el fondo transparente: toca «Guardar en Fotos» y, en WhatsApp, toca «Crear sticker» y elige esa imagen.',
   };
   ANIM_PLATFORMS.whatsapp = {
-    name: 'WhatsApp',
+    name: 'WhatsApp', gif: 'box', modes: true,
     actions: [{ act: 'share', use: 'gif', label: 'Enviar a WhatsApp', primary: true }, { act: 'download', use: 'gif', label: 'Guardar en Fotos' }],
     steps: viaGif,
     note: '¿Al pegarlo sigue siendo GIF? Toca «Guardar en Fotos» y, en WhatsApp, toca «Crear sticker» y elige ese GIF.',
@@ -1478,34 +1507,38 @@ if (isIOS) {
 
 /* Cada archivo lleva sus medidas para mostrarlas en la hoja. */
 const sized = (file, w, h) => { file.px = [w, h]; return file; };
-async function animFiles(st) {
-  if ((st.anim.gv || 1) < GIF_V) {
-    try { await rebuildGif(st); } catch (e) { /* si no se puede, sirve el GIF que ya tenía */ }
-  }
-  return {
-    webp: sized(new File([st.anim.webp], 'sticker-' + st.id + '.webp', { type: 'image/webp' }), S, S),
-    gif: sized(new File([st.anim.gif], 'sticker-' + st.id + '.gif', { type: 'image/gif' }), st.anim.gw || 320, st.anim.gh || 320),
-  };
-}
+const webpFile = (st) => sized(new File([st.anim.webp], 'sticker-' + st.id + '.webp', { type: 'image/webp' }), S, S);
 
-/* Un sticker quieto como GIF cuadrado de dos cuadros iguales. Si el fondo está recortado
-   (mucha transparencia) queda sobre blanco; si no, sobre un tono oscuro de la propia imagen. */
-async function stillGif(st) {
-  const { GIFEncoder, quantize, applyPalette } = await loadGif();
+/* El póster del sticker en un lienzo de S×S y la zona que tiene dibujo. */
+async function stillSource(st) {
   const img = await decode(new Blob([st.png], { type: 'image/png' }));
   const a = mk(S, S), ag = a.getContext('2d', { willReadFrequently: true });
   ag.drawImage(img, 0, 0, S, S);
   if (img.close) img.close();
-  const box = alphaBox(ag.getImageData(0, 0, S, S).data);
-  const b = mk(S, S), bg = b.getContext('2d', { willReadFrequently: true });
-  squareFrame(bg, a, box, S, box.clear < box.w * box.h * 0.08 ? fillColor(a, box) : '#fff');
-  const rgba = bg.getImageData(0, 0, S, S).data;
+  return { canvas: a, box: alphaBox(ag.getImageData(0, 0, S, S).data) };
+}
+
+/* El GIF de cualquier sticker en la forma pedida. Uno quieto sale como GIF de dos cuadros
+   iguales; si tiene el fondo recortado (mucha transparencia) queda sobre blanco. */
+async function gifFile(st, variant) {
+  const name = 'sticker-' + st.id + '.gif';
+  if (st.anim) {
+    const g = await animGif(st, variant);
+    return sized(new File([g.buf], name, { type: 'image/gif' }), g.w, g.h);
+  }
+  const { GIFEncoder, quantize, applyPalette } = await loadGif();
+  const { canvas, box } = await stillSource(st);
+  const [w, h] = variantSize(box, variant, S);
+  const b = mk(w, h), bg = b.getContext('2d', { willReadFrequently: true });
+  const cutout = box.clear >= box.w * box.h * 0.08;
+  paintVariant(bg, canvas, box, variant, w, h, cutout ? '#fff' : variant === 'fit' ? fillColor(canvas, box) : '#000');
+  const rgba = bg.getImageData(0, 0, w, h).data;
   const palette = quantize(rgba, 256, { format: 'rgb565' }), index = applyPalette(rgba, palette, 'rgb565');
   const gif = GIFEncoder();
-  gif.writeFrame(index, S, S, { palette, delay: 500 });
-  gif.writeFrame(index, S, S, { palette, delay: 500 });
+  gif.writeFrame(index, w, h, { palette, delay: 500 });
+  gif.writeFrame(index, w, h, { palette, delay: 500 });
   gif.finish();
-  return sized(new File([gif.bytes().slice()], 'sticker-' + st.id + '.gif', { type: 'image/gif' }), S, S);
+  return sized(new File([gif.bytes().slice()], name, { type: 'image/gif' }), w, h);
 }
 
 /* WebP: primero el codificador del navegador; si no sabe (Safari), el de WebAssembly. */
@@ -1569,10 +1602,15 @@ const canShare = (file) => !!(navigator.share && navigator.canShare && navigator
 
 /* ───────── Hoja inferior ───────── */
 const body = $('#sheetBody');
-let cur = null, ready = null, prepToken = 0;
+let cur = null, ready = null, prepToken = 0, sheetPlat = null, previewUrl = null;
+function dropPreview() {
+  sheetPlat = null;
+  if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = null; }
+}
 
 function showSheet(html, label) {
   ready = null; prepToken++;
+  dropPreview();
   body.innerHTML = html;
   sheetEl.setAttribute('aria-label', label);
   sheetEl.hidden = false;
@@ -1586,6 +1624,7 @@ function hideSheet() {
   backdropEl.hidden = true;
   body.textContent = '';
   cur = null; ready = null; prepToken++;
+  dropPreview();
 }
 function closeSheet() { hideSheet(); layersChanged(); }
 
@@ -1615,20 +1654,33 @@ async function openPlatform(key) {
   const [first, ...rest] = p.actions;
   showSheet(
     '<div class="sh-head"><button class="round-btn" data-act="back" aria-label="Volver">←</button><h2>Agregar a ' + p.name + '</h2>' + closeBtn + '</div>' +
-    '<div class="ready"><div class="mini checker"><img src="' + liveUrlFor(st) + '" alt=""></div><div><strong id="spec">Preparando…</strong><span class="muted" id="specNote"></span></div></div>' +
+    '<div class="ready"><div class="mini checker"><img id="miniImg" src="' + liveUrlFor(st) + '" alt=""></div><div><strong id="spec">Preparando…</strong><span class="muted" id="specNote"></span></div></div>' +
+    (p.modes ? '<div class="seg modes" id="gifModes" role="group" aria-label="Cómo queda dentro del cuadrado" hidden><button data-gif="box">Completo</button><button data-gif="fill">Llenar cuadro</button></div>' : '') +
     '<div class="acts">' + btn(first) + (rest.length ? '<div class="pair">' + rest.map(btn).join('') + '</div>' : '') + '</div>' +
     '<ol class="steps">' + p.steps.map(s => '<li>' + s + '</li>').join('') + '</ol>' +
     (p.note ? '<p class="note">' + p.note + '</p>' : ''),
     'Agregar a ' + p.name);
   cur = st;
+  sheetPlat = { st, key, p };
+  await preparePlatform();
+}
+
+/* Prepara los archivos de la plataforma abierta. Se repite al cambiar entre «Completo» y «Llenar cuadro». */
+async function preparePlatform() {
+  const { st, key, p } = sheetPlat, first = p.actions[0];
   const token = ++prepToken;
-  let files;
+  ready = null;
+  $('#spec').textContent = 'Preparando…';
+  for (const b of body.querySelectorAll('[data-do]')) b.disabled = true;
+  const variant = p.modes ? gifMode() : p.gif;
+  let files, box;
   try {
-    files = st.anim ? await animFiles(st) : { main: await buildFile(st, p) };
-    if (!st.anim && p.gif) files.gif = await stillGif(st);
+    files = st.anim ? { webp: webpFile(st) } : { main: await buildFile(st, p) };
+    if (p.gif) files.gif = await gifFile(st, variant);
+    if (p.modes) box = (await stillSource(st)).box;
   }
   catch (e) { if (token === prepToken) $('#spec').textContent = 'No pude preparar el archivo.'; return; }
-  if (token !== prepToken) return;
+  if (token !== prepToken || !sheetPlat) return;
   ready = files;
 
   const file = files[first.use || 'main'];
@@ -1637,10 +1689,20 @@ async function openPlatform(key) {
   $('#spec').textContent = (isGif ? 'GIF' : isWebp ? (st.anim ? 'WebP animado' : 'WebP') : 'PNG') + ' · ' + file.px[0] + ' × ' + file.px[1] + ' px · ' +
     (kb >= 1000 ? (kb / 1024).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(kb)) + ' KB');
   const note = $('#specNote');
+  note.className = 'muted';
   if (!st.anim && p.fmt === 'webp' && !isWebp) { note.textContent = 'Este navegador no pudo crear WebP; va como PNG.'; note.className = 'bad'; }
   else if (p.max && file.size > p.max) { note.textContent = 'Pesa más de lo que acepta ' + p.name + '.'; note.className = 'bad'; }
   else if (st.anim) note.textContent = st.anim.n + ' cuadros · ' + secs(st.anim.ms / 1000);
   else note.textContent = 'Listo, en el formato de ' + (key === 'other' ? 'sticker' : p.name) + '.';
+
+  /* La miniatura muestra exactamente lo que se va a enviar. */
+  if (previewUrl) URL.revokeObjectURL(previewUrl);
+  previewUrl = URL.createObjectURL(file);
+  $('#miniImg').src = previewUrl;
+  if (p.modes) {
+    $('#gifModes').hidden = Math.min(box.w, box.h) / Math.max(box.w, box.h) > 0.94;   // si ya es casi cuadrado no hay nada que elegir
+    setSeg('#gifModes', 'gif', variant);
+  }
 
   const copyOk = !!(navigator.clipboard && navigator.clipboard.write && window.ClipboardItem);
   for (const b of body.querySelectorAll('[data-do]')) {
@@ -1689,8 +1751,13 @@ function doAction(act, use) {
 }
 
 body.addEventListener('click', async (e) => {
-  const t = e.target.closest('[data-act],[data-plat],[data-do]');
+  const t = e.target.closest('[data-act],[data-plat],[data-do],[data-gif]');
   if (!t) return;
+  if (t.dataset.gif) {
+    try { localStorage.setItem('pasa-gif', t.dataset.gif); } catch (err) { /* sin memoria, vale solo esta vez */ }
+    if (sheetPlat && gifMode() === t.dataset.gif) preparePlatform();
+    return;
+  }
   if (t.dataset.plat) { openPlatform(t.dataset.plat); return; }
   if (t.dataset.do) { doAction(t.dataset.do, t.dataset.use); return; }
   const act = t.dataset.act;
