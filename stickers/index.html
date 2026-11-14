@@ -76,13 +76,16 @@
   .hint{color:var(--muted);font-size:14.5px;margin:6px 0 14px}
   .row{display:flex;gap:10px;flex-wrap:wrap}
   .row .btn{flex:1 1 140px}
+  .row .btn.primary{flex:1 1 100%}
 
   /* Biblioteca */
   .lib-head{display:flex;align-items:baseline;gap:8px;margin:26px 2px 12px}
   .count{color:var(--muted);font-weight:600;font-size:14px}
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
   @media (min-width:480px){ .grid{grid-template-columns:repeat(4,1fr)} }
-  .st{aspect-ratio:1;border:0;padding:9px;border-radius:20px;background:var(--surface);min-width:0}
+  .st{aspect-ratio:1;border:0;padding:9px;border-radius:20px;background:var(--surface);min-width:0;position:relative}
+  .badge{position:absolute;right:7px;bottom:7px;background:var(--text);color:var(--bg);font-size:10.5px;font-weight:800;
+    letter-spacing:.5px;border-radius:6px;padding:2px 6px}
   .st img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 3px 0 rgba(0,0,0,.26));
     transition:transform .14s ease}
   .st:nth-child(3n+1) img{transform:rotate(-4deg)}
@@ -140,6 +143,12 @@
   .pk-stage canvas{display:block;max-width:100%;max-height:100%;border-radius:14px;cursor:pointer}
   .pk-box{position:absolute;border:3px solid var(--accent);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.5);pointer-events:none}
   .pk-hint{margin-top:10px;font-size:14.5px;color:var(--muted);text-align:center}
+  .pk-stage video{display:block;max-width:100%;max-height:100%;border-radius:14px;background:#000;cursor:pointer}
+  .cl-controls{width:100%;max-width:440px;display:grid;grid-template-columns:minmax(0,1fr);gap:6px;margin-top:10px}
+  .cl-controls .slider b{flex:0 0 46px;text-align:right;font-variant-numeric:tabular-nums}
+  .cl-controls .pk-hint{margin-top:2px;min-height:2.9em}
+  .busy{position:absolute;inset:0;z-index:5;background:rgba(0,0,0,.78);color:#fff;display:flex;align-items:center;justify-content:center;
+    text-align:center;padding:28px;font-weight:700;font-size:17px}
 
   /* Hoja inferior */
   .backdrop{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.55)}
@@ -213,18 +222,18 @@
     <h2 id="bringTitle">Trae un sticker</h2>
     <p class="hint" id="hint"></p>
     <div class="row">
-      <button class="btn primary" id="pickBtn">Elegir captura</button>
+      <button class="btn primary" id="pickBtn">Elegir captura o video</button>
       <button class="btn" id="pasteBtn">Pegar imagen</button>
     </div>
-    <input class="vh" id="fileIn" type="file" accept="image/*" multiple tabindex="-1" aria-hidden="true">
+    <input class="vh" id="fileIn" type="file" accept="image/*,video/*" multiple tabindex="-1" aria-hidden="true">
   </section>
 
   <section aria-labelledby="libTitle">
     <div class="lib-head"><h2 id="libTitle">Tus stickers</h2><span class="count" id="count"></span></div>
     <div class="grid" id="grid"></div>
     <ol class="empty" id="empty">
-      <li><span class="n">1</span><div><strong>Captura</strong><span>Haz una captura de pantalla donde se vea el sticker.</span></div></li>
-      <li><span class="n">2</span><div><strong>Toca</strong><span>Elige la captura aquí y toca el sticker: se recorta solo.</span></div></li>
+      <li><span class="n">1</span><div><strong>Captura</strong><span>Haz una captura de pantalla donde se vea el sticker, o graba la pantalla si se mueve.</span></div></li>
+      <li><span class="n">2</span><div><strong>Toca</strong><span>Elige la captura o el video aquí y toca el sticker: se recorta solo.</span></div></li>
       <li><span class="n">3</span><div><strong>Pasa</strong><span>Agrégalo a WhatsApp, Telegram, Discord o Instagram.</span></div></li>
     </ol>
   </section>
@@ -238,6 +247,21 @@
   </div>
   <div class="pk-stage" id="pkStage"></div>
   <p class="pk-hint">Toca el sticker que quieres pasar. Si no lo recorta bien, usa «A mano».</p>
+</div>
+
+<div class="picker" id="clip" role="dialog" aria-modal="true" aria-label="Crear sticker animado" hidden>
+  <div class="ed-bar">
+    <button class="btn ghost sm" id="clClose">Cerrar</button>
+    <strong>Sticker animado</strong>
+    <button class="btn primary sm" id="clMake" disabled>Crear</button>
+  </div>
+  <div class="pk-stage" id="clStage"><video id="clVideo" muted playsinline webkit-playsinline preload="auto"></video></div>
+  <div class="cl-controls">
+    <label class="slider"><span>Empieza</span><input type="range" id="clStart" min="0" max="0" step="0.1" value="0"><b id="clStartVal">0 s</b></label>
+    <label class="slider"><span>Dura</span><input type="range" id="clDur" min="1" max="5" step="0.5" value="3"><b id="clDurVal">3 s</b></label>
+    <p class="pk-hint" id="clHint"></p>
+  </div>
+  <div class="busy" id="clBusy" hidden><p id="clBusyText"></p></div>
 </div>
 
 <div class="editor" id="editor" role="dialog" aria-modal="true" aria-label="Recortar sticker" hidden>
@@ -336,6 +360,13 @@ function urlFor(st) {
   if (!u) { u = URL.createObjectURL(new Blob([st.png], { type: 'image/png' })); urls.set(st.id, u); }
   return u;
 }
+/* Los animados guardan además el WebP animado y el GIF; la vista previa usa el WebP. */
+function liveUrlFor(st) {
+  if (!st.anim) return urlFor(st);
+  let u = urls.get(st.id + ':anim');
+  if (!u) { u = URL.createObjectURL(new Blob([st.anim.webp], { type: 'image/webp' })); urls.set(st.id + ':anim', u); }
+  return u;
+}
 
 function renderGrid() {
   const grid = $('#grid');
@@ -349,6 +380,13 @@ function renderGrid() {
     im.draggable = false;
     im.src = urlFor(st);
     b.appendChild(im);
+    if (st.anim) {
+      const tag = document.createElement('span');
+      tag.className = 'badge';
+      tag.textContent = 'GIF';
+      b.appendChild(tag);
+      b.setAttribute('aria-label', 'Abrir sticker animado');
+    }
     b.addEventListener('click', () => openDetail(st));
     grid.appendChild(b);
   }
@@ -356,9 +394,10 @@ function renderGrid() {
   $('#count').textContent = stickers.length ? String(stickers.length) : '';
 }
 
-async function addSticker(png, replaceId) {
+async function addSticker(png, replaceId, anim) {
   if (replaceId) await removeSticker(replaceId);
   const st = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: Date.now(), png };
+  if (anim) st.anim = anim;
   const saved = await Store.put(st);
   stickers.unshift(st);
   renderGrid();
@@ -367,8 +406,10 @@ async function addSticker(png, replaceId) {
 }
 function removeSticker(id) {
   stickers = stickers.filter(s => s.id !== id);
-  const u = urls.get(id);
-  if (u) { URL.revokeObjectURL(u); urls.delete(id); }
+  for (const k of [id, id + ':anim']) {
+    const u = urls.get(k);
+    if (u) { URL.revokeObjectURL(u); urls.delete(k); }
+  }
   renderGrid();
   return Store.del(id);
 }
@@ -376,9 +417,9 @@ function removeSticker(id) {
 /* ───────── Capas (selector / editor / hoja) y botón «atrás» ─────────
    Mientras haya algo abierto existe una sola entrada extra en el historial,
    así el gesto «atrás» de Android cierra la capa en vez de salir de la app. */
-const editorEl = $('#editor'), pickerEl = $('#picker'), sheetEl = $('#sheet'), backdropEl = $('#backdrop');
+const editorEl = $('#editor'), pickerEl = $('#picker'), clipEl = $('#clip'), sheetEl = $('#sheet'), backdropEl = $('#backdrop');
 let hasEntry = false, backPending = false;
-const anyOpen = () => !editorEl.hidden || !pickerEl.hidden || !sheetEl.hidden;
+const anyOpen = () => !editorEl.hidden || !pickerEl.hidden || !clipEl.hidden || !sheetEl.hidden;
 function layersChanged() {
   const open = anyOpen();
   document.body.classList.toggle('locked', open);
@@ -402,6 +443,7 @@ addEventListener('popstate', () => {
     pending.length = 0;
     hideEditor();
     hidePicker();
+    hideClip();
     hideSheet();
     document.body.classList.remove('locked');
   }
@@ -444,9 +486,13 @@ async function importBlob(blob) {
   else openEditor(c, g);
 }
 
+const isVideo = (f) => (f.type || '').startsWith('video/') || /\.(mp4|mov|m4v|webm)$/i.test(f.name || '');
+
 function importFiles(list) {
+  const video = [...list].find(isVideo);
+  if (video) { pending.length = 0; openClip(video); return; }
   const imgs = [...list].filter(f => (f.type || '').startsWith('image/') || /\.(png|jpe?g|webp|gif|heic|avif)$/i.test(f.name || ''));
-  if (!imgs.length) { toast('Eso no es una imagen.'); return; }
+  if (!imgs.length) { toast('Eso no es una imagen ni un video.'); return; }
   pending.push(...imgs.slice(1));
   importBlob(imgs[0]);
 }
@@ -460,7 +506,7 @@ async function pasteFromClipboard() {
     }
     toast('No hay ninguna imagen copiada. En la otra app mantén pulsada la imagen y elige «Copiar».');
   } catch (e) {
-    toast('No pude leer el portapapeles. Usa «Elegir captura».');
+    toast('No pude leer el portapapeles. Usa «Elegir captura o video».');
   }
 }
 
@@ -501,8 +547,8 @@ function findSticker(img, tx, ty) {
 
 /* Recorta y vuelve transparentes las esquinas redondeadas que dejan ver el fondo de la app.
    Se descarta además un filo de 1-2 px: ahí el sticker está mezclado con el fondo. */
-function cropSticker(img, rect) {
-  const e = Math.max(1, Math.round(img.width * 0.0015));
+function cropSticker(img, rect, edge) {
+  const e = edge || Math.max(1, Math.round(img.width * 0.0015));
   const r = rect.w > e * 12 && rect.h > e * 12 ? { x: rect.x + e, y: rect.y + e, w: rect.w - e * 2, h: rect.h - e * 2 } : rect;
   const c = mk(r.w, r.h), g = c.getContext('2d', { willReadFrequently: true });
   g.putImageData(img, -r.x, -r.y, r.x, r.y, r.w, r.h);
@@ -532,7 +578,7 @@ function cropSticker(img, rect) {
     }
   }
   g.putImageData(cd, 0, 0);
-  return c;
+  return { canvas: c, rect: r };
 }
 
 async function stickerPng(c) {
@@ -545,6 +591,7 @@ async function stickerPng(c) {
 
 function openPicker(src, sctx) {
   hideEditor();
+  hideClip();
   hideSheet();
   P.src = src; P.sctx = sctx; P.img = null; P.busy = false;
   pkStage.textContent = '';
@@ -579,7 +626,7 @@ pkStage.addEventListener('click', (e) => {
   mark.style.cssText = 'left:' + (box.left - sb.left + r.x * k - 3) + 'px;top:' + (box.top - sb.top + r.y * k - 3) + 'px;width:' + (r.w * k + 6) + 'px;height:' + (r.h * k + 6) + 'px';
   pkStage.appendChild(mark);
   P.busy = true;
-  const crop = cropSticker(P.img, r);
+  const crop = cropSticker(P.img, r).canvas;
   setTimeout(async () => {
     mark.remove();
     if (pickerEl.hidden) return;          // se cerró mientras tanto
@@ -593,6 +640,334 @@ $('#pkManual').addEventListener('click', () => {
   if (!src) return;
   hidePicker();
   openEditor(src, sctx);
+});
+
+/* ───────── Stickers animados: desde una grabación de pantalla ─────────
+   Se toca el sticker en el video, se capturan unos segundos de esa zona mientras
+   el video se reproduce y con esos cuadros se arman un WebP animado y un GIF. */
+const clStage = $('#clStage'), clVideo = $('#clVideo');
+const C = { url: null, rect: null, mask: null, mark: null, start: 0, dur: 3, busy: false };
+const CLIP_HINT = 'Toca el sticker mientras se ve en el video.';
+const once = (el, ev, ms) => new Promise((res) => {
+  const done = () => { el.removeEventListener(ev, done); clearTimeout(t); res(); };
+  const t = setTimeout(done, ms);
+  el.addEventListener(ev, done);
+});
+const tick = () => new Promise((res) => setTimeout(res));
+const secs = (v) => String(Math.round(v * 10) / 10).replace('.', ',') + ' s';
+const say = (msg) => { $('#clBusyText').textContent = msg; $('#clBusy').hidden = false; };
+const clipTotal = () => (isFinite(clVideo.duration) ? clVideo.duration : 0);
+
+function resetClip() {
+  clVideo.pause();
+  clVideo.removeAttribute('src');
+  clVideo.load();
+  if (C.url) URL.revokeObjectURL(C.url);
+  if (C.mark) C.mark.remove();
+  Object.assign(C, { url: null, rect: null, mask: null, mark: null, start: 0, dur: 3, busy: false });
+  $('#clMake').disabled = true;
+  $('#clBusy').hidden = true;
+  $('#clHint').textContent = CLIP_HINT;
+}
+function hideClip() {
+  if (clipEl.hidden) return;
+  clipEl.hidden = true;
+  resetClip();
+}
+function closeClip() { hideClip(); layersChanged(); }
+
+async function openClip(blob) {
+  hideEditor();
+  hidePicker();
+  hideSheet();
+  resetClip();
+  const url = C.url = URL.createObjectURL(blob);
+  clipEl.hidden = false;
+  layersChanged();
+  clVideo.src = url;
+  clVideo.load();
+  if (clVideo.readyState < 1) await once(clVideo, 'loadedmetadata', 10000);
+  if (C.url !== url) return;                       // se cerró o se eligió otro mientras cargaba
+  if (!clVideo.videoWidth) { toast('No pude abrir ese video.'); closeClip(); return; }
+  if (!isFinite(clVideo.duration)) {               // hay videos que no traen la duración hasta recorrerlos
+    clVideo.currentTime = 1e7;
+    await once(clVideo, 'durationchange', 4000);
+    clVideo.currentTime = 0;
+    await once(clVideo, 'seeked', 2000);
+    if (C.url !== url) return;
+  }
+  fitClip();
+  syncClip();
+  clVideo.play().catch(() => {});
+}
+
+function placeMark() {
+  if (!C.mark || !C.rect) return;
+  const box = clVideo.getBoundingClientRect(), sb = clStage.getBoundingClientRect(), k = box.width / clVideo.videoWidth, r = C.rect;
+  C.mark.style.cssText = 'left:' + (box.left - sb.left + r.x * k - 3) + 'px;top:' + (box.top - sb.top + r.y * k - 3) + 'px;width:' + (r.w * k + 6) + 'px;height:' + (r.h * k + 6) + 'px';
+}
+function fitClip() {
+  if (clipEl.hidden || !clVideo.videoWidth) return;
+  const r = clStage.getBoundingClientRect(), k = Math.min(r.width / clVideo.videoWidth, r.height / clVideo.videoHeight);
+  if (k > 0) { clVideo.style.width = Math.floor(clVideo.videoWidth * k) + 'px'; clVideo.style.height = Math.floor(clVideo.videoHeight * k) + 'px'; }
+  placeMark();
+}
+addEventListener('resize', fitClip);
+/* El espacio libre también cambia cuando crece el texto de abajo: se vuelve a ajustar. */
+if (window.ResizeObserver) {
+  new ResizeObserver(() => fitClip()).observe(clStage);
+  new ResizeObserver(() => fitPicker()).observe(pkStage);
+}
+
+/* Ajusta las barras «Empieza» y «Dura» a lo que mide el video. */
+function syncClip() {
+  const total = clipTotal(), ds = $('#clDur'), ss = $('#clStart');
+  const maxDur = Math.max(1, Math.min(5, Math.floor(total * 2) / 2));
+  C.dur = total && total < 1 ? total : Math.min(C.dur, maxDur);
+  ds.max = maxDur; ds.value = C.dur; ds.disabled = total < 1.5;
+  const maxStart = Math.max(0, Math.floor((total - C.dur) * 10) / 10);
+  C.start = Math.min(C.start, maxStart);
+  ss.max = maxStart; ss.value = C.start; ss.disabled = maxStart <= 0;
+  $('#clDurVal').textContent = secs(C.dur);
+  $('#clStartVal').textContent = secs(C.start);
+}
+
+/* El video se repite solo: entero antes de elegir, y solo el trozo elegido después. */
+clVideo.addEventListener('timeupdate', () => {
+  if (C.busy || clipEl.hidden || !C.rect) return;
+  if (clVideo.currentTime >= C.start + C.dur - 0.05 || clVideo.currentTime < C.start - 0.4) clVideo.currentTime = C.start;
+});
+clVideo.addEventListener('ended', () => {
+  if (C.busy || clipEl.hidden) return;
+  clVideo.currentTime = C.rect ? C.start : 0;
+  clVideo.play().catch(() => {});
+});
+$('#clStart').addEventListener('input', (e) => {
+  C.start = +e.target.value;
+  clVideo.currentTime = C.start;
+  syncClip();
+  clVideo.play().catch(() => {});
+});
+$('#clDur').addEventListener('input', (e) => { C.dur = +e.target.value; syncClip(); });
+$('#clClose').addEventListener('click', closeClip);
+
+clVideo.addEventListener('click', (e) => {
+  if (C.busy || !clVideo.videoWidth) return;
+  if (clVideo.readyState < 2) { clVideo.play().catch(() => {}); return; }
+  const box = clVideo.getBoundingClientRect(), w = clVideo.videoWidth, h = clVideo.videoHeight;
+  const c = mk(w, h), g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(clVideo, 0, 0, w, h);
+  const img = g.getImageData(0, 0, w, h);
+  const found = findSticker(img, Math.floor((e.clientX - box.left) * w / box.width), Math.floor((e.clientY - box.top) * h / box.height));
+  if (!found) { toast('No encontré el borde de ese sticker. Toca justo encima.'); return; }
+  /* En video el filo se descarta más ancho: la compresión ensucia los bordes. */
+  const crop = cropSticker(img, found, Math.max(2, Math.round(w * 0.004)));
+  if (!C.rect) C.start = Math.max(0, Math.round(clVideo.currentTime * 10) / 10);
+  C.rect = crop.rect; C.mask = crop.canvas;
+  if (!C.mark) { C.mark = document.createElement('div'); C.mark.className = 'pk-box'; clStage.appendChild(C.mark); }
+  placeMark();
+  syncClip();
+  $('#clMake').disabled = false;
+  $('#clHint').textContent = 'Se guarda lo que ves dentro del marco. Ajusta las barras si hace falta y toca «Crear».';
+  fitClip();
+  if (clVideo.paused) clVideo.play().catch(() => {});
+});
+
+async function captureFrames() {
+  const v = clVideo, r = C.rect, mask = C.mask, start = C.start, dur = C.dur;
+  const fps = dur <= 3 ? 10 : 8, step = 1 / fps, want = Math.max(2, Math.round(dur * fps));
+  const k = S / Math.max(r.w, r.h), dw = Math.max(2, Math.round(r.w * k)), dh = Math.max(2, Math.round(r.h * k)), dx = (S - dw) >> 1, dy = (S - dh) >> 1;
+  const c = mk(S, S), g = c.getContext('2d', { willReadFrequently: true });
+  g.imageSmoothingQuality = 'high';
+  const frames = [];
+  const grab = (t) => {
+    g.globalCompositeOperation = 'source-over';
+    g.clearRect(0, 0, S, S);
+    g.drawImage(v, r.x, r.y, r.w, r.h, dx, dy, dw, dh);
+    g.globalCompositeOperation = 'destination-in';
+    g.drawImage(mask, dx, dy, dw, dh);
+    frames.push({ img: g.getImageData(0, 0, S, S), t });
+  };
+  v.pause();
+  v.currentTime = start;
+  await once(v, 'seeked', 2500);
+  await v.play().catch(() => {});
+  /* Mientras el video corre, se toma un cuadro cada «step» segundos de video. */
+  await new Promise((resolve) => {
+    const t0 = performance.now(), limit = (dur * 2 + 4) * 1000;
+    let last = -1;
+    const loop = () => {
+      if (clipEl.hidden) return resolve();
+      const t = v.currentTime - start;
+      if (t >= 0 && (last < 0 || t - last >= step * 0.9)) { grab(t); last = t; }
+      if (frames.length >= want || t >= dur || v.ended || v.paused || performance.now() - t0 > limit) return resolve();
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  });
+  v.pause();
+  /* Si el navegador no dejó reproducir, se salta de cuadro en cuadro. */
+  if (frames.length < 2 && !clipEl.hidden) {
+    frames.length = 0;
+    for (let i = 0; i < want && !clipEl.hidden; i++) {
+      v.currentTime = Math.min(start + i * step, Math.max(0, clipTotal() - 0.05));
+      await once(v, 'seeked', 2500);
+      grab(i * step);
+    }
+  }
+  for (let i = 0; i < frames.length; i++) {
+    const next = i + 1 < frames.length ? frames[i + 1].t : frames[i].t + step;
+    frames[i].ms = Math.max(20, Math.round((next - frames[i].t) * 1000));
+  }
+  return frames;
+}
+
+/* Un cuadro en WebP: con el navegador si sabe, y si no con WebAssembly. */
+async function webpBytes(img, q, scratch) {
+  if (nativeWebp !== false) {
+    scratch.getContext('2d').putImageData(img, 0, 0);
+    const b = await canvasBlob(scratch, 'image/webp', q / 100);
+    if (b && b.type === 'image/webp') { nativeWebp = true; return new Uint8Array(await toBuffer(b)); }
+    nativeWebp = false;
+  }
+  const mod = await loadWasm();
+  const out = mod.encode(img.data, img.width, img.height, { ...WEBP_OPTS, quality: q });
+  if (!out) throw new Error('webp');
+  return out.slice();
+}
+
+/* De un archivo WebP suelto se sacan solo los trozos de imagen (y su transparencia). */
+function webpImageChunks(u8) {
+  const out = [];
+  for (let p = 12; p + 8 <= u8.length;) {
+    const id = String.fromCharCode(u8[p], u8[p + 1], u8[p + 2], u8[p + 3]);
+    const size = (u8[p + 4] | (u8[p + 5] << 8) | (u8[p + 6] << 16) | (u8[p + 7] << 24)) >>> 0;
+    if (id === 'ALPH' || id === 'VP8 ' || id === 'VP8L') {
+      const chunk = new Uint8Array(8 + size + (size & 1));
+      chunk.set(u8.subarray(p, Math.min(u8.length, p + 8 + size)));
+      out.push(chunk);
+    }
+    p += 8 + size + (size & 1);
+  }
+  return out;
+}
+
+/* Contenedor WebP animado: cabecera VP8X + ANIM y un bloque ANMF por cuadro. */
+function muxWebp(frames, size) {
+  const u24 = (a, o, v) => { a[o] = v & 255; a[o + 1] = (v >> 8) & 255; a[o + 2] = (v >> 16) & 255; };
+  const u32 = (a, o, v) => { u24(a, o, v); a[o + 3] = (v >>> 24) & 255; };
+  const tag = (a, o, s) => { for (let i = 0; i < 4; i++) a[o + i] = s.charCodeAt(i); };
+  const head = new Uint8Array(44);
+  tag(head, 0, 'RIFF'); tag(head, 8, 'WEBP');
+  tag(head, 12, 'VP8X'); u32(head, 16, 10); head[20] = 0x02 | 0x10; u24(head, 24, size - 1); u24(head, 27, size - 1);
+  tag(head, 30, 'ANIM'); u32(head, 34, 6);        // fondo transparente y repetición infinita (ceros)
+  const parts = [head];
+  for (const f of frames) {
+    const len = f.chunks.reduce((n, ch) => n + ch.length, 0), fh = new Uint8Array(24);
+    tag(fh, 0, 'ANMF'); u32(fh, 4, 16 + len);
+    u24(fh, 14, size - 1); u24(fh, 17, size - 1); u24(fh, 20, f.ms);
+    fh[23] = 0x02;                                // cada cuadro reemplaza al anterior, sin mezclar
+    parts.push(fh, ...f.chunks);
+  }
+  const total = parts.reduce((n, p) => n + p.length, 0), out = new Uint8Array(total);
+  let o = 0;
+  for (const p of parts) { out.set(p, o); o += p.length; }
+  u32(out, 4, total - 8);
+  return out;
+}
+
+/* WebP animado dentro del peso máximo: baja la calidad y, si no alcanza, quita cuadros. */
+async function animatedWebp(frames, max, progress) {
+  const scratch = mk(S, S);
+  let list = frames, q = 50;
+  const probe = [list[0], list[list.length >> 1], list[list.length - 1]];
+  let est = 0;
+  for (const f of probe) est += (await webpBytes(f.img, q, scratch)).length;
+  est = est / probe.length * list.length;
+  if (est > max) q = Math.max(8, Math.round(q * max / est * 0.85));
+  for (let pass = 0; ; pass++) {
+    const enc = [];
+    for (let i = 0; i < list.length; i++) {
+      enc.push({ chunks: webpImageChunks(await webpBytes(list[i].img, q, scratch)), ms: list[i].ms });
+      if (i % 3 === 2) { progress((i + 1) / list.length); await tick(); }
+    }
+    const out = muxWebp(enc, S);
+    if (out.length <= max || pass >= 4) return out;
+    if (q > 10) q = Math.max(8, Math.round(q * max / out.length * 0.8));
+    else if (list.length > 6) {
+      const half = [];
+      for (let i = 0; i < list.length; i += 2) half.push({ img: list[i].img, ms: list[i].ms + (list[i + 1] ? list[i + 1].ms : 0) });
+      list = half;
+    } else return out;
+  }
+}
+
+let gifLib = null;
+const loadGif = () => gifLib || (gifLib = import('./vendor/gifenc.js').catch((e) => { gifLib = null; throw e; }));
+
+/* GIF: 255 colores por cuadro y un índice reservado para lo transparente. */
+async function animatedGif(frames, size) {
+  const { GIFEncoder, quantize, applyPalette } = await loadGif();
+  const gif = GIFEncoder();
+  const a = mk(S, S), ag = a.getContext('2d'), b = mk(size, size), bg = b.getContext('2d', { willReadFrequently: true });
+  bg.imageSmoothingQuality = 'high';
+  for (let i = 0; i < frames.length; i++) {
+    ag.putImageData(frames[i].img, 0, 0);
+    bg.clearRect(0, 0, size, size);
+    bg.drawImage(a, 0, 0, size, size);
+    const rgba = bg.getImageData(0, 0, size, size).data;
+    let clear = 0;
+    for (let j = 3; j < rgba.length; j += 4) if (rgba[j] < 128) clear++;
+    let solid = rgba;
+    if (clear) {
+      solid = new Uint8ClampedArray(rgba.length - clear * 4);
+      for (let j = 0, o = 0; j < rgba.length; j += 4) if (rgba[j + 3] >= 128) { solid[o] = rgba[j]; solid[o + 1] = rgba[j + 1]; solid[o + 2] = rgba[j + 2]; solid[o + 3] = 255; o += 4; }
+    }
+    const palette = solid.length ? quantize(solid, clear ? 255 : 256, { format: 'rgb565' }) : [[0, 0, 0]];
+    const index = applyPalette(rgba, palette, 'rgb565');
+    if (clear) {
+      for (let j = 0; j < index.length; j++) if (rgba[j * 4 + 3] < 128) index[j] = palette.length;
+      palette.push([0, 0, 0]);
+    }
+    gif.writeFrame(index, size, size, { palette, delay: frames[i].ms, transparent: clear > 0, transparentIndex: clear ? palette.length - 1 : 0, dispose: clear ? 2 : -1 });
+    if (i % 3 === 2) await tick();
+  }
+  gif.finish();
+  return gif.bytes().slice().buffer;
+}
+
+$('#clMake').addEventListener('click', async () => {
+  if (C.busy || !C.rect) return;
+  const url = C.url;
+  const gone = () => C.url !== url || clipEl.hidden;
+  C.busy = true;
+  say('Capturando el movimiento…');
+  try {
+    const frames = await captureFrames();
+    if (gone()) return;
+    if (frames.length < 2) throw new Error('frames');
+    say('Creando el sticker…');
+    await tick();
+    const webp = await animatedWebp(frames, 500 * 1024, (p) => say('Creando el sticker… ' + Math.round(p * 100) + ' %'));
+    if (gone()) return;
+    say('Creando el GIF…');
+    await tick();
+    const gif = await animatedGif(frames, 320);
+    if (gone()) return;
+    const poster = mk(S, S);
+    poster.getContext('2d').putImageData(frames[0].img, 0, 0);
+    const png = await toBuffer(await canvasBlob(poster, 'image/png'));
+    const ms = frames.reduce((n, f) => n + f.ms, 0);
+    const st = await addSticker(png, null, { webp: webp.buffer, gif, n: frames.length, ms });
+    hideClip();
+    openDetail(st);
+  } catch (err) {
+    if (gone()) return;
+    C.busy = false;
+    $('#clBusy').hidden = true;
+    toast('No pude crear el sticker animado. Prueba con un video más corto.');
+    clVideo.play().catch(() => {});
+  }
 });
 
 /* ───────── Editor ───────── */
@@ -707,6 +1082,7 @@ function openEditor(src, sctx, replaceId) {
   setMode('move');
   zoomEl.value = sliderFromScale(E.scale);
   hideSheet();
+  hideClip();
   editorEl.hidden = false;
   editorEl.scrollTop = 0;
   layersChanged();
@@ -918,6 +1294,50 @@ const PLATFORMS = {
   },
 };
 
+/* Los animados salen en dos archivos: WebP animado (sticker) y GIF (sirve en todas partes). */
+const ANIM_PLATFORMS = {
+  whatsapp: {
+    name: 'WhatsApp', max: 500 * 1024,
+    actions: [{ act: 'share', use: 'webp', label: 'Enviar a WhatsApp', primary: true }, { act: 'share', use: 'gif', label: 'Enviar como GIF' }, { act: 'download', use: 'webp', label: 'Guardar' }],
+    steps: [
+      'Toca «Enviar a WhatsApp» y elige WhatsApp en el menú.',
+      'Mándalo a un chat. Sirve tu propio chat («Tú»).',
+      'Si se mueve dentro del chat, tócalo y elige «Añadir a favoritos».',
+    ],
+    note: '¿Llegó quieto o como foto? Usa «Enviar como GIF»: se mueve igual, pero WhatsApp lo guarda entre tus GIF y no entre tus stickers.',
+  },
+  telegram: {
+    name: 'Telegram',
+    actions: [{ act: 'share', use: 'gif', label: 'Enviar a Telegram', primary: true }, { act: 'download', use: 'gif', label: 'Guardar GIF' }],
+    steps: [
+      'Toca «Enviar a Telegram» y elige Telegram en el menú.',
+      'Mándalo a «Mensajes guardados».',
+      'Mantén pulsado el GIF y elige «Guardar GIF». Queda en tu pestaña de GIF para usarlo en cualquier chat.',
+    ],
+  },
+  discord: {
+    name: 'Discord',
+    actions: [{ act: 'share', use: 'gif', label: 'Enviar a Discord', primary: true }, { act: 'download', use: 'gif', label: 'Guardar GIF' }],
+    steps: [
+      'Toca «Enviar a Discord» y elige el chat o canal.',
+      'Se envía como GIF y se reproduce solo.',
+      'Para tenerlo a mano, márcalo como favorito dentro de Discord.',
+    ],
+  },
+  other: {
+    name: 'otras apps', short: 'Otras',
+    actions: [{ act: 'share', use: 'gif', label: 'Compartir GIF…', primary: true }, { act: 'download', use: 'gif', label: 'Guardar GIF' }],
+    steps: [
+      '«Compartir GIF…» abre el menú del teléfono: elige la app que quieras.',
+      'El GIF se reproduce en casi todas las apps de mensajes.',
+    ],
+  },
+};
+const animFiles = (st) => ({
+  webp: new File([st.anim.webp], 'sticker-' + st.id + '.webp', { type: 'image/webp' }),
+  gif: new File([st.anim.gif], 'sticker-' + st.id + '.gif', { type: 'image/gif' }),
+});
+
 /* WebP: primero el codificador del navegador; si no sabe (Safari), el de WebAssembly. */
 const QUALITIES = [92, 84, 75, 65, 52, 40, 28, 16];
 const WEBP_OPTS = {
@@ -1002,51 +1422,57 @@ function closeSheet() { hideSheet(); layersChanged(); }
 const closeBtn = '<button class="round-btn" data-act="close" aria-label="Cerrar">✕</button>';
 
 function openDetail(st) {
-  const plats = Object.keys(PLATFORMS).map(k =>
-    '<button class="plat" data-plat="' + k + '"><span class="pico ' + k + '">' + ICON[k] + '</span><span>' + (PLATFORMS[k].short || PLATFORMS[k].name) + '</span></button>'
+  const set = st.anim ? ANIM_PLATFORMS : PLATFORMS;
+  const plats = Object.keys(set).map(k =>
+    '<button class="plat" data-plat="' + k + '"><span class="pico ' + k + '">' + ICON[k] + '</span><span>' + (set[k].short || set[k].name) + '</span></button>'
   ).join('');
   showSheet(
-    '<div class="sh-head"><h2>Tu sticker</h2>' + closeBtn + '</div>' +
-    '<div class="preview checker"><img src="' + urlFor(st) + '" alt="Vista previa del sticker"></div>' +
-    '<h3>Agregar a…</h3><div class="plats">' + plats + '</div>' +
-    '<div class="center"><button class="btn ghost sm" data-act="edit">Retocar</button><button class="btn ghost danger sm" data-act="delete">Eliminar</button></div>',
+    '<div class="sh-head"><h2>' + (st.anim ? 'Tu sticker animado' : 'Tu sticker') + '</h2>' + closeBtn + '</div>' +
+    '<div class="preview checker"><img src="' + liveUrlFor(st) + '" alt="Vista previa del sticker"></div>' +
+    '<h3>Agregar a…</h3><div class="plats" style="grid-template-columns:repeat(' + Object.keys(set).length + ',1fr)">' + plats + '</div>' +
+    '<div class="center">' + (st.anim ? '' : '<button class="btn ghost sm" data-act="edit">Retocar</button>') + '<button class="btn ghost danger sm" data-act="delete">Eliminar</button></div>',
     'Tu sticker');
   cur = st;
 }
 
 async function openPlatform(key) {
-  const p = PLATFORMS[key], st = cur;
+  const st = cur;
   if (!st) return;
+  const p = (st.anim ? ANIM_PLATFORMS : PLATFORMS)[key];
   const btn = (a) => a.act === 'link'
     ? '<a class="btn" href="' + a.href + '" target="_blank" rel="noopener">' + a.label + '</a>'
-    : '<button class="btn' + (a.primary ? ' primary' : '') + '" data-do="' + a.act + '" disabled>' + a.label + '</button>';
+    : '<button class="btn' + (a.primary ? ' primary' : '') + '" data-do="' + a.act + '" data-use="' + (a.use || 'main') + '" disabled>' + a.label + '</button>';
   const [first, ...rest] = p.actions;
   showSheet(
     '<div class="sh-head"><button class="round-btn" data-act="back" aria-label="Volver">←</button><h2>Agregar a ' + p.name + '</h2>' + closeBtn + '</div>' +
-    '<div class="ready"><div class="mini checker"><img src="' + urlFor(st) + '" alt=""></div><div><strong id="spec">Preparando…</strong><span class="muted" id="specNote"></span></div></div>' +
+    '<div class="ready"><div class="mini checker"><img src="' + liveUrlFor(st) + '" alt=""></div><div><strong id="spec">Preparando…</strong><span class="muted" id="specNote"></span></div></div>' +
     '<div class="acts">' + btn(first) + (rest.length ? '<div class="pair">' + rest.map(btn).join('') + '</div>' : '') + '</div>' +
     '<ol class="steps">' + p.steps.map(s => '<li>' + s + '</li>').join('') + '</ol>' +
     (p.note ? '<p class="note">' + p.note + '</p>' : ''),
     'Agregar a ' + p.name);
   cur = st;
   const token = ++prepToken;
-  let file;
-  try { file = await buildFile(st, p); }
+  let files;
+  try { files = st.anim ? animFiles(st) : { main: await buildFile(st, p) }; }
   catch (e) { if (token === prepToken) $('#spec').textContent = 'No pude preparar el archivo.'; return; }
   if (token !== prepToken) return;
-  ready = file;
+  ready = files;
 
-  const isWebp = file.type === 'image/webp';
-  $('#spec').textContent = (isWebp ? 'WebP' : 'PNG') + ' · ' + p.size + ' × ' + p.size + ' px · ' + Math.max(1, Math.round(file.size / 1024)) + ' KB';
+  const file = files[first.use || 'main'];
+  const isWebp = file.type === 'image/webp', isGif = file.type === 'image/gif';
+  const px = st.anim ? (isGif ? 320 : S) : p.size, kb = file.size / 1024;
+  $('#spec').textContent = (isGif ? 'GIF' : isWebp ? (st.anim ? 'WebP animado' : 'WebP') : 'PNG') + ' · ' + px + ' × ' + px + ' px · ' +
+    (kb >= 1000 ? (kb / 1024).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(kb)) + ' KB');
   const note = $('#specNote');
-  if (p.fmt === 'webp' && !isWebp) { note.textContent = 'Este navegador no pudo crear WebP; va como PNG.'; note.className = 'bad'; }
-  else if (file.size > p.max) { note.textContent = 'Pesa más de lo que acepta ' + p.name + '.'; note.className = 'bad'; }
+  if (!st.anim && p.fmt === 'webp' && !isWebp) { note.textContent = 'Este navegador no pudo crear WebP; va como PNG.'; note.className = 'bad'; }
+  else if (p.max && file.size > p.max) { note.textContent = 'Pesa más de lo que acepta ' + p.name + '.'; note.className = 'bad'; }
+  else if (st.anim) note.textContent = st.anim.n + ' cuadros · ' + secs(st.anim.ms / 1000);
   else note.textContent = 'Listo, en el formato de ' + (key === 'other' ? 'sticker' : p.name) + '.';
 
-  const shareOk = canShare(file), copyOk = !!(navigator.clipboard && navigator.clipboard.write && window.ClipboardItem);
+  const copyOk = !!(navigator.clipboard && navigator.clipboard.write && window.ClipboardItem);
   for (const b of body.querySelectorAll('[data-do]')) {
     b.disabled = false;
-    if (b.dataset.do === 'share' && !shareOk) b.hidden = true;
+    if (b.dataset.do === 'share' && !canShare(files[b.dataset.use])) b.hidden = true;
     if (b.dataset.do === 'copy' && !copyOk) b.hidden = true;
   }
   /* Si la acción principal no existe en este navegador, «Guardar» pasa a ser la principal. */
@@ -1059,8 +1485,8 @@ async function openPlatform(key) {
   }
 }
 
-function doAction(act) {
-  const file = ready;
+function doAction(act, use) {
+  const file = ready && ready[use || 'main'];
   if (!file) return;
   if (act === 'download') { download(file); toast('Guardado en tus descargas.'); return; }
   if (act === 'share') {
@@ -1082,7 +1508,7 @@ body.addEventListener('click', async (e) => {
   const t = e.target.closest('[data-act],[data-plat],[data-do]');
   if (!t) return;
   if (t.dataset.plat) { openPlatform(t.dataset.plat); return; }
-  if (t.dataset.do) { doAction(t.dataset.do); return; }
+  if (t.dataset.do) { doAction(t.dataset.do, t.dataset.use); return; }
   const act = t.dataset.act;
   if (act === 'close') closeSheet();
   else if (act === 'back') { if (cur) openDetail(cur); }
@@ -1110,6 +1536,7 @@ addEventListener('keydown', (e) => {
   if (!sheetEl.hidden) closeSheet();
   else if (!editorEl.hidden) cancelEditor();
   else if (!pickerEl.hidden) $('#pkClose').click();
+  else if (!clipEl.hidden) closeClip();
 });
 
 function openHelp() {
@@ -1117,17 +1544,18 @@ function openHelp() {
     '<div class="sh-head"><h2>Cómo funciona</h2>' + closeBtn + '</div><div class="help">' +
     '<p>PasaStickers convierte cualquier imagen en un sticker y la deja en el formato exacto de cada app.</p>' +
     '<h3>Stickers de comentarios, reels e historias</h3>' +
-    '<p>Instagram no deja mantener pulsado un sticker para sacarlo. Haz una captura de pantalla donde se vea, toca «Elegir captura» y luego toca el sticker: se recorta solo y salen los botones de WhatsApp, Telegram y Discord.</p>' +
+    '<p>Instagram no deja mantener pulsado un sticker para sacarlo. Haz una captura de pantalla donde se vea, toca «Elegir captura o video» y luego toca el sticker: se recorta solo y salen los botones de WhatsApp, Telegram y Discord.</p>' +
     '<p>Si no lo recorta bien, toca «A mano» y encuádralo con dos dedos.</p>' +
     '<h3>Los que se mueven</h3>' +
-    '<p>Una captura solo guarda una imagen fija. Para el GIF con movimiento, toca el botón GIF del teclado en WhatsApp, Telegram o Discord y búscalo por nombre: los más usados suelen estar ahí también.</p>' +
+    '<p>Graba la pantalla unos segundos mientras el sticker se mueve (en iPhone: Centro de control → botón de grabar). Toca «Elegir captura o video», elige la grabación, toca el sticker y luego «Crear».</p>' +
+    '<p>Se guarda como sticker animado y también como GIF, que sirve en todas las apps. No hagas scroll mientras grabas, para que el sticker no cambie de sitio.</p>' +
     '<h3>Desde otras apps</h3>' +
     '<p><strong>iPhone:</strong> mantén pulsada la imagen → Copiar. Vuelve aquí y toca «Pegar imagen».</p>' +
     '<p><strong>Android:</strong> instala PasaStickers (menú ⋮ del navegador → «Instalar app»). Después, en la otra app, mantén pulsada la imagen → Compartir → PasaStickers.</p>' +
     '<h3>Retocar y quitar el fondo</h3>' +
     '<p>Abre un sticker y toca «Retocar». Con «Quitar fondo» tocas el color que sobra; sube la tolerancia si quedan restos y bájala si se borra de más.</p>' +
     '<h3>Tus stickers</h3>' +
-    '<p>Se guardan solo en este teléfono. Nada se sube a internet. Los stickers animados se guardan como imagen fija.</p>' +
+    '<p>Se guardan solo en este teléfono. Nada se sube a internet.</p>' +
     '</div>',
     'Cómo funciona');
 }
@@ -1156,16 +1584,18 @@ async function checkInbox() {
       if (r) blobs.push(await r.blob());
     }
     for (const k of await inbox.keys()) await inbox.delete(k);
-    if (blobs.length) { pending.push(...blobs.slice(1)); importBlob(blobs[0]); }
+    const video = blobs.find(b => (b.type || '').startsWith('video/'));
+    if (video) openClip(video);
+    else if (blobs.length) { pending.push(...blobs.slice(1)); importBlob(blobs[0]); }
     else openLinkNotice();
   } catch (e) { /* sin buzón no hay nada que abrir */ }
 }
 
 /* ───────── Arranque ───────── */
 $('#hint').textContent =
-  isAndroid && isStandalone ? 'Haz una captura de pantalla donde se vea el sticker, elígela aquí y tócalo. Desde otras apps también sirve Compartir → PasaStickers.'
-  : isAndroid ? 'Haz una captura de pantalla donde se vea el sticker, elígela aquí y tócalo. Instala la app para que también salga en el menú «Compartir».'
-  : isIOS || navigator.maxTouchPoints > 0 ? 'Haz una captura de pantalla donde se vea el sticker (comentarios, reels, historias…), elígela aquí y toca el sticker.'
+  isAndroid && isStandalone ? 'Haz una captura de pantalla donde se vea el sticker, elígela aquí y tócalo. Si se mueve, graba la pantalla y elige el video. Desde otras apps también sirve Compartir → PasaStickers.'
+  : isAndroid ? 'Haz una captura de pantalla donde se vea el sticker, elígela aquí y tócalo. Si se mueve, graba la pantalla y elige el video.'
+  : isIOS || navigator.maxTouchPoints > 0 ? 'Haz una captura de pantalla donde se vea el sticker, elígela aquí y tócalo. Si el sticker se mueve, graba la pantalla unos segundos y elige el video.'
   : 'Pega una imagen (Ctrl+V), arrástrala aquí o elígela de tus archivos.';
 
 if (!(navigator.clipboard && navigator.clipboard.read)) $('#pasteBtn').hidden = true;
