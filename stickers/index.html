@@ -640,7 +640,7 @@ $('#pkManual').addEventListener('click', () => {
    video corre, detecta cuándo la animación vuelve a empezar y guarda una vuelta
    completa como WebP animado y como GIF. */
 const clStage = $('#clStage'), clVideo = $('#clVideo');
-const C = { url: null, rect: null, mask: null, mark: null, busy: false };
+const C = { url: null, rect: null, mask: null, mark: null, bg: '#fff', busy: false };
 const CLIP_HINT = 'Toca el sticker mientras se ve en el video. Lo demás es automático.';
 const STEP = 0.1;         // un cuadro cada 0,1 s de video
 const MAX_FRAMES = 80;    // se miran 8 s como mucho: alcanza para vueltas de hasta 4 s
@@ -665,7 +665,7 @@ function resetClip() {
   clVideo.load();
   if (C.url) URL.revokeObjectURL(C.url);
   if (C.mark) C.mark.remove();
-  Object.assign(C, { url: null, rect: null, mask: null, mark: null, busy: false });
+  Object.assign(C, { url: null, rect: null, mask: null, mark: null, bg: '#fff', busy: false });
   clipStatus(CLIP_HINT);
 }
 function hideClip() {
@@ -737,6 +737,8 @@ clVideo.addEventListener('click', (e) => {
   /* En video el filo se descarta más ancho: la compresión ensucia los bordes. */
   const crop = cropSticker(img, found, Math.max(2, Math.round(w * 0.004)));
   C.rect = crop.rect; C.mask = crop.canvas;
+  const edge = ((found.y + (found.h >> 1)) * w + 2) * 4;       // color de fondo de la app a la altura del sticker
+  C.bg = 'rgb(' + img.data[edge] + ',' + img.data[edge + 1] + ',' + img.data[edge + 2] + ')';
   if (!C.mark) { C.mark = document.createElement('div'); C.mark.className = 'pk-box'; clStage.appendChild(C.mark); }
   placeMark();
   makeAnimated(clVideo.currentTime);
@@ -856,7 +858,7 @@ async function captureLoop(t0, gone) {
   let first, count;
   if (res.period) { first = loopStart(sigs, res.period, tapped); count = res.period; }
   else { count = Math.min(50, frames.length); first = Math.min(tapped, frames.length - count); }   // sin vuelta clara: 5 s como mucho
-  return { loop: !!res.period, frames: frames.slice(first, first + count).map((img) => ({ img, ms: STEP * 1000 })) };
+  return { loop: !!res.period, box: { x: dx, y: dy, w: dw, h: dh }, frames: frames.slice(first, first + count).map((img) => ({ img, ms: STEP * 1000 })) };
 }
 
 async function makeAnimated(t0) {
@@ -884,13 +886,13 @@ async function makeAnimated(t0) {
     if (gone()) return;
     clipStatus('Creando el GIF…', true);
     await tick();
-    const gif = await animatedGif(frames, 320);
+    const gif = await animatedGif(frames, got.box, C.bg);
     if (gone()) return;
     const poster = mk(S, S);
     poster.getContext('2d').putImageData(frames[0].img, 0, 0);
     const png = await toBuffer(await canvasBlob(poster, 'image/png'));
     const ms = frames.reduce((n, f) => n + f.ms, 0);
-    const st = await addSticker(png, null, { webp: webp.buffer, gif, n: frames.length, ms });
+    const st = await addSticker(png, null, { webp: webp.buffer, gif: gif.buffer, gw: gif.w, gh: gif.h, n: frames.length, ms });
     hideClip();
     openDetail(st);
     toast(got.loop ? 'Listo: una vuelta completa, ' + secs(ms / 1000) + '.' : 'No vi que se repitiera, así que guardé ' + secs(ms / 1000) + '.');
@@ -988,35 +990,28 @@ async function animatedWebp(frames, max, progress) {
 let gifLib = null;
 const loadGif = () => gifLib || (gifLib = import('./vendor/gifenc.js').catch((e) => { gifLib = null; throw e; }));
 
-/* GIF: 255 colores por cuadro y un índice reservado para lo transparente. */
-async function animatedGif(frames, size) {
+/* GIF: solo la zona del sticker, sin márgenes y sin transparencia. WhatsApp pasa los GIF
+   a video y lo transparente saldría negro; por eso las esquinas se rellenan con el color
+   de fondo que tenía la app en la grabación. */
+async function animatedGif(frames, box, bgColor) {
   const { GIFEncoder, quantize, applyPalette } = await loadGif();
   const gif = GIFEncoder();
-  const a = mk(S, S), ag = a.getContext('2d'), b = mk(size, size), bg = b.getContext('2d', { willReadFrequently: true });
+  const k = (frames.length > 30 ? 384 : S) / Math.max(box.w, box.h);
+  const w = Math.max(2, Math.round(box.w * k)), h = Math.max(2, Math.round(box.h * k));
+  const a = mk(S, S), ag = a.getContext('2d'), b = mk(w, h), bg = b.getContext('2d', { willReadFrequently: true });
   bg.imageSmoothingQuality = 'high';
   for (let i = 0; i < frames.length; i++) {
     ag.putImageData(frames[i].img, 0, 0);
-    bg.clearRect(0, 0, size, size);
-    bg.drawImage(a, 0, 0, size, size);
-    const rgba = bg.getImageData(0, 0, size, size).data;
-    let clear = 0;
-    for (let j = 3; j < rgba.length; j += 4) if (rgba[j] < 128) clear++;
-    let solid = rgba;
-    if (clear) {
-      solid = new Uint8ClampedArray(rgba.length - clear * 4);
-      for (let j = 0, o = 0; j < rgba.length; j += 4) if (rgba[j + 3] >= 128) { solid[o] = rgba[j]; solid[o + 1] = rgba[j + 1]; solid[o + 2] = rgba[j + 2]; solid[o + 3] = 255; o += 4; }
-    }
-    const palette = solid.length ? quantize(solid, clear ? 255 : 256, { format: 'rgb565' }) : [[0, 0, 0]];
-    const index = applyPalette(rgba, palette, 'rgb565');
-    if (clear) {
-      for (let j = 0; j < index.length; j++) if (rgba[j * 4 + 3] < 128) index[j] = palette.length;
-      palette.push([0, 0, 0]);
-    }
-    gif.writeFrame(index, size, size, { palette, delay: frames[i].ms, transparent: clear > 0, transparentIndex: clear ? palette.length - 1 : 0, dispose: clear ? 2 : -1 });
+    bg.fillStyle = bgColor;
+    bg.fillRect(0, 0, w, h);
+    bg.drawImage(a, box.x, box.y, box.w, box.h, 0, 0, w, h);
+    const rgba = bg.getImageData(0, 0, w, h).data;
+    const palette = quantize(rgba, 256, { format: 'rgb565' });
+    gif.writeFrame(applyPalette(rgba, palette, 'rgb565'), w, h, { palette, delay: frames[i].ms });
     if (i % 3 === 2) await tick();
   }
   gif.finish();
-  return gif.bytes().slice().buffer;
+  return { buffer: gif.bytes().slice().buffer, w, h };
 }
 
 /* ───────── Editor ───────── */
@@ -1382,10 +1377,75 @@ const ANIM_PLATFORMS = {
     ],
   },
 };
+/* iPhone: WhatsApp convierte en foto cualquier archivo que le llega por «Compartir».
+   Lo que sí vuelve sticker (comprobado en un iPhone real) es un GIF enviado al chat y
+   luego copiado y pegado ahí mismo. Por eso en iPhone todo va a WhatsApp como GIF:
+   los animados tal cual y los quietos como un GIF de dos cuadros iguales. */
+if (isIOS) {
+  const viaGif = [
+    'Toca el botón amarillo, elige WhatsApp y mándalo a un chat. Sirve tu propio chat («Tú»). Llega como GIF.',
+    'En el chat, mantén pulsado ese GIF y toca «Copiar». Si no aparece, toca «Más» y luego «Copiar».',
+    'Mantén pulsado el cuadro donde escribes, toca «Pegar» y envíalo: WhatsApp lo convierte en sticker.',
+    'Toca el sticker y elige «Añadir a favoritos».',
+  ];
+  PLATFORMS.whatsapp = {
+    name: 'WhatsApp', fmt: 'png', size: 512, max: Infinity, gif: true,
+    actions: [{ act: 'share', use: 'gif', label: 'Enviar a WhatsApp', primary: true }, { act: 'download', label: 'Guardar en Fotos' }],
+    steps: viaGif,
+    note: 'Otra forma, que conserva el fondo transparente: toca «Guardar en Fotos» y, en WhatsApp, toca «Crear sticker» y elige esa imagen.',
+  };
+  ANIM_PLATFORMS.whatsapp = {
+    name: 'WhatsApp',
+    actions: [{ act: 'share', use: 'gif', label: 'Enviar a WhatsApp', primary: true }, { act: 'download', use: 'gif', label: 'Guardar en Fotos' }],
+    steps: viaGif,
+    note: '¿Al pegarlo sigue siendo GIF? Toca «Guardar en Fotos» y, en WhatsApp, toca «Crear sticker» y elige ese GIF.',
+  };
+} else {
+  ANIM_PLATFORMS.whatsapp.note += ' Truco: dentro del chat, mantén pulsado el GIF, toca «Copiar» y pégalo; WhatsApp lo convierte en sticker animado.';
+}
+
+/* Cada archivo lleva sus medidas para mostrarlas en la hoja. */
+const sized = (file, w, h) => { file.px = [w, h]; return file; };
 const animFiles = (st) => ({
-  webp: new File([st.anim.webp], 'sticker-' + st.id + '.webp', { type: 'image/webp' }),
-  gif: new File([st.anim.gif], 'sticker-' + st.id + '.gif', { type: 'image/gif' }),
+  webp: sized(new File([st.anim.webp], 'sticker-' + st.id + '.webp', { type: 'image/webp' }), S, S),
+  gif: sized(new File([st.anim.gif], 'sticker-' + st.id + '.gif', { type: 'image/gif' }), st.anim.gw || 320, st.anim.gh || 320),
 });
+
+/* Un sticker quieto como GIF de dos cuadros iguales, recortado a lo que tiene dibujo.
+   El GIF no puede llevar transparencia (WhatsApp la mostraría negra): si solo faltan las
+   esquinas redondeadas, se rellenan con la propia imagen; si el fondo está recortado,
+   queda blanco. */
+async function stillGif(st) {
+  const { GIFEncoder, quantize, applyPalette } = await loadGif();
+  const img = await decode(new Blob([st.png], { type: 'image/png' }));
+  const a = mk(S, S), ag = a.getContext('2d', { willReadFrequently: true });
+  ag.drawImage(img, 0, 0, S, S);
+  if (img.close) img.close();
+  const d = ag.getImageData(0, 0, S, S).data;
+  let x0 = S, y0 = S, x1 = -1, y1 = -1;
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    if (d[(y * S + x) * 4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  }
+  if (x1 < 0) { x0 = 0; y0 = 0; x1 = S - 1; y1 = S - 1; }
+  const w = x1 - x0 + 1, h = y1 - y0 + 1;
+  let clear = 0;
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (d[(y * S + x) * 4 + 3] < 128) clear++;
+  const b = mk(w, h), bg = b.getContext('2d', { willReadFrequently: true });
+  bg.fillStyle = '#fff';
+  bg.fillRect(0, 0, w, h);
+  if (clear < w * h * 0.08) {
+    const m = Math.ceil(Math.max(w, h) * 0.06);
+    bg.drawImage(a, x0, y0, w, h, -m, -m, w + m * 2, h + m * 2);
+  }
+  bg.drawImage(a, x0, y0, w, h, 0, 0, w, h);
+  const rgba = bg.getImageData(0, 0, w, h).data;
+  const palette = quantize(rgba, 256, { format: 'rgb565' }), index = applyPalette(rgba, palette, 'rgb565');
+  const gif = GIFEncoder();
+  gif.writeFrame(index, w, h, { palette, delay: 500 });
+  gif.writeFrame(index, w, h, { palette, delay: 500 });
+  gif.finish();
+  return sized(new File([gif.bytes().slice()], 'sticker-' + st.id + '.gif', { type: 'image/gif' }), w, h);
+}
 
 /* WebP: primero el codificador del navegador; si no sabe (Safari), el de WebAssembly. */
 const QUALITIES = [92, 84, 75, 65, 52, 40, 28, 16];
@@ -1432,7 +1492,7 @@ async function buildFile(st, p) {
   if (img.close) img.close();
   const blob = p.fmt === 'webp' ? await encodeWebp(c, p.max) : await canvasBlob(c, 'image/png');
   const ext = blob.type === 'image/webp' ? 'webp' : 'png';
-  return new File([blob], 'sticker-' + st.id + '.' + ext, { type: blob.type });
+  return sized(new File([blob], 'sticker-' + st.id + '.' + ext, { type: blob.type }), p.size, p.size);
 }
 
 function download(file) {
@@ -1502,15 +1562,18 @@ async function openPlatform(key) {
   cur = st;
   const token = ++prepToken;
   let files;
-  try { files = st.anim ? animFiles(st) : { main: await buildFile(st, p) }; }
+  try {
+    files = st.anim ? animFiles(st) : { main: await buildFile(st, p) };
+    if (!st.anim && p.gif) files.gif = await stillGif(st);
+  }
   catch (e) { if (token === prepToken) $('#spec').textContent = 'No pude preparar el archivo.'; return; }
   if (token !== prepToken) return;
   ready = files;
 
   const file = files[first.use || 'main'];
   const isWebp = file.type === 'image/webp', isGif = file.type === 'image/gif';
-  const px = st.anim ? (isGif ? 320 : S) : p.size, kb = file.size / 1024;
-  $('#spec').textContent = (isGif ? 'GIF' : isWebp ? (st.anim ? 'WebP animado' : 'WebP') : 'PNG') + ' · ' + px + ' × ' + px + ' px · ' +
+  const kb = file.size / 1024;
+  $('#spec').textContent = (isGif ? 'GIF' : isWebp ? (st.anim ? 'WebP animado' : 'WebP') : 'PNG') + ' · ' + file.px[0] + ' × ' + file.px[1] + ' px · ' +
     (kb >= 1000 ? (kb / 1024).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(kb)) + ' KB');
   const note = $('#specNote');
   if (!st.anim && p.fmt === 'webp' && !isWebp) { note.textContent = 'Este navegador no pudo crear WebP; va como PNG.'; note.className = 'bad'; }
@@ -1537,7 +1600,18 @@ async function openPlatform(key) {
 function doAction(act, use) {
   const file = ready && ready[use || 'main'];
   if (!file) return;
-  if (act === 'download') { download(file); toast('Guardado en tus descargas.'); return; }
+  if (act === 'download') {
+    /* En iPhone una descarga va a «Archivos», donde WhatsApp y las demás no la buscan.
+       El menú de compartir sí ofrece «Guardar imagen», que la deja en Fotos. */
+    if (isIOS && canShare(file)) {
+      toast('En el menú que se abre, elige «Guardar imagen».');
+      navigator.share({ files: [file] }).catch(() => {});
+      return;
+    }
+    download(file);
+    toast('Guardado en tus descargas.');
+    return;
+  }
   if (act === 'share') {
     navigator.share({ files: [file] }).catch((err) => {
       if (err && err.name === 'AbortError') return;
