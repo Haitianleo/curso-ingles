@@ -133,6 +133,14 @@
   .erase-panel .line{display:flex;gap:12px;align-items:center}
   .erase-panel .slider{flex:1;min-width:0}
 
+  /* Captura de pantalla: tocar el sticker */
+  .picker{position:fixed;inset:0;z-index:30;background:var(--bg);display:flex;flex-direction:column;align-items:center;
+    padding:calc(8px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom))}
+  .pk-stage{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;border-radius:14px}
+  .pk-stage canvas{display:block;max-width:100%;max-height:100%;border-radius:14px;cursor:pointer}
+  .pk-box{position:absolute;border:3px solid var(--accent);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.5);pointer-events:none}
+  .pk-hint{margin-top:10px;font-size:14.5px;color:var(--muted);text-align:center}
+
   /* Hoja inferior */
   .backdrop{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.55)}
   .sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;margin:0 auto;max-width:560px;max-height:92vh;max-height:92dvh;
@@ -173,12 +181,12 @@
   .help h3{margin:18px 0 6px}
   .help p{font-size:15px}
   .help p + p{margin-top:8px}
-  .center{display:flex;justify-content:center;margin-top:8px}
+  .center{display:flex;justify-content:center;gap:6px;margin-top:8px;flex-wrap:wrap}
 
-  .toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translate(-50%,20px);z-index:60;
-    max-width:min(92vw,440px);background:var(--text);color:var(--bg);padding:12px 16px;border-radius:14px;font-size:14.5px;
+  .toast{position:fixed;left:16px;right:16px;margin:0 auto;width:fit-content;bottom:calc(22px + env(safe-area-inset-bottom));
+    transform:translateY(20px);z-index:60;max-width:440px;background:var(--text);color:var(--bg);padding:12px 16px;border-radius:14px;font-size:14.5px;
     font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;text-align:center;box-shadow:var(--shadow)}
-  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast.show{opacity:1;transform:none}
   @media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
 </style>
 </head>
@@ -205,8 +213,8 @@
     <h2 id="bringTitle">Trae un sticker</h2>
     <p class="hint" id="hint"></p>
     <div class="row">
-      <button class="btn primary" id="pasteBtn">Pegar imagen</button>
-      <button class="btn" id="pickBtn">Elegir foto</button>
+      <button class="btn primary" id="pickBtn">Elegir captura</button>
+      <button class="btn" id="pasteBtn">Pegar imagen</button>
     </div>
     <input class="vh" id="fileIn" type="file" accept="image/*" multiple tabindex="-1" aria-hidden="true">
   </section>
@@ -215,11 +223,21 @@
     <div class="lib-head"><h2 id="libTitle">Tus stickers</h2><span class="count" id="count"></span></div>
     <div class="grid" id="grid"></div>
     <ol class="empty" id="empty">
-      <li><span class="n">1</span><div><strong>Trae</strong><span>Pega, elige o comparte la imagen desde otra app.</span></div></li>
-      <li><span class="n">2</span><div><strong>Recorta</strong><span>Encuadra el sticker y quítale el fondo.</span></div></li>
+      <li><span class="n">1</span><div><strong>Captura</strong><span>Haz una captura de pantalla donde se vea el sticker.</span></div></li>
+      <li><span class="n">2</span><div><strong>Toca</strong><span>Elige la captura aquí y toca el sticker: se recorta solo.</span></div></li>
       <li><span class="n">3</span><div><strong>Pasa</strong><span>Agrégalo a WhatsApp, Telegram, Discord o Instagram.</span></div></li>
     </ol>
   </section>
+</div>
+
+<div class="picker" id="picker" role="dialog" aria-modal="true" aria-label="Elegir el sticker en la captura" hidden>
+  <div class="ed-bar">
+    <button class="btn ghost sm" id="pkClose">Listo</button>
+    <strong>Toca el sticker</strong>
+    <button class="btn sm" id="pkManual">A mano</button>
+  </div>
+  <div class="pk-stage" id="pkStage"></div>
+  <p class="pk-hint">Toca el sticker que quieres pasar. Si no lo recorta bien, usa «A mano».</p>
 </div>
 
 <div class="editor" id="editor" role="dialog" aria-modal="true" aria-label="Recortar sticker" hidden>
@@ -338,12 +356,29 @@ function renderGrid() {
   $('#count').textContent = stickers.length ? String(stickers.length) : '';
 }
 
-/* ───────── Capas (editor / hoja) y botón «atrás» ─────────
+async function addSticker(png, replaceId) {
+  if (replaceId) await removeSticker(replaceId);
+  const st = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: Date.now(), png };
+  const saved = await Store.put(st);
+  stickers.unshift(st);
+  renderGrid();
+  if (!saved) toast('No pude guardarlo en este teléfono (¿modo privado?). Úsalo ahora, antes de cerrar.');
+  return st;
+}
+function removeSticker(id) {
+  stickers = stickers.filter(s => s.id !== id);
+  const u = urls.get(id);
+  if (u) { URL.revokeObjectURL(u); urls.delete(id); }
+  renderGrid();
+  return Store.del(id);
+}
+
+/* ───────── Capas (selector / editor / hoja) y botón «atrás» ─────────
    Mientras haya algo abierto existe una sola entrada extra en el historial,
    así el gesto «atrás» de Android cierra la capa en vez de salir de la app. */
-const editorEl = $('#editor'), sheetEl = $('#sheet'), backdropEl = $('#backdrop');
+const editorEl = $('#editor'), pickerEl = $('#picker'), sheetEl = $('#sheet'), backdropEl = $('#backdrop');
 let hasEntry = false, backPending = false;
-const anyOpen = () => !editorEl.hidden || !sheetEl.hidden;
+const anyOpen = () => !editorEl.hidden || !pickerEl.hidden || !sheetEl.hidden;
 function layersChanged() {
   const open = anyOpen();
   document.body.classList.toggle('locked', open);
@@ -366,6 +401,7 @@ addEventListener('popstate', () => {
     hasEntry = false;
     pending.length = 0;
     hideEditor();
+    hidePicker();
     hideSheet();
     document.body.classList.remove('locked');
   }
@@ -404,7 +440,8 @@ async function importBlob(blob) {
   g.imageSmoothingQuality = 'high';
   g.drawImage(bmp, 0, 0, c.width, c.height);
   if (bmp.close) bmp.close();
-  openEditor(c, g);
+  if (looksLikeScreenshot(c.width, c.height, blob.type)) openPicker(c, g);
+  else openEditor(c, g);
 }
 
 function importFiles(list) {
@@ -423,17 +460,147 @@ async function pasteFromClipboard() {
     }
     toast('No hay ninguna imagen copiada. En la otra app mantén pulsada la imagen y elige «Copiar».');
   } catch (e) {
-    toast('No pude leer el portapapeles. Usa «Elegir foto».');
+    toast('No pude leer el portapapeles. Usa «Elegir captura».');
   }
 }
 
-/* ───────── Editor ───────── */
+/* ───────── Captura de pantalla: se toca el sticker y se recorta solo ─────────
+   En una captura, el fondo de cada fila es el color que tiene esa fila en los
+   bordes de la pantalla. Desde el punto tocado se hace crecer un rectángulo
+   hasta que por los cuatro lados solo queda fondo. */
 const S = 512;            // tamaño de trabajo del sticker
+const pkStage = $('#pkStage');
+const P = { src: null, sctx: null, img: null, busy: false };
+const looksLikeScreenshot = (w, h, type) => h / w >= 1.9 || (h / w >= 1.6 && type === 'image/png');
+const BG_T2 = 3 * 16 * 16;
+const dist2 = (a, i, b, j) => { const r = a[i] - b[j], g = a[i + 1] - b[j + 1], bl = a[i + 2] - b[j + 2]; return r * r + g * g + bl * bl; };
+
+function findSticker(img, tx, ty) {
+  const w = img.width, h = img.height, d = img.data;
+  const isBg = (x, y) => { const i = (y * w + x) * 4, row = y * w * 4; return dist2(d, i, d, row + 8) <= BG_T2 || dist2(d, i, d, row + (w - 3) * 4) <= BG_T2; };
+  const rowDirty = (y, xa, xb) => { let n = 0; const lim = Math.max(2, (xb - xa + 1) * 0.02); for (let x = xa; x <= xb; x++) if (!isBg(x, y) && ++n > lim) return true; return false; };
+  const colDirty = (x, ya, yb) => { let n = 0; const lim = Math.max(2, (yb - ya + 1) * 0.02); for (let y = ya; y <= yb; y++) if (!isBg(x, y) && ++n > lim) return true; return false; };
+  const gap = Math.max(3, Math.round(w * 0.006)), seed = Math.round(w * 0.02);
+  let x0 = Math.max(0, tx - seed), x1 = Math.min(w - 1, tx + seed), y0 = Math.max(0, ty - seed), y1 = Math.min(h - 1, ty + seed);
+  for (let grew = true, guard = 0; grew && guard < 20000; guard++) {
+    grew = false;
+    for (let k = 1; k <= gap && y0 - k >= 0; k++) if (rowDirty(y0 - k, x0, x1)) { y0 -= k; grew = true; break; }
+    for (let k = 1; k <= gap && y1 + k < h; k++) if (rowDirty(y1 + k, x0, x1)) { y1 += k; grew = true; break; }
+    for (let k = 1; k <= gap && x0 - k >= 0; k++) if (colDirty(x0 - k, y0, y1)) { x0 -= k; grew = true; break; }
+    for (let k = 1; k <= gap && x1 + k < w; k++) if (colDirty(x1 + k, y0, y1)) { x1 += k; grew = true; break; }
+  }
+  while (y0 < y1 && !rowDirty(y0, x0, x1)) y0++;
+  while (y1 > y0 && !rowDirty(y1, x0, x1)) y1--;
+  while (x0 < x1 && !colDirty(x0, y0, y1)) x0++;
+  while (x1 > x0 && !colDirty(x1, y0, y1)) x1--;
+  const rw = x1 - x0 + 1, rh = y1 - y0 + 1;
+  if (rw < w * 0.06 || rh < w * 0.06) return null;      // demasiado chico: se tocó fondo o texto suelto
+  if (rw > w * 0.97 && rh > h * 0.9) return null;       // casi toda la pantalla: no hay borde que seguir
+  return { x: x0, y: y0, w: rw, h: rh };
+}
+
+/* Recorta y vuelve transparentes las esquinas redondeadas que dejan ver el fondo de la app.
+   Se descarta además un filo de 1-2 px: ahí el sticker está mezclado con el fondo. */
+function cropSticker(img, rect) {
+  const e = Math.max(1, Math.round(img.width * 0.0015));
+  const r = rect.w > e * 12 && rect.h > e * 12 ? { x: rect.x + e, y: rect.y + e, w: rect.w - e * 2, h: rect.h - e * 2 } : rect;
+  const c = mk(r.w, r.h), g = c.getContext('2d', { willReadFrequently: true });
+  g.putImageData(img, -r.x, -r.y, r.x, r.y, r.w, r.h);
+  const cd = g.getImageData(0, 0, r.w, r.h), d = cd.data, o = img.data, W = img.width;
+  const R = Math.max(4, Math.round(Math.min(r.w, r.h) * 0.09));
+  const isBg = (x, y) => { const i = (y * r.w + x) * 4, row = (r.y + y) * W * 4; return dist2(d, i, o, row + 8) <= BG_T2 || dist2(d, i, o, row + (W - 3) * 4) <= BG_T2; };
+  for (const [cx, cy, sx, sy] of [[0, 0, 1, 1], [r.w - 1, 0, -1, 1], [0, r.h - 1, 1, -1], [r.w - 1, r.h - 1, -1, -1]]) {
+    const seen = new Uint8Array(R * R), stack = [0], hit = [];
+    seen[0] = 1;
+    while (stack.length) {
+      const p = stack.pop(), u = p % R, v = (p / R) | 0, x = cx + sx * u, y = cy + sy * v;
+      if (!isBg(x, y)) continue;
+      hit.push(y * r.w + x);
+      if (u + 1 < R && !seen[p + 1]) { seen[p + 1] = 1; stack.push(p + 1); }
+      if (v + 1 < R && !seen[p + R]) { seen[p + R] = 1; stack.push(p + R); }
+      if (u > 0 && !seen[p - 1]) { seen[p - 1] = 1; stack.push(p - 1); }
+      if (v > 0 && !seen[p - R]) { seen[p - R] = 1; stack.push(p - R); }
+    }
+    /* Una esquina redondeada borra poco; si se borraría casi todo el cuadro, es parte del dibujo. */
+    if (hit.length > R * R * 0.5) continue;
+    for (const q of hit) {
+      const qx = q % r.w, qy = (q / r.w) | 0;
+      for (let dy = -e; dy <= e; dy++) for (let dx = -e; dx <= e; dx++) {
+        const x = qx + dx, y = qy + dy;
+        if (x >= 0 && y >= 0 && x < r.w && y < r.h) d[(y * r.w + x) * 4 + 3] = 0;
+      }
+    }
+  }
+  g.putImageData(cd, 0, 0);
+  return c;
+}
+
+async function stickerPng(c) {
+  const out = mk(S, S), g = out.getContext('2d');
+  const k = S / Math.max(c.width, c.height), w = c.width * k, h = c.height * k;
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(c, (S - w) / 2, (S - h) / 2, w, h);
+  return toBuffer(await canvasBlob(out, 'image/png'));
+}
+
+function openPicker(src, sctx) {
+  hideEditor();
+  hideSheet();
+  P.src = src; P.sctx = sctx; P.img = null; P.busy = false;
+  pkStage.textContent = '';
+  pkStage.appendChild(src);
+  pickerEl.hidden = false;
+  fitPicker();
+  layersChanged();
+}
+/* La captura se ajusta entera al espacio libre, sin depender de cómo cada navegador resuelve max-height. */
+function fitPicker() {
+  if (!P.src || pickerEl.hidden) return;
+  const r = pkStage.getBoundingClientRect(), k = Math.min(r.width / P.src.width, r.height / P.src.height);
+  if (k > 0) { P.src.style.width = Math.floor(P.src.width * k) + 'px'; P.src.style.height = Math.floor(P.src.height * k) + 'px'; }
+}
+addEventListener('resize', fitPicker);
+function hidePicker() {
+  pickerEl.hidden = true;
+  pkStage.textContent = '';
+  P.src = null; P.sctx = null; P.img = null; P.busy = false;
+}
+
+pkStage.addEventListener('click', (e) => {
+  if (!P.src || P.busy || e.target !== P.src) return;
+  const box = P.src.getBoundingClientRect(), sb = pkStage.getBoundingClientRect();
+  const tx = Math.floor((e.clientX - box.left) * P.src.width / box.width);
+  const ty = Math.floor((e.clientY - box.top) * P.src.height / box.height);
+  if (!P.img) P.img = P.sctx.getImageData(0, 0, P.src.width, P.src.height);
+  const r = findSticker(P.img, tx, ty);
+  if (!r) { toast('No encontré el borde de ese sticker. Toca justo encima o usa «A mano».'); return; }
+  const k = box.width / P.src.width, mark = document.createElement('div');
+  mark.className = 'pk-box';
+  mark.style.cssText = 'left:' + (box.left - sb.left + r.x * k - 3) + 'px;top:' + (box.top - sb.top + r.y * k - 3) + 'px;width:' + (r.w * k + 6) + 'px;height:' + (r.h * k + 6) + 'px';
+  pkStage.appendChild(mark);
+  P.busy = true;
+  const crop = cropSticker(P.img, r);
+  setTimeout(async () => {
+    mark.remove();
+    if (pickerEl.hidden) return;          // se cerró mientras tanto
+    P.busy = false;
+    openDetail(await addSticker(await stickerPng(crop)));
+  }, 320);
+});
+$('#pkClose').addEventListener('click', () => { pending.length = 0; hidePicker(); layersChanged(); });
+$('#pkManual').addEventListener('click', () => {
+  const src = P.src, sctx = P.sctx;
+  if (!src) return;
+  hidePicker();
+  openEditor(src, sctx);
+});
+
+/* ───────── Editor ───────── */
 const BORDER = 12;        // grosor del borde blanco
 const view = $('#view'), vg = view.getContext('2d');
 const layerA = mk(S, S), ga = layerA.getContext('2d');
 const layerB = mk(S, S), gb = layerB.getContext('2d');
-const E = { src: null, sctx: null, scale: 1, x: 0, y: 0, min: 1, max: 1, shape: 'square', border: false, mode: 'move', tol: 36, undo: [], maxUndo: 3 };
+const E = { src: null, sctx: null, scale: 1, x: 0, y: 0, min: 1, max: 1, shape: 'square', border: false, mode: 'move', tol: 36, undo: [], maxUndo: 3, replaceId: null };
 
 function shapePath(g, x, y, s, shape) {
   g.beginPath();
@@ -527,8 +694,8 @@ function setMode(mode) {
   view.classList.toggle('erase', mode === 'erase');
 }
 
-function openEditor(src, sctx) {
-  E.src = src; E.sctx = sctx;
+function openEditor(src, sctx, replaceId) {
+  E.src = src; E.sctx = sctx; E.replaceId = replaceId || null;
   const contain = S / Math.max(src.width, src.height), cover = S / Math.min(src.width, src.height);
   E.min = contain * 0.5; E.max = cover * 16;
   E.scale = contain; E.x = 0; E.y = 0;
@@ -681,18 +848,13 @@ $('#edSave').addEventListener('click', async () => {
   let visible = false;
   for (let i = 3; i < d.length; i += 16) if (d[i] > 8) { visible = true; break; }
   if (!visible) { toast('El sticker quedó vacío. Mueve la imagen dentro del cuadro.'); return; }
-  const png = await toBuffer(await canvasBlob(c, 'image/png'));
-  const st = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: Date.now(), png };
-  const saved = await Store.put(st);
-  stickers.unshift(st);
-  renderGrid();
+  const st = await addSticker(await toBuffer(await canvasBlob(c, 'image/png')), E.replaceId);
   if (pending.length) {
     toast('Guardado. Vamos con la siguiente imagen.');
     importBlob(pending.shift());
   } else {
     openDetail(st);     // la hoja se abre antes de cerrar el editor: una sola entrada de historial
     hideEditor();
-    if (!saved) toast('No pude guardarlo en este teléfono (¿modo privado?). Úsalo ahora, antes de cerrar.');
   }
 });
 
@@ -847,7 +1009,7 @@ function openDetail(st) {
     '<div class="sh-head"><h2>Tu sticker</h2>' + closeBtn + '</div>' +
     '<div class="preview checker"><img src="' + urlFor(st) + '" alt="Vista previa del sticker"></div>' +
     '<h3>Agregar a…</h3><div class="plats">' + plats + '</div>' +
-    '<div class="center"><button class="btn ghost danger sm" data-act="delete">Eliminar sticker</button></div>',
+    '<div class="center"><button class="btn ghost sm" data-act="edit">Retocar</button><button class="btn ghost danger sm" data-act="delete">Eliminar</button></div>',
     'Tu sticker');
   cur = st;
 }
@@ -925,15 +1087,20 @@ body.addEventListener('click', async (e) => {
   if (act === 'close') closeSheet();
   else if (act === 'back') { if (cur) openDetail(cur); }
   else if (act === 'pick') { closeSheet(); $('#fileIn').click(); }
+  else if (act === 'edit') {
+    const st = cur;
+    if (!st) return;
+    const img = await decode(new Blob([st.png], { type: 'image/png' }));
+    const c = mk(S, S), g = c.getContext('2d', { willReadFrequently: true });
+    g.drawImage(img, 0, 0, S, S);
+    if (img.close) img.close();
+    openEditor(c, g, st.id);
+  }
   else if (act === 'delete') {
     if (!t.dataset.armed) { t.dataset.armed = '1'; t.textContent = 'Toca otra vez para eliminar'; return; }
     const st = cur;
-    stickers = stickers.filter(s => s.id !== st.id);
-    const u = urls.get(st.id);
-    if (u) { URL.revokeObjectURL(u); urls.delete(st.id); }
     closeSheet();
-    renderGrid();
-    await Store.del(st.id);
+    await removeSticker(st.id);
     toast('Sticker eliminado.');
   }
 });
@@ -942,19 +1109,23 @@ addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   if (!sheetEl.hidden) closeSheet();
   else if (!editorEl.hidden) cancelEditor();
+  else if (!pickerEl.hidden) $('#pkClose').click();
 });
 
 function openHelp() {
   showSheet(
     '<div class="sh-head"><h2>Cómo funciona</h2>' + closeBtn + '</div><div class="help">' +
     '<p>PasaStickers convierte cualquier imagen en un sticker y la deja en el formato exacto de cada app.</p>' +
-    '<h3>Desde Discord, Telegram, X, la galería…</h3>' +
-    '<p><strong>Android:</strong> instala PasaStickers (menú ⋮ del navegador → «Instalar app»). Después, en la otra app, mantén pulsada la imagen → Compartir → PasaStickers.</p>' +
+    '<h3>Stickers de comentarios, reels e historias</h3>' +
+    '<p>Instagram no deja mantener pulsado un sticker para sacarlo. Haz una captura de pantalla donde se vea, toca «Elegir captura» y luego toca el sticker: se recorta solo y salen los botones de WhatsApp, Telegram y Discord.</p>' +
+    '<p>Si no lo recorta bien, toca «A mano» y encuádralo con dos dedos.</p>' +
+    '<h3>Los que se mueven</h3>' +
+    '<p>Una captura solo guarda una imagen fija. Para el GIF con movimiento, toca el botón GIF del teclado en WhatsApp, Telegram o Discord y búscalo por nombre: los más usados suelen estar ahí también.</p>' +
+    '<h3>Desde otras apps</h3>' +
     '<p><strong>iPhone:</strong> mantén pulsada la imagen → Copiar. Vuelve aquí y toca «Pegar imagen».</p>' +
-    '<h3>Reels, historias y publicaciones de Instagram</h3>' +
-    '<p>Instagram no deja sacar la imagen: solo comparte el enlace. Haz una captura de pantalla donde se vea el sticker, elígela aquí y recórtala con dos dedos.</p>' +
-    '<h3>Quitar el fondo</h3>' +
-    '<p>En el editor toca «Quitar fondo» y luego toca el color que sobra. Sube la tolerancia si quedan restos; bájala si se borra de más.</p>' +
+    '<p><strong>Android:</strong> instala PasaStickers (menú ⋮ del navegador → «Instalar app»). Después, en la otra app, mantén pulsada la imagen → Compartir → PasaStickers.</p>' +
+    '<h3>Retocar y quitar el fondo</h3>' +
+    '<p>Abre un sticker y toca «Retocar». Con «Quitar fondo» tocas el color que sobra; sube la tolerancia si quedan restos y bájala si se borra de más.</p>' +
     '<h3>Tus stickers</h3>' +
     '<p>Se guardan solo en este teléfono. Nada se sube a internet. Los stickers animados se guardan como imagen fija.</p>' +
     '</div>',
@@ -965,7 +1136,7 @@ function openLinkNotice() {
   showSheet(
     '<div class="sh-head"><h2>Solo llegó un enlace</h2>' + closeBtn + '</div><div class="help">' +
     '<p>Esa app compartió el enlace de la publicación, no la imagen. Instagram hace esto con reels, historias y publicaciones.</p>' +
-    '<p>Haz una captura de pantalla donde se vea el sticker y elígela aquí. Luego la recortas con dos dedos.</p>' +
+    '<p>Haz una captura de pantalla donde se vea el sticker, elígela aquí y toca el sticker: se recorta solo.</p>' +
     '</div><div class="acts" style="margin-top:16px"><button class="btn primary" data-act="pick">Elegir captura</button></div>',
     'Solo llegó un enlace');
 }
@@ -992,15 +1163,12 @@ async function checkInbox() {
 
 /* ───────── Arranque ───────── */
 $('#hint').textContent =
-  isIOS ? 'En la otra app mantén pulsada la imagen y elige «Copiar»; luego toca «Pegar imagen». Para reels e historias, usa una captura de pantalla.'
-  : isAndroid && isStandalone ? 'En la otra app mantén pulsada la imagen → Compartir → PasaStickers. Para reels e historias, usa una captura de pantalla.'
-  : isAndroid ? 'Instala la app para que aparezca en el menú «Compartir» de Discord, Telegram y demás. Para reels e historias, usa una captura de pantalla.'
+  isAndroid && isStandalone ? 'Haz una captura de pantalla donde se vea el sticker, elígela aquí y tócalo. Desde otras apps también sirve Compartir → PasaStickers.'
+  : isAndroid ? 'Haz una captura de pantalla donde se vea el sticker, elígela aquí y tócalo. Instala la app para que también salga en el menú «Compartir».'
+  : isIOS || navigator.maxTouchPoints > 0 ? 'Haz una captura de pantalla donde se vea el sticker (comentarios, reels, historias…), elígela aquí y toca el sticker.'
   : 'Pega una imagen (Ctrl+V), arrástrala aquí o elígela de tus archivos.';
 
-if (!(navigator.clipboard && navigator.clipboard.read)) {
-  $('#pasteBtn').hidden = true;
-  $('#pickBtn').classList.add('primary');
-}
+if (!(navigator.clipboard && navigator.clipboard.read)) $('#pasteBtn').hidden = true;
 $('#pasteBtn').addEventListener('click', pasteFromClipboard);
 $('#pickBtn').addEventListener('click', () => $('#fileIn').click());
 $('#fileIn').addEventListener('change', (e) => {
