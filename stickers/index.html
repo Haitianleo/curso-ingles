@@ -144,11 +144,9 @@
   .pk-box{position:absolute;border:3px solid var(--accent);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.5);pointer-events:none}
   .pk-hint{margin-top:10px;font-size:14.5px;color:var(--muted);text-align:center}
   .pk-stage video{display:block;max-width:100%;max-height:100%;border-radius:14px;background:#000;cursor:pointer}
-  .cl-controls{width:100%;max-width:440px;display:grid;grid-template-columns:minmax(0,1fr);gap:6px;margin-top:10px}
-  .cl-controls .slider b{flex:0 0 46px;text-align:right;font-variant-numeric:tabular-nums}
-  .cl-controls .pk-hint{margin-top:2px;min-height:2.9em}
-  .busy{position:absolute;inset:0;z-index:5;background:rgba(0,0,0,.78);color:#fff;display:flex;align-items:center;justify-content:center;
-    text-align:center;padding:28px;font-weight:700;font-size:17px}
+  #clHint{min-height:2.9em;max-width:440px}
+  #clHint.work{color:var(--text);font-weight:700}
+  .bar-gap{width:72px;flex:0 0 auto}
 
   /* Hoja inferior */
   .backdrop{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.55)}
@@ -253,15 +251,10 @@
   <div class="ed-bar">
     <button class="btn ghost sm" id="clClose">Cerrar</button>
     <strong>Sticker animado</strong>
-    <button class="btn primary sm" id="clMake" disabled>Crear</button>
+    <span class="bar-gap"></span>
   </div>
   <div class="pk-stage" id="clStage"><video id="clVideo" muted playsinline webkit-playsinline preload="auto"></video></div>
-  <div class="cl-controls">
-    <label class="slider"><span>Empieza</span><input type="range" id="clStart" min="0" max="0" step="0.1" value="0"><b id="clStartVal">0 s</b></label>
-    <label class="slider"><span>Dura</span><input type="range" id="clDur" min="1" max="5" step="0.5" value="3"><b id="clDurVal">3 s</b></label>
-    <p class="pk-hint" id="clHint"></p>
-  </div>
-  <div class="busy" id="clBusy" hidden><p id="clBusyText"></p></div>
+  <p class="pk-hint" id="clHint" role="status"></p>
 </div>
 
 <div class="editor" id="editor" role="dialog" aria-modal="true" aria-label="Recortar sticker" hidden>
@@ -643,11 +636,15 @@ $('#pkManual').addEventListener('click', () => {
 });
 
 /* ───────── Stickers animados: desde una grabación de pantalla ─────────
-   Se toca el sticker en el video, se capturan unos segundos de esa zona mientras
-   el video se reproduce y con esos cuadros se arman un WebP animado y un GIF. */
+   Se toca el sticker en el video y la app hace el resto: mira esa zona mientras el
+   video corre, detecta cuándo la animación vuelve a empezar y guarda una vuelta
+   completa como WebP animado y como GIF. */
 const clStage = $('#clStage'), clVideo = $('#clVideo');
-const C = { url: null, rect: null, mask: null, mark: null, start: 0, dur: 3, busy: false };
-const CLIP_HINT = 'Toca el sticker mientras se ve en el video.';
+const C = { url: null, rect: null, mask: null, mark: null, busy: false };
+const CLIP_HINT = 'Toca el sticker mientras se ve en el video. Lo demás es automático.';
+const STEP = 0.1;         // un cuadro cada 0,1 s de video
+const MAX_FRAMES = 80;    // se miran 8 s como mucho: alcanza para vueltas de hasta 4 s
+const SIG = 24;           // cada cuadro se resume en 24×24 puntos para compararlos rápido
 const once = (el, ev, ms) => new Promise((res) => {
   const done = () => { el.removeEventListener(ev, done); clearTimeout(t); res(); };
   const t = setTimeout(done, ms);
@@ -655,8 +652,12 @@ const once = (el, ev, ms) => new Promise((res) => {
 });
 const tick = () => new Promise((res) => setTimeout(res));
 const secs = (v) => String(Math.round(v * 10) / 10).replace('.', ',') + ' s';
-const say = (msg) => { $('#clBusyText').textContent = msg; $('#clBusy').hidden = false; };
 const clipTotal = () => (isFinite(clVideo.duration) ? clVideo.duration : 0);
+function clipStatus(msg, working) {
+  const el = $('#clHint');
+  el.textContent = msg;
+  el.classList.toggle('work', !!working);
+}
 
 function resetClip() {
   clVideo.pause();
@@ -664,10 +665,8 @@ function resetClip() {
   clVideo.load();
   if (C.url) URL.revokeObjectURL(C.url);
   if (C.mark) C.mark.remove();
-  Object.assign(C, { url: null, rect: null, mask: null, mark: null, start: 0, dur: 3, busy: false });
-  $('#clMake').disabled = true;
-  $('#clBusy').hidden = true;
-  $('#clHint').textContent = CLIP_HINT;
+  Object.assign(C, { url: null, rect: null, mask: null, mark: null, busy: false });
+  clipStatus(CLIP_HINT);
 }
 function hideClip() {
   if (clipEl.hidden) return;
@@ -697,7 +696,6 @@ async function openClip(blob) {
     if (C.url !== url) return;
   }
   fitClip();
-  syncClip();
   clVideo.play().catch(() => {});
 }
 
@@ -719,36 +717,12 @@ if (window.ResizeObserver) {
   new ResizeObserver(() => fitPicker()).observe(pkStage);
 }
 
-/* Ajusta las barras «Empieza» y «Dura» a lo que mide el video. */
-function syncClip() {
-  const total = clipTotal(), ds = $('#clDur'), ss = $('#clStart');
-  const maxDur = Math.max(1, Math.min(5, Math.floor(total * 2) / 2));
-  C.dur = total && total < 1 ? total : Math.min(C.dur, maxDur);
-  ds.max = maxDur; ds.value = C.dur; ds.disabled = total < 1.5;
-  const maxStart = Math.max(0, Math.floor((total - C.dur) * 10) / 10);
-  C.start = Math.min(C.start, maxStart);
-  ss.max = maxStart; ss.value = C.start; ss.disabled = maxStart <= 0;
-  $('#clDurVal').textContent = secs(C.dur);
-  $('#clStartVal').textContent = secs(C.start);
-}
-
-/* El video se repite solo: entero antes de elegir, y solo el trozo elegido después. */
-clVideo.addEventListener('timeupdate', () => {
-  if (C.busy || clipEl.hidden || !C.rect) return;
-  if (clVideo.currentTime >= C.start + C.dur - 0.05 || clVideo.currentTime < C.start - 0.4) clVideo.currentTime = C.start;
-});
+/* Antes de tocar nada, el video se repite entero para que dé tiempo a ver el sticker. */
 clVideo.addEventListener('ended', () => {
   if (C.busy || clipEl.hidden) return;
-  clVideo.currentTime = C.rect ? C.start : 0;
+  clVideo.currentTime = 0;
   clVideo.play().catch(() => {});
 });
-$('#clStart').addEventListener('input', (e) => {
-  C.start = +e.target.value;
-  clVideo.currentTime = C.start;
-  syncClip();
-  clVideo.play().catch(() => {});
-});
-$('#clDur').addEventListener('input', (e) => { C.dur = +e.target.value; syncClip(); });
 $('#clClose').addEventListener('click', closeClip);
 
 clVideo.addEventListener('click', (e) => {
@@ -762,64 +736,173 @@ clVideo.addEventListener('click', (e) => {
   if (!found) { toast('No encontré el borde de ese sticker. Toca justo encima.'); return; }
   /* En video el filo se descarta más ancho: la compresión ensucia los bordes. */
   const crop = cropSticker(img, found, Math.max(2, Math.round(w * 0.004)));
-  if (!C.rect) C.start = Math.max(0, Math.round(clVideo.currentTime * 10) / 10);
   C.rect = crop.rect; C.mask = crop.canvas;
   if (!C.mark) { C.mark = document.createElement('div'); C.mark.className = 'pk-box'; clStage.appendChild(C.mark); }
   placeMark();
-  syncClip();
-  $('#clMake').disabled = false;
-  $('#clHint').textContent = 'Se guarda lo que ves dentro del marco. Ajusta las barras si hace falta y toca «Crear».';
-  fitClip();
-  if (clVideo.paused) clVideo.play().catch(() => {});
+  makeAnimated(clVideo.currentTime);
 });
 
-async function captureFrames() {
-  const v = clVideo, r = C.rect, mask = C.mask, start = C.start, dur = C.dur;
-  const fps = dur <= 3 ? 10 : 8, step = 1 / fps, want = Math.max(2, Math.round(dur * fps));
+/* Diferencia entre dos cuadros resumidos (0 = iguales). */
+function sigDiff(a, b) {
+  let s = 0;
+  for (let i = 0; i < a.length; i += 4) {
+    const r = a[i] - b[i], g = a[i + 1] - b[i + 1], bl = a[i + 2] - b[i + 2];
+    s += r * r + g * g + bl * bl;
+  }
+  return Math.sqrt(s / (a.length / 4 * 3));
+}
+
+/* ¿Cada cuántos cuadros se repite la animación? Para cada separación L se mide cuánto
+   se parece cada cuadro al que viene L cuadros después. La vuelta es la separación más
+   corta en la que vuelven a coincidir después de haber sido distintos.
+   Devuelve { period }, { still: true } si nada se mueve, o null si no se repite. */
+function findLoop(sigs) {
+  const n = sigs.length, maxL = n >> 1;
+  if (maxL < 4) return null;
+  const score = new Float32Array(maxL + 1);
+  let top = 0;
+  for (let L = 1; L <= maxL; L++) {
+    const d = [];
+    for (let i = 0; i + L < n; i++) d.push(sigDiff(sigs[i], sigs[i + L]));
+    d.sort((x, y) => x - y);
+    score[L] = d[d.length >> 1];                  // mediana: aguanta cuadros sucios al principio o al final
+    if (score[L] > top) top = score[L];
+  }
+  if (top < 2.5) return { still: true };
+  let peak = Math.max(score[1], score[2], score[3]);
+  for (let L = 4; L <= maxL; L++) {
+    const v = score[L];
+    const low = v <= Math.max(3, top * 0.35), valley = v <= score[L - 1] && (L === maxL || v <= score[L + 1]);
+    if (low && valley && peak >= v * 2 + 1) return { period: L };
+    if (v > peak) peak = v;
+  }
+  return null;
+}
+
+/* Elige en qué cuadro empieza la vuelta: donde mejor coincide con la vuelta siguiente,
+   y a igualdad, lo más cerca del momento en que se tocó. */
+function loopStart(sigs, period, near) {
+  let best = 0, bestCost = Infinity;
+  for (let i0 = 0; i0 + period * 2 <= sigs.length; i0++) {
+    let worst = 0;
+    for (let i = i0; i < i0 + period; i++) worst = Math.max(worst, sigDiff(sigs[i], sigs[i + period]));
+    const cost = worst + Math.abs(i0 - near) * 0.02;
+    if (cost < bestCost) { bestCost = cost; best = i0; }
+  }
+  return best;
+}
+
+/* Reproduce el video desde donde se tocó, toma un cuadro de la zona cada 0,1 s y se
+   detiene en cuanto ve la animación repetirse. Devuelve la vuelta completa. */
+async function captureLoop(t0, gone) {
+  const v = clVideo, r = C.rect, mask = C.mask, total = clipTotal();
+  const end = total ? Math.min(total, t0 + MAX_FRAMES * STEP) : t0 + MAX_FRAMES * STEP;
+  const from = end - t0 >= 4 ? t0 : Math.max(0, end - MAX_FRAMES * STEP);   // si queda poco video, se mira también lo anterior
   const k = S / Math.max(r.w, r.h), dw = Math.max(2, Math.round(r.w * k)), dh = Math.max(2, Math.round(r.h * k)), dx = (S - dw) >> 1, dy = (S - dh) >> 1;
   const c = mk(S, S), g = c.getContext('2d', { willReadFrequently: true });
+  const sc = mk(SIG, SIG), sg = sc.getContext('2d', { willReadFrequently: true });
   g.imageSmoothingQuality = 'high';
-  const frames = [];
-  const grab = (t) => {
+  const frames = [], sigs = [];
+  const grab = () => {
     g.globalCompositeOperation = 'source-over';
     g.clearRect(0, 0, S, S);
     g.drawImage(v, r.x, r.y, r.w, r.h, dx, dy, dw, dh);
     g.globalCompositeOperation = 'destination-in';
     g.drawImage(mask, dx, dy, dw, dh);
-    frames.push({ img: g.getImageData(0, 0, S, S), t });
+    frames.push(g.getImageData(0, 0, S, S));
+    sg.clearRect(0, 0, SIG, SIG);
+    sg.drawImage(c, dx, dy, dw, dh, 0, 0, SIG, SIG);
+    sigs.push(sg.getImageData(0, 0, SIG, SIG).data);
   };
+  let found = null;
   v.pause();
-  v.currentTime = start;
+  v.currentTime = from;
   await once(v, 'seeked', 2500);
   await v.play().catch(() => {});
-  /* Mientras el video corre, se toma un cuadro cada «step» segundos de video. */
   await new Promise((resolve) => {
-    const t0 = performance.now(), limit = (dur * 2 + 4) * 1000;
-    let last = -1;
+    const began = performance.now(), limit = ((end - from) * 2 + 4) * 1000;
+    let nextT = from, checked = 0;
     const loop = () => {
-      if (clipEl.hidden) return resolve();
-      const t = v.currentTime - start;
-      if (t >= 0 && (last < 0 || t - last >= step * 0.9)) { grab(t); last = t; }
-      if (frames.length >= want || t >= dur || v.ended || v.paused || performance.now() - t0 > limit) return resolve();
+      if (gone()) return resolve();
+      const t = v.currentTime;
+      while (t >= nextT && frames.length < MAX_FRAMES) { grab(); nextT += STEP; }
+      const n = frames.length;
+      if (n >= 16 && n % 4 === 0 && n !== checked) {
+        checked = n;
+        const res = findLoop(sigs);
+        /* Para cortar antes de tiempo se piden tres vueltas vistas, o 3 s sin ningún movimiento. */
+        if (res && ((res.period && n >= res.period * 3) || (res.still && n >= 30))) { found = res; return resolve(); }
+      }
+      if (n >= MAX_FRAMES || t >= end - 0.02 || v.ended || v.paused || performance.now() - began > limit) return resolve();
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
   });
   v.pause();
   /* Si el navegador no dejó reproducir, se salta de cuadro en cuadro. */
-  if (frames.length < 2 && !clipEl.hidden) {
-    frames.length = 0;
-    for (let i = 0; i < want && !clipEl.hidden; i++) {
-      v.currentTime = Math.min(start + i * step, Math.max(0, clipTotal() - 0.05));
+  if (frames.length < 2 && !gone()) {
+    frames.length = 0; sigs.length = 0;
+    const count = Math.min(MAX_FRAMES, Math.max(2, Math.floor((end - from) / STEP)));
+    for (let i = 0; i < count && !gone(); i++) {
+      v.currentTime = Math.min(from + i * STEP, Math.max(0, end - 0.05));
       await once(v, 'seeked', 2500);
-      grab(i * step);
+      grab();
     }
   }
-  for (let i = 0; i < frames.length; i++) {
-    const next = i + 1 < frames.length ? frames[i + 1].t : frames[i].t + step;
-    frames[i].ms = Math.max(20, Math.round((next - frames[i].t) * 1000));
+  if (gone() || !frames.length) return { frames: [] };
+  const res = found || findLoop(sigs) || {};
+  const tapped = Math.max(0, Math.min(frames.length - 1, Math.round((t0 - from) / STEP)));
+  if (res.still) return { still: frames[tapped] };
+  let first, count;
+  if (res.period) { first = loopStart(sigs, res.period, tapped); count = res.period; }
+  else { count = Math.min(50, frames.length); first = Math.min(tapped, frames.length - count); }   // sin vuelta clara: 5 s como mucho
+  return { loop: !!res.period, frames: frames.slice(first, first + count).map((img) => ({ img, ms: STEP * 1000 })) };
+}
+
+async function makeAnimated(t0) {
+  const url = C.url;
+  const gone = () => C.url !== url || clipEl.hidden;
+  C.busy = true;
+  clipStatus('Mirando el sticker para ver cuánto dura…', true);
+  try {
+    const got = await captureLoop(t0, gone);
+    if (gone()) return;
+    if (got.still) {
+      const c = mk(S, S);
+      c.getContext('2d').putImageData(got.still, 0, 0);
+      const st = await addSticker(await toBuffer(await canvasBlob(c, 'image/png')));
+      hideClip();
+      openDetail(st);
+      toast('Ese sticker no se mueve en la grabación, así que lo guardé como imagen fija.');
+      return;
+    }
+    const frames = got.frames;
+    if (frames.length < 2) throw new Error('frames');
+    clipStatus('Creando el sticker…', true);
+    await tick();
+    const webp = await animatedWebp(frames, 500 * 1024, (p) => clipStatus('Creando el sticker… ' + Math.round(p * 100) + ' %', true));
+    if (gone()) return;
+    clipStatus('Creando el GIF…', true);
+    await tick();
+    const gif = await animatedGif(frames, 320);
+    if (gone()) return;
+    const poster = mk(S, S);
+    poster.getContext('2d').putImageData(frames[0].img, 0, 0);
+    const png = await toBuffer(await canvasBlob(poster, 'image/png'));
+    const ms = frames.reduce((n, f) => n + f.ms, 0);
+    const st = await addSticker(png, null, { webp: webp.buffer, gif, n: frames.length, ms });
+    hideClip();
+    openDetail(st);
+    toast(got.loop ? 'Listo: una vuelta completa, ' + secs(ms / 1000) + '.' : 'No vi que se repitiera, así que guardé ' + secs(ms / 1000) + '.');
+  } catch (err) {
+    if (gone()) return;
+    C.busy = false;
+    if (C.mark) { C.mark.remove(); C.mark = null; }
+    C.rect = null; C.mask = null;
+    clipStatus(CLIP_HINT);
+    toast('No pude crear el sticker animado. Toca el sticker otra vez.');
+    clVideo.play().catch(() => {});
   }
-  return frames;
 }
 
 /* Un cuadro en WebP: con el navegador si sabe, y si no con WebAssembly. */
@@ -935,40 +1018,6 @@ async function animatedGif(frames, size) {
   gif.finish();
   return gif.bytes().slice().buffer;
 }
-
-$('#clMake').addEventListener('click', async () => {
-  if (C.busy || !C.rect) return;
-  const url = C.url;
-  const gone = () => C.url !== url || clipEl.hidden;
-  C.busy = true;
-  say('Capturando el movimiento…');
-  try {
-    const frames = await captureFrames();
-    if (gone()) return;
-    if (frames.length < 2) throw new Error('frames');
-    say('Creando el sticker…');
-    await tick();
-    const webp = await animatedWebp(frames, 500 * 1024, (p) => say('Creando el sticker… ' + Math.round(p * 100) + ' %'));
-    if (gone()) return;
-    say('Creando el GIF…');
-    await tick();
-    const gif = await animatedGif(frames, 320);
-    if (gone()) return;
-    const poster = mk(S, S);
-    poster.getContext('2d').putImageData(frames[0].img, 0, 0);
-    const png = await toBuffer(await canvasBlob(poster, 'image/png'));
-    const ms = frames.reduce((n, f) => n + f.ms, 0);
-    const st = await addSticker(png, null, { webp: webp.buffer, gif, n: frames.length, ms });
-    hideClip();
-    openDetail(st);
-  } catch (err) {
-    if (gone()) return;
-    C.busy = false;
-    $('#clBusy').hidden = true;
-    toast('No pude crear el sticker animado. Prueba con un video más corto.');
-    clVideo.play().catch(() => {});
-  }
-});
 
 /* ───────── Editor ───────── */
 const BORDER = 12;        // grosor del borde blanco
@@ -1547,8 +1596,8 @@ function openHelp() {
     '<p>Instagram no deja mantener pulsado un sticker para sacarlo. Haz una captura de pantalla donde se vea, toca «Elegir captura o video» y luego toca el sticker: se recorta solo y salen los botones de WhatsApp, Telegram y Discord.</p>' +
     '<p>Si no lo recorta bien, toca «A mano» y encuádralo con dos dedos.</p>' +
     '<h3>Los que se mueven</h3>' +
-    '<p>Graba la pantalla unos segundos mientras el sticker se mueve (en iPhone: Centro de control → botón de grabar). Toca «Elegir captura o video», elige la grabación, toca el sticker y luego «Crear».</p>' +
-    '<p>Se guarda como sticker animado y también como GIF, que sirve en todas las apps. No hagas scroll mientras grabas, para que el sticker no cambie de sitio.</p>' +
+    '<p>Graba la pantalla unos 8 segundos mientras el sticker se mueve (en iPhone: Centro de control → botón de grabar). Toca «Elegir captura o video», elige la grabación y toca el sticker.</p>' +
+    '<p>La app mira sola cuánto dura y guarda una vuelta completa, como sticker animado y como GIF. No hagas scroll mientras grabas, para que el sticker no cambie de sitio.</p>' +
     '<h3>Desde otras apps</h3>' +
     '<p><strong>iPhone:</strong> mantén pulsada la imagen → Copiar. Vuelve aquí y toca «Pegar imagen».</p>' +
     '<p><strong>Android:</strong> instala PasaStickers (menú ⋮ del navegador → «Instalar app»). Después, en la otra app, mantén pulsada la imagen → Compartir → PasaStickers.</p>' +
@@ -1595,7 +1644,7 @@ async function checkInbox() {
 $('#hint').textContent =
   isAndroid && isStandalone ? 'Haz una captura de pantalla donde se vea el sticker, elígela aquí y tócalo. Si se mueve, graba la pantalla y elige el video. Desde otras apps también sirve Compartir → PasaStickers.'
   : isAndroid ? 'Haz una captura de pantalla donde se vea el sticker, elígela aquí y tócalo. Si se mueve, graba la pantalla y elige el video.'
-  : isIOS || navigator.maxTouchPoints > 0 ? 'Haz una captura de pantalla donde se vea el sticker, elígela aquí y tócalo. Si el sticker se mueve, graba la pantalla unos segundos y elige el video.'
+  : isIOS || navigator.maxTouchPoints > 0 ? 'Haz una captura de pantalla donde se vea el sticker, elígela aquí y tócalo. Si el sticker se mueve, graba la pantalla unos 8 segundos y elige el video.'
   : 'Pega una imagen (Ctrl+V), arrástrala aquí o elígela de tus archivos.';
 
 if (!(navigator.clipboard && navigator.clipboard.read)) $('#pasteBtn').hidden = true;
