@@ -640,7 +640,7 @@ $('#pkManual').addEventListener('click', () => {
    video corre, detecta cuándo la animación vuelve a empezar y guarda una vuelta
    completa como WebP animado y como GIF. */
 const clStage = $('#clStage'), clVideo = $('#clVideo');
-const C = { url: null, rect: null, mask: null, mark: null, bg: '#fff', busy: false };
+const C = { url: null, rect: null, mask: null, mark: null, busy: false };
 const CLIP_HINT = 'Toca el sticker mientras se ve en el video. Lo demás es automático.';
 const STEP = 0.1;         // un cuadro cada 0,1 s de video
 const MAX_FRAMES = 80;    // se miran 8 s como mucho: alcanza para vueltas de hasta 4 s
@@ -665,7 +665,7 @@ function resetClip() {
   clVideo.load();
   if (C.url) URL.revokeObjectURL(C.url);
   if (C.mark) C.mark.remove();
-  Object.assign(C, { url: null, rect: null, mask: null, mark: null, bg: '#fff', busy: false });
+  Object.assign(C, { url: null, rect: null, mask: null, mark: null, busy: false });
   clipStatus(CLIP_HINT);
 }
 function hideClip() {
@@ -737,8 +737,6 @@ clVideo.addEventListener('click', (e) => {
   /* En video el filo se descarta más ancho: la compresión ensucia los bordes. */
   const crop = cropSticker(img, found, Math.max(2, Math.round(w * 0.004)));
   C.rect = crop.rect; C.mask = crop.canvas;
-  const edge = ((found.y + (found.h >> 1)) * w + 2) * 4;       // color de fondo de la app a la altura del sticker
-  C.bg = 'rgb(' + img.data[edge] + ',' + img.data[edge + 1] + ',' + img.data[edge + 2] + ')';
   if (!C.mark) { C.mark = document.createElement('div'); C.mark.className = 'pk-box'; clStage.appendChild(C.mark); }
   placeMark();
   makeAnimated(clVideo.currentTime);
@@ -886,13 +884,13 @@ async function makeAnimated(t0) {
     if (gone()) return;
     clipStatus('Creando el GIF…', true);
     await tick();
-    const gif = await animatedGif(frames, got.box, C.bg);
+    const gif = await animatedGif(frames, got.box);
     if (gone()) return;
     const poster = mk(S, S);
     poster.getContext('2d').putImageData(frames[0].img, 0, 0);
     const png = await toBuffer(await canvasBlob(poster, 'image/png'));
     const ms = frames.reduce((n, f) => n + f.ms, 0);
-    const st = await addSticker(png, null, { webp: webp.buffer, gif: gif.buffer, gw: gif.w, gh: gif.h, n: frames.length, ms });
+    const st = await addSticker(png, null, { webp: webp.buffer, gif: gif.buffer, gw: gif.w, gh: gif.h, gv: GIF_V, n: frames.length, ms });
     hideClip();
     openDetail(st);
     toast(got.loop ? 'Listo: una vuelta completa, ' + secs(ms / 1000) + '.' : 'No vi que se repitiera, así que guardé ' + secs(ms / 1000) + '.');
@@ -990,28 +988,102 @@ async function animatedWebp(frames, max, progress) {
 let gifLib = null;
 const loadGif = () => gifLib || (gifLib = import('./vendor/gifenc.js').catch((e) => { gifLib = null; throw e; }));
 
-/* GIF: solo la zona del sticker, sin márgenes y sin transparencia. WhatsApp pasa los GIF
-   a video y lo transparente saldría negro; por eso las esquinas se rellenan con el color
-   de fondo que tenía la app en la grabación. */
-async function animatedGif(frames, box, bgColor) {
+/* Versión de cómo se arma el GIF. Si sube, los GIF ya guardados se rehacen solos
+   la próxima vez que se usan. */
+const GIF_V = 2;
+
+/* Zona con dibujo dentro de un cuadro de S×S, y cuántos puntos transparentes tiene. */
+function alphaBox(d) {
+  let x0 = S, y0 = S, x1 = -1, y1 = -1, clear = 0;
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    if (d[(y * S + x) * 4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  }
+  if (x1 < 0) return { x: 0, y: 0, w: S, h: S, clear: 0 };
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (d[(y * S + x) * 4 + 3] < 128) clear++;
+  return { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1, clear };
+}
+
+/* Color para lo que sobra alrededor del sticker: el promedio de la propia imagen, oscurecido. */
+function fillColor(src, box) {
+  const t = mk(16, 16), tg = t.getContext('2d', { willReadFrequently: true });
+  tg.drawImage(src, box.x, box.y, box.w, box.h, 0, 0, 16, 16);
+  const d = tg.getImageData(0, 0, 16, 16).data;
+  let r = 0, g = 0, b = 0, n = 0;
+  for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 128) { r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; }
+  if (!n) return '#111';
+  const k = 0.38 / n;
+  return 'rgb(' + Math.round(r * k) + ',' + Math.round(g * k) + ',' + Math.round(b * k) + ')';
+}
+
+/* Dibuja el sticker entero y centrado dentro de un cuadrado. WhatsApp recorta los GIF a un
+   cuadrado al volverlos sticker (si no es cuadrado, le corta los lados), y un GIF no puede
+   llevar transparencia (no la respeta). Así que lo que sobra va de un color liso. */
+function squareFrame(g, src, box, size, fill) {
+  g.fillStyle = fill;
+  g.fillRect(0, 0, size, size);
+  const k = size / Math.max(box.w, box.h), w = box.w * k, h = box.h * k;
+  g.imageSmoothingEnabled = true;
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(src, box.x, box.y, box.w, box.h, (size - w) / 2, (size - h) / 2, w, h);
+}
+
+async function animatedGif(frames, box) {
   const { GIFEncoder, quantize, applyPalette } = await loadGif();
   const gif = GIFEncoder();
-  const k = (frames.length > 30 ? 384 : S) / Math.max(box.w, box.h);
-  const w = Math.max(2, Math.round(box.w * k)), h = Math.max(2, Math.round(box.h * k));
-  const a = mk(S, S), ag = a.getContext('2d'), b = mk(w, h), bg = b.getContext('2d', { willReadFrequently: true });
-  bg.imageSmoothingQuality = 'high';
+  const size = frames.length > 30 ? 384 : S;
+  const a = mk(S, S), ag = a.getContext('2d'), b = mk(size, size), bg = b.getContext('2d', { willReadFrequently: true });
+  ag.putImageData(frames[0].img, 0, 0);
+  const fill = fillColor(a, box);                 // el mismo color en todos los cuadros, para que no parpadee
   for (let i = 0; i < frames.length; i++) {
     ag.putImageData(frames[i].img, 0, 0);
-    bg.fillStyle = bgColor;
-    bg.fillRect(0, 0, w, h);
-    bg.drawImage(a, box.x, box.y, box.w, box.h, 0, 0, w, h);
-    const rgba = bg.getImageData(0, 0, w, h).data;
+    squareFrame(bg, a, box, size, fill);
+    const rgba = bg.getImageData(0, 0, size, size).data;
     const palette = quantize(rgba, 256, { format: 'rgb565' });
-    gif.writeFrame(applyPalette(rgba, palette, 'rgb565'), w, h, { palette, delay: frames[i].ms });
+    gif.writeFrame(applyPalette(rgba, palette, 'rgb565'), size, size, { palette, delay: frames[i].ms });
     if (i % 3 === 2) await tick();
   }
   gif.finish();
-  return { buffer: gif.bytes().slice().buffer, w, h };
+  return { buffer: gif.bytes().slice().buffer, w: size, h: size };
+}
+
+/* Separa los cuadros de un WebP animado hecho por esta app; cada uno sale como WebP suelto. */
+function webpFrames(buf) {
+  const u8 = new Uint8Array(buf), out = [];
+  const str = (o) => String.fromCharCode(u8[o], u8[o + 1], u8[o + 2], u8[o + 3]);
+  const r24 = (o) => u8[o] | (u8[o + 1] << 8) | (u8[o + 2] << 16);
+  const r32 = (o) => (r24(o) | (u8[o + 3] << 24)) >>> 0;
+  const tag = (a, o, t) => { for (let i = 0; i < 4; i++) a[o + i] = t.charCodeAt(i); };
+  const w24 = (a, o, v) => { a[o] = v & 255; a[o + 1] = (v >> 8) & 255; a[o + 2] = (v >> 16) & 255; };
+  for (let p = 12; p + 8 <= u8.length;) {
+    const size = r32(p + 4);
+    if (str(p) === 'ANMF' && size > 16) {
+      const data = u8.subarray(p + 24, Math.min(u8.length, p + 8 + size));   // los trozos de imagen, tal cual
+      const alpha = str(p + 24) === 'ALPH', head = alpha ? 30 : 12, file = new Uint8Array(head + data.length);
+      tag(file, 0, 'RIFF'); w24(file, 4, file.length - 8); file[7] = ((file.length - 8) >>> 24) & 255; tag(file, 8, 'WEBP');
+      if (alpha) { tag(file, 12, 'VP8X'); file[16] = 10; file[20] = 0x10; w24(file, 24, r24(p + 14)); w24(file, 27, r24(p + 17)); }
+      file.set(data, head);
+      out.push({ bytes: file, ms: r24(p + 20) });
+    }
+    p += 8 + size + (size & 1);
+  }
+  return out;
+}
+
+/* Rehace el GIF de un sticker animado ya guardado, a partir de su WebP animado. */
+async function rebuildGif(st) {
+  const parts = webpFrames(st.anim.webp);
+  if (parts.length < 2) throw new Error('frames');
+  const c = mk(S, S), g = c.getContext('2d', { willReadFrequently: true }), frames = [];
+  for (const part of parts) {
+    const img = await decode(new Blob([part.bytes], { type: 'image/webp' }));
+    g.clearRect(0, 0, S, S);
+    g.drawImage(img, 0, 0, S, S);
+    if (img.close) img.close();
+    frames.push({ img: g.getImageData(0, 0, S, S), ms: part.ms || 100 });
+  }
+  const gif = await animatedGif(frames, alphaBox(frames[0].img.data));
+  Object.assign(st.anim, { gif: gif.buffer, gw: gif.w, gh: gif.h, gv: GIF_V });
+  await Store.put(st);
 }
 
 /* ───────── Editor ───────── */
@@ -1406,45 +1478,34 @@ if (isIOS) {
 
 /* Cada archivo lleva sus medidas para mostrarlas en la hoja. */
 const sized = (file, w, h) => { file.px = [w, h]; return file; };
-const animFiles = (st) => ({
-  webp: sized(new File([st.anim.webp], 'sticker-' + st.id + '.webp', { type: 'image/webp' }), S, S),
-  gif: sized(new File([st.anim.gif], 'sticker-' + st.id + '.gif', { type: 'image/gif' }), st.anim.gw || 320, st.anim.gh || 320),
-});
+async function animFiles(st) {
+  if ((st.anim.gv || 1) < GIF_V) {
+    try { await rebuildGif(st); } catch (e) { /* si no se puede, sirve el GIF que ya tenía */ }
+  }
+  return {
+    webp: sized(new File([st.anim.webp], 'sticker-' + st.id + '.webp', { type: 'image/webp' }), S, S),
+    gif: sized(new File([st.anim.gif], 'sticker-' + st.id + '.gif', { type: 'image/gif' }), st.anim.gw || 320, st.anim.gh || 320),
+  };
+}
 
-/* Un sticker quieto como GIF de dos cuadros iguales, recortado a lo que tiene dibujo.
-   El GIF no puede llevar transparencia (WhatsApp la mostraría negra): si solo faltan las
-   esquinas redondeadas, se rellenan con la propia imagen; si el fondo está recortado,
-   queda blanco. */
+/* Un sticker quieto como GIF cuadrado de dos cuadros iguales. Si el fondo está recortado
+   (mucha transparencia) queda sobre blanco; si no, sobre un tono oscuro de la propia imagen. */
 async function stillGif(st) {
   const { GIFEncoder, quantize, applyPalette } = await loadGif();
   const img = await decode(new Blob([st.png], { type: 'image/png' }));
   const a = mk(S, S), ag = a.getContext('2d', { willReadFrequently: true });
   ag.drawImage(img, 0, 0, S, S);
   if (img.close) img.close();
-  const d = ag.getImageData(0, 0, S, S).data;
-  let x0 = S, y0 = S, x1 = -1, y1 = -1;
-  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
-    if (d[(y * S + x) * 4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
-  }
-  if (x1 < 0) { x0 = 0; y0 = 0; x1 = S - 1; y1 = S - 1; }
-  const w = x1 - x0 + 1, h = y1 - y0 + 1;
-  let clear = 0;
-  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (d[(y * S + x) * 4 + 3] < 128) clear++;
-  const b = mk(w, h), bg = b.getContext('2d', { willReadFrequently: true });
-  bg.fillStyle = '#fff';
-  bg.fillRect(0, 0, w, h);
-  if (clear < w * h * 0.08) {
-    const m = Math.ceil(Math.max(w, h) * 0.06);
-    bg.drawImage(a, x0, y0, w, h, -m, -m, w + m * 2, h + m * 2);
-  }
-  bg.drawImage(a, x0, y0, w, h, 0, 0, w, h);
-  const rgba = bg.getImageData(0, 0, w, h).data;
+  const box = alphaBox(ag.getImageData(0, 0, S, S).data);
+  const b = mk(S, S), bg = b.getContext('2d', { willReadFrequently: true });
+  squareFrame(bg, a, box, S, box.clear < box.w * box.h * 0.08 ? fillColor(a, box) : '#fff');
+  const rgba = bg.getImageData(0, 0, S, S).data;
   const palette = quantize(rgba, 256, { format: 'rgb565' }), index = applyPalette(rgba, palette, 'rgb565');
   const gif = GIFEncoder();
-  gif.writeFrame(index, w, h, { palette, delay: 500 });
-  gif.writeFrame(index, w, h, { palette, delay: 500 });
+  gif.writeFrame(index, S, S, { palette, delay: 500 });
+  gif.writeFrame(index, S, S, { palette, delay: 500 });
   gif.finish();
-  return sized(new File([gif.bytes().slice()], 'sticker-' + st.id + '.gif', { type: 'image/gif' }), w, h);
+  return sized(new File([gif.bytes().slice()], 'sticker-' + st.id + '.gif', { type: 'image/gif' }), S, S);
 }
 
 /* WebP: primero el codificador del navegador; si no sabe (Safari), el de WebAssembly. */
@@ -1563,7 +1624,7 @@ async function openPlatform(key) {
   const token = ++prepToken;
   let files;
   try {
-    files = st.anim ? animFiles(st) : { main: await buildFile(st, p) };
+    files = st.anim ? await animFiles(st) : { main: await buildFile(st, p) };
     if (!st.anim && p.gif) files.gif = await stillGif(st);
   }
   catch (e) { if (token === prepToken) $('#spec').textContent = 'No pude preparar el archivo.'; return; }
