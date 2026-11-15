@@ -645,9 +645,11 @@ $('#pkManual').addEventListener('click', () => {
 const clStage = $('#clStage'), clVideo = $('#clVideo');
 const C = { url: null, rect: null, mask: null, mark: null, busy: false };
 const CLIP_HINT = 'Toca el sticker mientras se ve en el video. Lo demás es automático.';
-const STEP = 0.1;         // un cuadro cada 0,1 s de video
-const MAX_FRAMES = 80;    // se miran 8 s como mucho: alcanza para vueltas de hasta 4 s
+const GRID = 1 / 30;      // el análisis compara la zona en pasos de un cuadro de video (1/30 s)
+const SCAN_MAX = 12;      // segundos de video que se miran como mucho
 const SIG = 24;           // cada cuadro se resume en 24×24 puntos para compararlos rápido
+const OUT_FPS = 15;       // cuadros por segundo del sticker
+const OUT_MAX = 48;       // y tope de cuadros, para que quepa en lo que acepta WhatsApp
 const once = (el, ev, ms) => new Promise((res) => {
   const done = () => { el.removeEventListener(ev, done); clearTimeout(t); res(); };
   const t = setTimeout(done, ms);
@@ -755,149 +757,267 @@ function sigDiff(a, b) {
   return Math.sqrt(s / (a.length / 4 * 3));
 }
 
-/* ¿Cada cuántos cuadros se repite la animación? Para cada separación L se mide cuánto
-   se parece cada cuadro al que viene L cuadros después. La vuelta es la separación más
-   corta en la que vuelven a coincidir después de haber sido distintos.
-   Devuelve { period }, { still: true } si nada se mueve, o null si no se repite. */
-function findLoop(sigs) {
-  const n = sigs.length, maxL = n >> 1;
-  if (maxL < 4) return null;
-  const score = new Float32Array(maxL + 1);
-  let top = 0;
-  for (let L = 1; L <= maxL; L++) {
-    const d = [];
-    for (let i = 0; i + L < n; i++) d.push(sigDiff(sigs[i], sigs[i + L]));
-    d.sort((x, y) => x - y);
-    score[L] = d[d.length >> 1];                  // mediana: aguanta cuadros sucios al principio o al final
-    if (score[L] > top) top = score[L];
+const pct = (list, p) => {
+  if (!list.length) return 0;
+  const sorted = Float32Array.from(list).sort();
+  return sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))];
+};
+
+/* Lo que se va viendo de la zona del sticker mientras corre el video.
+   · times/sigs: cada cuadro visto, con su momento exacto.
+   · g/dist: los mismos cuadros puestos en una rejilla uniforme (el video no entrega cuadros
+     a ritmo fijo; a cada casilla va el cuadro visto más cerca de su momento) y la diferencia
+     de cada uno con todos los anteriores. */
+const newScan = () => ({ times: [], sigs: [], g: [], dist: [] });
+function scanAdd(sc, t, sig) {
+  const prev = sc.sigs.length - 1;
+  sc.times.push(t); sc.sigs.push(sig);
+  for (;;) {
+    const k = sc.g.length, slot = sc.times[0] + k * GRID;
+    if (t < slot) break;
+    const pick = prev >= 0 && slot - sc.times[prev] < t - slot ? sc.sigs[prev] : sig;
+    const row = new Float32Array(k);
+    for (let j = 0; j < k; j++) row[j] = sigDiff(pick, sc.g[j]);
+    sc.g.push(pick); sc.dist.push(row);
   }
-  if (top < 2.5) return { still: true };
-  let peak = Math.max(score[1], score[2], score[3]);
-  for (let L = 4; L <= maxL; L++) {
-    const v = score[L];
-    const low = v <= Math.max(3, top * 0.35), valley = v <= score[L - 1] && (L === maxL || v <= score[L + 1]);
-    if (low && valley && peak >= v * 2 + 1) return { period: L };
-    if (v > peak) peak = v;
+}
+const scanDiff = (sc, i, j) => (i === j ? 0 : i > j ? sc.dist[i][j] : sc.dist[j][i]);
+
+/* Busca la vuelta de la animación: la separación L más corta en la que una racha larga de
+   cuadros seguidos coincide con los que vienen L después.
+   · «Coincidir» se mide contra el ruido del propio video y contra cuánto se mueve el sticker.
+   · La racha tiene que cubrir casi todo lo visto: un gesto que se repite dos veces dentro
+     de una animación más larga no cuenta como vuelta.
+   · La racha tiene que contener movimiento: una pausa coincide consigo misma a cualquier
+     separación y tampoco cuenta.
+   Con `strict` solo se acepta lo visto repetirse de sobra (sirve para cortar antes de
+   tiempo); sin él, al final del video, basta una vuelta y un trozo de la siguiente.
+   Devuelve { start, period } en segundos, { still: true } si nada se mueve, o null. */
+function detectLoop(sc, tapTime, strict) {
+  const n = sc.g.length, LMIN = Math.round(0.3 / GRID), OVER = Math.round(0.5 / GRID);
+  if (n < LMIN * 2) return null;
+  const local = new Float32Array(n);              // cuánto cambia la zona en el medio segundo alrededor de cada cuadro
+  const twin = new Float32Array(n);               // y cuánto se parece cada cuadro a su mejor gemelo lejos en el tiempo
+  for (let i = 0; i < n; i++) {
+    let far = 0, near = Infinity;
+    for (let j = 0; j < n; j++) {
+      const d = scanDiff(sc, i, j), gap = Math.abs(i - j);
+      if (gap <= OVER) { if (d > far) far = d; } else if (gap >= LMIN && d < near) near = d;
+    }
+    local[i] = far; twin[i] = near === Infinity ? 0 : near;
   }
-  return null;
+  const moving = pct(local, 0.9), typical = pct(local, 0.5);
+  if (moving < 2.5) return n * GRID >= 3 ? { still: true } : null;
+  /* Dos cuadros «coinciden» si difieren poco frente a lo que el sticker se mueve. El video
+     comprimido nunca repite un cuadro idéntico: el parecido entre gemelos da la medida de
+     ese ruido y sube el listón, pero nunca tanto como para confundir un movimiento lento
+     y continuo con una repetición. */
+  const same = Math.max(2.5, typical * 0.3, Math.min(pct(twin, 0.5) * 2, typical * 0.45));
+  /* Además, cada cuadro tolera lo que cambia de una casilla a la siguiente: la vuelta rara
+     vez dura un número exacto de casillas y el gemelo llega un poco adelantado o atrasado. */
+  const slack = new Float32Array(n);
+  for (let i = 0; i < n; i++) slack[i] = Math.max(same, 1 + 1.25 * Math.max(i ? scanDiff(sc, i, i - 1) : 0, i + 1 < n ? scanDiff(sc, i, i + 1) : 0));
+  const tap = Math.max(0, Math.min(n - 1, Math.round((tapTime - sc.times[0]) / GRID)));
+  const maxL = strict ? Math.floor(n / 2.6) : n - OVER;
+
+  const runAt = (L) => {                          // racha más larga de coincidencias a separación L
+    const m = n - L, ok = new Uint8Array(m);
+    for (let i = 0; i < m; i++) ok[i] = scanDiff(sc, i, i + L) <= Math.min(slack[i], slack[i + L]) ? 1 : 0;
+    for (let i = 1; i + 1 < m; i++) if (!ok[i] && ok[i - 1] && ok[i + 1]) ok[i] = 1;   // un cuadro suelto que falla no corta la racha
+    let best = 0, at = 0;
+    for (let i = 0, run = 0; i < m; i++) { run = ok[i] ? run + 1 : 0; if (run > best) { best = run; at = i - run + 1; } }
+    let sum = 0;
+    for (let i = at; i < at + best; i++) sum += scanDiff(sc, i, i + L);
+    return { L, m, best, at, mean: best ? sum / best : Infinity };
+  };
+  /* ¿La racha contiene movimiento propio? Una pausa, o un trozo de grabación tapado, coincide
+     consigo mismo a cualquier separación y no es una vuelta. */
+  const moves = (r) => {
+    const len = Math.min(r.best, r.L), mid = r.at + (len >> 1);
+    const need = Math.max(2.5, same * 1.5);       // medido contra «same» y no contra todo el video: un trozo tapado lo inflaría
+    for (let i = r.at; i < r.at + len; i++) if (Math.max(scanDiff(sc, i, r.at), scanDiff(sc, i, mid)) >= need) return true;
+    return false;
+  };
+  const runs = [];
+  for (let L = LMIN; L <= maxL; L++) {
+    const r = runAt(L);
+    r.full = r.best >= L;                         // se vio la vuelta entera repetirse
+    r.cover = r.best / r.m;                       // parte de lo visto que cubre la racha
+    if (r.best && moves(r)) runs.push(r);
+  }
+  /* Entre las separaciones que se repiten enteras, la más corta de las que cubren casi tanto
+     como la mejor: así gana la vuelta completa y no un gesto que se repite dentro de ella.
+     Si la grabación no alcanzó para verla dos veces, vale una vuelta y un trozo de la siguiente. */
+  const fulls = runs.filter(r => r.full && r.cover >= (strict ? 0.85 : 0.4));
+  let pick = null;
+  if (fulls.length) {
+    const top = Math.max(...fulls.map(r => r.cover));
+    pick = fulls.find(r => r.cover >= top * 0.85);
+  } else if (!strict) {
+    pick = runs.find(r => !r.full && r.best >= OVER && r.cover >= 0.8);
+  }
+  if (!pick) return null;
+  /* Las separaciones vecinas también pasan por poco; se queda la que mejor coincide. */
+  for (const r of runs) if (r.L > pick.L && r.L <= pick.L + 3 && r.full === pick.full && r.mean < pick.mean && r.cover >= pick.cover * 0.9) pick = r;
+  const i0 = pick.full ? Math.max(pick.at, Math.min(pick.at + pick.best - pick.L, tap)) : pick.at;   // lo más cerca posible de donde se tocó
+  return { start: sc.times[0] + i0 * GRID, period: pick.L * GRID };
 }
 
-/* Elige en qué cuadro empieza la vuelta: donde mejor coincide con la vuelta siguiente,
-   y a igualdad, lo más cerca del momento en que se tocó. */
-function loopStart(sigs, period, near) {
-  let best = 0, bestCost = Infinity;
-  for (let i0 = 0; i0 + period * 2 <= sigs.length; i0++) {
-    let worst = 0;
-    for (let i = i0; i < i0 + period; i++) worst = Math.max(worst, sigDiff(sigs[i], sigs[i + period]));
-    const cost = worst + Math.abs(i0 - near) * 0.02;
-    if (cost < bestCost) { bestCost = cost; best = i0; }
+/* Afina la duración de la vuelta por debajo del paso de la rejilla, con los cuadros tal
+   como se vieron: prueba separaciones de 0,01 en 0,01 s alrededor de la encontrada. */
+function refinePeriod(sc, start, period) {
+  const { times, sigs } = sc;
+  let best = period, bestCost = Infinity;
+  for (let lag = period - GRID; lag <= period + GRID + 1e-6; lag += 0.01) {
+    let sum = 0, count = 0;
+    for (let i = 0, j = 0; i < times.length; i++) {
+      if (times[i] < start) continue;
+      if (times[i] > start + period) break;
+      const want = times[i] + lag;
+      while (j + 1 < times.length && Math.abs(times[j + 1] - want) <= Math.abs(times[j] - want)) j++;
+      if (Math.abs(times[j] - want) > 0.04) continue;       // no se vio ningún cuadro cerca de ese momento
+      sum += sigDiff(sigs[i], sigs[j]); count++;
+    }
+    if (count >= 4 && sum / count < bestCost) { bestCost = sum / count; best = lag; }
   }
   return best;
 }
 
-/* Reproduce el video desde donde se tocó, toma un cuadro de la zona cada 0,1 s y se
-   detiene en cuanto ve la animación repetirse. Devuelve la vuelta completa. */
-async function captureLoop(t0, gone) {
-  const v = clVideo, r = C.rect, mask = C.mask, total = clipTotal();
-  const end = total ? Math.min(total, t0 + MAX_FRAMES * STEP) : t0 + MAX_FRAMES * STEP;
-  const from = end - t0 >= 4 ? t0 : Math.max(0, end - MAX_FRAMES * STEP);   // si queda poco video, se mira también lo anterior
-  const k = S / Math.max(r.w, r.h), dw = Math.max(2, Math.round(r.w * k)), dh = Math.max(2, Math.round(r.h * k)), dx = (S - dw) >> 1, dy = (S - dh) >> 1;
-  const c = mk(S, S), g = c.getContext('2d', { willReadFrequently: true });
-  const sc = mk(SIG, SIG), sg = sc.getContext('2d', { willReadFrequently: true });
-  g.imageSmoothingQuality = 'high';
-  const frames = [], sigs = [];
-  const grab = () => {
-    g.globalCompositeOperation = 'source-over';
-    g.clearRect(0, 0, S, S);
-    g.drawImage(v, r.x, r.y, r.w, r.h, dx, dy, dw, dh);
-    g.globalCompositeOperation = 'destination-in';
-    g.drawImage(mask, dx, dy, dw, dh);
-    frames.push(g.getImageData(0, 0, S, S));
-    sg.clearRect(0, 0, SIG, SIG);
-    sg.drawImage(c, dx, dy, dw, dh, 0, 0, SIG, SIG);
-    sigs.push(sg.getImageData(0, 0, SIG, SIG).data);
-  };
-  let found = null;
+/* Primera pasada: mirar. Reproduce el video entre `from` y `end` y resume la zona del sticker
+   cada vez que el video avanza. Cada cuarto de segundo pregunta a `enough` si ya vio bastante. */
+async function scanRegion(from, end, gone, enough) {
+  const v = clVideo, r = C.rect, sc = newScan();
+  const tiny = mk(SIG, SIG), tg = tiny.getContext('2d', { willReadFrequently: true });
   v.pause();
   v.currentTime = from;
   await once(v, 'seeked', 2500);
   await v.play().catch(() => {});
   await new Promise((resolve) => {
     const began = performance.now(), limit = ((end - from) * 2 + 4) * 1000;
-    let nextT = from, checked = 0;
+    let last = -1, asked = 0;
     const loop = () => {
       if (gone()) return resolve();
       const t = v.currentTime;
-      while (t >= nextT && frames.length < MAX_FRAMES) { grab(); nextT += STEP; }
-      const n = frames.length;
-      if (n >= 16 && n % 4 === 0 && n !== checked) {
-        checked = n;
-        const res = findLoop(sigs);
-        /* Para cortar antes de tiempo se piden tres vueltas vistas, o 3 s sin ningún movimiento. */
-        if (res && ((res.period && n >= res.period * 3) || (res.still && n >= 30))) { found = res; return resolve(); }
+      if (t >= from && t - last >= 0.012) {
+        tg.drawImage(v, r.x, r.y, r.w, r.h, 0, 0, SIG, SIG);
+        scanAdd(sc, t, tg.getImageData(0, 0, SIG, SIG).data);
+        last = t;
+        if (t - from >= 1.5 && t - asked >= 0.25) { asked = t; if (enough(sc)) return resolve(); }
       }
-      if (n >= MAX_FRAMES || t >= end - 0.02 || v.ended || v.paused || performance.now() - began > limit) return resolve();
+      if (t >= end - 0.02 || v.ended || v.paused || performance.now() - began > limit) return resolve();
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  });
+  v.pause();
+  return sc;
+}
+
+/* Segunda pasada: capturar. Toma `count` cuadros repartidos por igual entre `start` y
+   `start + period`, así el último empalma con el primero aunque la vuelta no dure un
+   número redondo. */
+async function captureFrames(start, period, count, gone) {
+  const v = clVideo, r = C.rect, mask = C.mask;
+  const k = S / Math.max(r.w, r.h), dw = Math.max(2, Math.round(r.w * k)), dh = Math.max(2, Math.round(r.h * k)), dx = (S - dw) >> 1, dy = (S - dh) >> 1;
+  const c = mk(S, S), g = c.getContext('2d', { willReadFrequently: true });
+  g.imageSmoothingQuality = 'high';
+  const frames = [], step = period / count;
+  const grab = () => {
+    g.globalCompositeOperation = 'source-over';
+    g.clearRect(0, 0, S, S);
+    g.drawImage(v, r.x, r.y, r.w, r.h, dx, dy, dw, dh);
+    g.globalCompositeOperation = 'destination-in';
+    g.drawImage(mask, dx, dy, dw, dh);
+    frames.push({ img: g.getImageData(0, 0, S, S) });
+  };
+  v.pause();
+  v.currentTime = start;
+  await once(v, 'seeked', 2500);
+  await v.play().catch(() => {});
+  await new Promise((resolve) => {
+    const began = performance.now(), limit = (period * 2 + 4) * 1000;
+    const loop = () => {
+      if (gone()) return resolve();
+      const t = v.currentTime;
+      while (frames.length < count && t >= start + frames.length * step) grab();
+      if (frames.length >= count || v.ended || v.paused || performance.now() - began > limit) return resolve();
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
   });
   v.pause();
   /* Si el navegador no dejó reproducir, se salta de cuadro en cuadro. */
-  if (frames.length < 2 && !gone()) {
-    frames.length = 0; sigs.length = 0;
-    const count = Math.min(MAX_FRAMES, Math.max(2, Math.floor((end - from) / STEP)));
+  if (frames.length < Math.min(2, count) && !gone()) {
+    frames.length = 0;
     for (let i = 0; i < count && !gone(); i++) {
-      v.currentTime = Math.min(from + i * STEP, Math.max(0, end - 0.05));
+      v.currentTime = Math.min(start + i * step, Math.max(0, clipTotal() - 0.05));
       await once(v, 'seeked', 2500);
       grab();
     }
   }
-  if (gone() || !frames.length) return { frames: [] };
-  const res = found || findLoop(sigs) || {};
-  const tapped = Math.max(0, Math.min(frames.length - 1, Math.round((t0 - from) / STEP)));
-  if (res.still) return { still: frames[tapped] };
-  let first, count;
-  if (res.period) { first = loopStart(sigs, res.period, tapped); count = res.period; }
-  else { count = Math.min(50, frames.length); first = Math.min(tapped, frames.length - count); }   // sin vuelta clara: 5 s como mucho
-  return { loop: !!res.period, box: { x: dx, y: dy, w: dw, h: dh }, frames: frames.slice(first, first + count).map((img) => ({ img, ms: STEP * 1000 })) };
+  const total = Math.round(period * 1000), each = Math.max(20, Math.round(total / Math.max(1, frames.length)));
+  frames.forEach((f, i) => { f.ms = i === frames.length - 1 ? Math.max(20, total - each * (frames.length - 1)) : each; });
+  return { frames, box: { x: dx, y: dy, w: dw, h: dh } };
+}
+
+/* Convierte unos cuadros ya listos (512×512, con su duración) en sticker animado guardado. */
+async function saveAnimated(frames, box, say, gone) {
+  say('Creando el sticker…');
+  await tick();
+  const webp = await animatedWebp(frames, 500 * 1024, (p) => say('Creando el sticker… ' + Math.round(p * 100) + ' %'));
+  if (gone()) return null;
+  say('Creando el GIF…');
+  await tick();
+  const variant = isIOS ? gifMode() : 'fit';
+  const gif = await animatedGif(frames, box, variant);
+  if (gone()) return null;
+  const poster = mk(S, S);
+  poster.getContext('2d').putImageData(frames[0].img, 0, 0);
+  const png = await toBuffer(await canvasBlob(poster, 'image/png'));
+  const ms = frames.reduce((n, f) => n + f.ms, 0);
+  return addSticker(png, null, { webp: webp.buffer, g: { [variant]: gif }, gv: GIF_V, n: frames.length, ms });
 }
 
 async function makeAnimated(t0) {
   const url = C.url;
   const gone = () => C.url !== url || clipEl.hidden;
+  const say = (msg) => clipStatus(msg, true);
   C.busy = true;
-  clipStatus('Mirando el sticker para ver cuánto dura…', true);
+  say('Mirando el sticker para ver cuánto dura…');
   try {
-    const got = await captureLoop(t0, gone);
+    const total = clipTotal(), end = total ? Math.min(total, t0 + SCAN_MAX) : t0 + SCAN_MAX;
+    const from = end - t0 >= 4 ? t0 : Math.max(0, end - SCAN_MAX);     // si queda poco video, se mira también lo anterior
+    let early = null;
+    const sc = await scanRegion(from, end, gone, (seen) => !!(early = detectLoop(seen, t0, true)));
     if (gone()) return;
-    if (got.still) {
+    const found = early || detectLoop(sc, t0, false);
+    if (found && found.still) {
+      const one = await captureFrames(Math.min(t0, Math.max(0, end - 0.3)), 0.2, 1, gone);
+      if (gone() || !one.frames.length) return;
       const c = mk(S, S);
-      c.getContext('2d').putImageData(got.still, 0, 0);
+      c.getContext('2d').putImageData(one.frames[0].img, 0, 0);
       const st = await addSticker(await toBuffer(await canvasBlob(c, 'image/png')));
       hideClip();
       openDetail(st);
       toast('Ese sticker no se mueve en la grabación, así que lo guardé como imagen fija.');
       return;
     }
-    const frames = got.frames;
-    if (frames.length < 2) throw new Error('frames');
-    clipStatus('Creando el sticker…', true);
-    await tick();
-    const webp = await animatedWebp(frames, 500 * 1024, (p) => clipStatus('Creando el sticker… ' + Math.round(p * 100) + ' %', true));
+    let start, period;
+    if (found) { start = found.start; period = refinePeriod(sc, found.start, found.period); }
+    else {                                                              // sin vuelta clara: 5 s como mucho desde donde se tocó
+      start = t0; period = Math.min(5, end - t0);
+      if (period < 1) { start = Math.max(0, end - 5); period = end - start; }
+    }
+    say('Capturando la vuelta…');
+    const got = await captureFrames(start, period, Math.max(4, Math.min(OUT_MAX, Math.round(period * OUT_FPS))), gone);
     if (gone()) return;
-    clipStatus('Creando el GIF…', true);
-    await tick();
-    const variant = isIOS ? gifMode() : 'fit';
-    const gif = await animatedGif(frames, got.box, variant);
-    if (gone()) return;
-    const poster = mk(S, S);
-    poster.getContext('2d').putImageData(frames[0].img, 0, 0);
-    const png = await toBuffer(await canvasBlob(poster, 'image/png'));
-    const ms = frames.reduce((n, f) => n + f.ms, 0);
-    const st = await addSticker(png, null, { webp: webp.buffer, g: { [variant]: gif }, gv: GIF_V, n: frames.length, ms });
+    if (got.frames.length < 2) throw new Error('frames');
+    const st = await saveAnimated(got.frames, got.box, say, gone);
+    if (!st) return;
     hideClip();
     openDetail(st);
-    toast(got.loop ? 'Listo: una vuelta completa, ' + secs(ms / 1000) + '.' : 'No vi que se repitiera, así que guardé ' + secs(ms / 1000) + '.');
+    const ms = got.frames.reduce((n, f) => n + f.ms, 0);
+    toast(found ? 'Listo: una vuelta completa, ' + secs(ms / 1000) + '.' : 'No vi que se repitiera, así que guardé ' + secs(ms / 1000) + '.');
   } catch (err) {
     if (gone()) return;
     C.busy = false;
