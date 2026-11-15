@@ -17,13 +17,24 @@ final class Hub: NSObject, ObservableObject, WKScriptMessageHandler {
     private var stickersReady = false
     private var waiting: [String: Any]?
 
-    /// Se presenta como Safari de iPhone: con el nombre de una app embebida, Instagram recorta
-    /// funciones o insiste en abrir su app.
+    /// Versión de Safari que corresponde a este iPhone (la misma que la del sistema, p. ej. «26.1»).
+    private static let safariVersion: String = {
+        UIDevice.current.systemVersion.split(separator: ".").prefix(2).joined(separator: ".")
+    }()
+
+    /// La parte final de la identificación de Safari. WebKit pone delante la parte del sistema
+    /// tal como la manda Safari de verdad (desde iOS 26 esa parte ya no dice la versión real),
+    /// así que la página de Instagram ve exactamente lo mismo que vería en Safari. Con la
+    /// identificación de una vista embebida, o con una armada a mano que Safari nunca envía,
+    /// Instagram recorta funciones y desconfía del inicio de sesión.
+    static let safariSuffix = "Version/\(safariVersion) Mobile/15E148 Safari/604.1"
+
+    /// Identificación completa, solo para las descargas que hace la app por su cuenta.
     static let safariUserAgent: String = {
         let parts = UIDevice.current.systemVersion.split(separator: ".")
-        let os = parts.joined(separator: "_")
-        let short = parts.prefix(2).joined(separator: ".")
-        return "Mozilla/5.0 (iPhone; CPU iPhone OS \(os) like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(short) Mobile/15E148 Safari/604.1"
+        let major = Int(parts.first ?? "0") ?? 0
+        let os = major >= 26 ? "18_6" : parts.joined(separator: "_")
+        return "Mozilla/5.0 (iPhone; CPU iPhone OS \(os) like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) \(safariSuffix)"
     }()
 
     // MARK: Pantalla de stickers
@@ -65,6 +76,7 @@ final class Hub: NSObject, ObservableObject, WKScriptMessageHandler {
         }
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
+        config.applicationNameForUserAgent = Hub.safariSuffix
         // El script corre en un mundo aparte: la página de Instagram no puede verlo ni usar el canal.
         let world = WKContentWorld.defaultClient
         config.userContentController.add(self, contentWorld: world, name: "pasa")
@@ -74,7 +86,6 @@ final class Hub: NSObject, ObservableObject, WKScriptMessageHandler {
                 WKUserScript(source: source, injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: world))
         }
         let web = WKWebView(frame: .zero, configuration: config)
-        web.customUserAgent = Hub.safariUserAgent
         web.allowsBackForwardNavigationGestures = true
         web.allowsLinkPreview = false
         web.navigationDelegate = delegate
