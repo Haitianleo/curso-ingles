@@ -1,0 +1,50 @@
+# Proyecto de Xcode de PasaStickers para iPhone.
+# No se guarda el .xcodeproj: se genera con XcodeGen a partir de este archivo
+# (lo hace GitHub al compilar; a mano sería `xcodegen generate` dentro de ios/).
+name: PasaStickers
+options:
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+targets:
+  PasaStickers:
+    type: application
+    platform: iOS
+    sources:
+      - PasaStickers
+    info:
+      path: PasaStickers/Info.plist
+      properties:
+        CFBundleDisplayName: PasaStickers
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        # Para poder abrir WhatsApp con el paquete de stickers.
+        LSApplicationQueriesSchemes:
+          - whatsapp
+        ITSAppUsesNonExemptEncryption: false
+        # El selector de fotos de la página ofrece «Hacer foto» y «Guardar imagen»;
+        # sin estos textos el iPhone cierra la app al elegirlos.
+        NSCameraUsageDescription: Para hacer una foto y convertirla en sticker.
+        NSMicrophoneUsageDescription: Solo si grabas un video desde el selector de fotos.
+        NSPhotoLibraryUsageDescription: Para elegir la captura o el video del que sale el sticker.
+        NSPhotoLibraryAddUsageDescription: Para guardar tus stickers en Fotos.
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.pasastickers.iphone
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.0"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Sale sin firmar: la firma la pone Sideloadly o AltStore al instalarla.
+        CODE_SIGNING_ALLOWED: "NO"
+        CODE_SIGNING_REQUIRED: "NO"
+        CODE_SIGN_IDENTITY: ""
+schemes:
+  PasaStickers:
+    build:
+      targets:
+        PasaStickers: all
