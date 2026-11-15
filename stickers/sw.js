@@ -2,7 +2,7 @@
    1) Guarda la app para que abra sin conexión.
    2) Recibe lo que otras apps mandan con "Compartir" (Android) y se lo deja a la página. */
 
-const SHELL = 'pasa-shell-v2';
+const SHELL = 'pasa-shell-v3';
 const INBOX = 'pasa-inbox';
 const ASSETS = [
   './',
@@ -12,6 +12,7 @@ const ASSETS = [
   './vendor/webp_enc.js',
   './vendor/webp_enc.wasm',
   './vendor/gifenc.js',
+  './vendor/omggif.js',
 ];
 
 self.addEventListener('install', (e) => {

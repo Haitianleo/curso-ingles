@@ -191,6 +191,8 @@
   .help p + p{margin-top:8px}
   .center{display:flex;justify-content:center;gap:6px;margin-top:8px;flex-wrap:wrap}
 
+  .work{position:fixed;inset:0;z-index:55;background:rgba(0,0,0,.72);color:#fff;display:flex;align-items:center;justify-content:center;
+    text-align:center;padding:28px;font-weight:700;font-size:17px}
   .toast{position:fixed;left:16px;right:16px;margin:0 auto;width:fit-content;bottom:calc(22px + env(safe-area-inset-bottom));
     transform:translateY(20px);z-index:60;max-width:440px;background:var(--text);color:var(--bg);padding:12px 16px;border-radius:14px;font-size:14.5px;
     font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;text-align:center;box-shadow:var(--shadow)}
@@ -214,6 +216,7 @@
     <h1>Pasa<b>Stickers</b></h1>
     <span class="grow"></span>
     <button class="btn sm" id="installBtn" hidden>Instalar</button>
+    <button class="btn sm" id="igBtn" hidden>Instagram</button>
     <button class="round-btn" id="helpBtn" aria-label="Cómo funciona">?</button>
   </header>
 
@@ -294,6 +297,7 @@
   <div class="grab"></div>
   <div id="sheetBody"></div>
 </div>
+<div class="work" id="work" role="status" hidden><p id="workText"></p></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <noscript><p style="padding:20px">PasaStickers necesita JavaScript para funcionar.</p></noscript>
 
@@ -1181,7 +1185,9 @@ async function animatedGif(frames, box, variant) {
   const [w, h] = variantSize(box, variant, frames.length > 30 ? 384 : S);
   const a = mk(S, S), ag = a.getContext('2d'), b = mk(w, h), bg = b.getContext('2d', { willReadFrequently: true });
   ag.putImageData(frames[0].img, 0, 0);
-  const fill = edgeColors(a, box);                // los del primer cuadro en todos, para que no parpadee
+  /* Un color por borde, tomado del primer cuadro para que no parpadee; si el sticker es una
+     figura recortada (mucha transparencia), fondo blanco. */
+  const fill = box.clear >= box.w * box.h * 0.08 ? '#fff' : edgeColors(a, box);
   for (let i = 0; i < frames.length; i++) {
     ag.putImageData(frames[i].img, 0, 0);
     paintVariant(bg, a, box, variant, w, h, fill);
@@ -1196,13 +1202,15 @@ async function animatedGif(frames, box, variant) {
 
 /* Separa los cuadros de un WebP animado hecho por esta app; cada uno sale como WebP suelto. */
 function webpFrames(buf) {
-  const u8 = new Uint8Array(buf), out = [];
+  const u8 = new Uint8Array(buf), frames = [];
   const str = (o) => String.fromCharCode(u8[o], u8[o + 1], u8[o + 2], u8[o + 3]);
   const r24 = (o) => u8[o] | (u8[o + 1] << 8) | (u8[o + 2] << 16);
   const r32 = (o) => (r24(o) | (u8[o + 3] << 24)) >>> 0;
   const tag = (a, o, t) => { for (let i = 0; i < 4; i++) a[o + i] = t.charCodeAt(i); };
   const w24 = (a, o, v) => { a[o] = v & 255; a[o + 1] = (v >> 8) & 255; a[o + 2] = (v >> 16) & 255; };
-  for (let p = 12; p + 8 <= u8.length;) {
+  const animated = u8.length > 30 && str(0) === 'RIFF' && str(8) === 'WEBP' && str(12) === 'VP8X' && (u8[20] & 2) !== 0;
+  const out = { w: animated ? r24(24) + 1 : 0, h: animated ? r24(27) + 1 : 0, frames };
+  for (let p = 12; animated && p + 8 <= u8.length;) {
     const size = r32(p + 4);
     if (str(p) === 'ANMF' && size > 16) {
       const data = u8.subarray(p + 24, Math.min(u8.length, p + 8 + size));   // los trozos de imagen, tal cual
@@ -1210,27 +1218,155 @@ function webpFrames(buf) {
       tag(file, 0, 'RIFF'); w24(file, 4, file.length - 8); file[7] = ((file.length - 8) >>> 24) & 255; tag(file, 8, 'WEBP');
       if (alpha) { tag(file, 12, 'VP8X'); file[16] = 10; file[20] = 0x10; w24(file, 24, r24(p + 14)); w24(file, 27, r24(p + 17)); }
       file.set(data, head);
-      out.push({ bytes: file, ms: r24(p + 20) });
+      /* Cada cuadro trae su sitio en el lienzo y cómo se combina: si se mezcla con lo que
+         había o lo reemplaza, y si al terminar hay que borrar su zona. */
+      frames.push({ bytes: file, ms: r24(p + 20), x: r24(p + 8) * 2, y: r24(p + 11) * 2, w: r24(p + 14) + 1, h: r24(p + 17) + 1,
+        blend: (u8[p + 23] & 2) === 0, dispose: (u8[p + 23] & 1) !== 0 });
     }
     p += 8 + size + (size & 1);
   }
   return out;
 }
 
-/* Los cuadros de un sticker animado ya guardado, sacados de su WebP animado. */
-async function framesOf(st) {
-  const parts = webpFrames(st.anim.webp);
-  if (parts.length < 2) throw new Error('frames');
-  const c = mk(S, S), g = c.getContext('2d', { willReadFrequently: true }), frames = [];
-  for (const part of parts) {
-    const img = await decode(new Blob([part.bytes], { type: 'image/webp' }));
-    g.clearRect(0, 0, S, S);
-    g.drawImage(img, 0, 0, S, S);
-    if (img.close) img.close();
-    frames.push({ img: g.getImageData(0, 0, S, S), ms: part.ms || 100 });
+/* Reúne los cuadros de una animación ya decodificada. `paint(i)` deja el cuadro i compuesto
+   en `canvas` y dice cuánto dura; aquí se pasa cada uno a 512×512, entero y centrado.
+   Con más de 60 cuadros se saltan algunos (sumando sus tiempos) y se corta a los 10 s,
+   que es lo máximo que acepta WhatsApp. */
+async function collectFrames(canvas, count, paint) {
+  const w = canvas.width, h = canvas.height, k = S / Math.max(w, h);
+  const dw = Math.max(1, Math.round(w * k)), dh = Math.max(1, Math.round(h * k));
+  const out = mk(S, S), og = out.getContext('2d', { willReadFrequently: true });
+  og.imageSmoothingQuality = 'high';
+  const every = Math.ceil(count / 60), frames = [];
+  let total = 0;
+  for (let i = 0; i < count && total < 10000; i++) {
+    const step = await paint(i);
+    const ms = step.ms < 20 ? 100 : step.ms;      // como hacen los navegadores con una duración casi nula
+    if (i % every === 0) {
+      og.clearRect(0, 0, S, S);
+      og.drawImage(canvas, (S - dw) >> 1, (S - dh) >> 1, dw, dh);
+      frames.push({ img: og.getImageData(0, 0, S, S), ms });
+    } else frames[frames.length - 1].ms += ms;
+    total += ms;
+    if (step.after) step.after();
+    if (i % 8 === 7) await tick();
   }
   return frames;
 }
+
+async function webpAnimFrames(buf) {
+  const info = webpFrames(buf);
+  if (!info.frames.length) return [];
+  const c = mk(info.w, info.h), g = c.getContext('2d', { willReadFrequently: true });
+  return collectFrames(c, info.frames.length, async (i) => {
+    const f = info.frames[i];
+    const img = await decode(new Blob([f.bytes], { type: 'image/webp' }));
+    if (!f.blend) g.clearRect(f.x, f.y, f.w, f.h);
+    g.drawImage(img, f.x, f.y);
+    if (img.close) img.close();
+    return { ms: f.ms, after: f.dispose ? () => g.clearRect(f.x, f.y, f.w, f.h) : null };
+  });
+}
+
+/* GIF: lo decodifica omggif (vendor/omggif.js, que se carga solo cuando hace falta); aquí se
+   va componiendo cuadro sobre cuadro según lo que cada uno pide hacer al terminar. */
+let gifReader = null;
+const loadGifReader = () => gifReader || (gifReader = new Promise((res, rej) => {
+  if (window.GifReader) { res(window.GifReader); return; }
+  const tagEl = document.createElement('script');
+  tagEl.src = './vendor/omggif.js';
+  tagEl.onload = () => (window.GifReader ? res(window.GifReader) : rej(new Error('gif')));
+  tagEl.onerror = () => { gifReader = null; rej(new Error('gif')); };
+  document.head.appendChild(tagEl);
+}));
+
+async function gifFrames(bytes) {
+  const GifReader = await loadGifReader();
+  const r = new GifReader(bytes), w = r.width, h = r.height;
+  const c = mk(w, h), g = c.getContext('2d', { willReadFrequently: true });
+  const px = new Uint8ClampedArray(w * h * 4), image = new ImageData(px, w, h);
+  return collectFrames(c, r.numFrames(), (i) => {
+    const f = r.frameInfo(i);
+    const before = f.disposal === 3 ? px.slice() : null;        // «volver a como estaba antes»
+    r.decodeAndBlitFrameRGBA(i, px);
+    g.putImageData(image, 0, 0);
+    return { ms: f.delay * 10, after: () => {
+      if (before) px.set(before);
+      else if (f.disposal === 2) for (let y = f.y; y < f.y + f.height; y++) px.fill(0, (y * w + f.x) * 4, (y * w + f.x + f.width) * 4);   // «borrar su zona»
+    } };
+  });
+}
+
+/* Los cuadros de un sticker animado ya guardado, sacados de su WebP animado. */
+async function framesOf(st) {
+  const frames = await webpAnimFrames(st.anim.webp);
+  if (frames.length < 2) throw new Error('frames');
+  return frames;
+}
+
+/* Zona con dibujo contando todos los cuadros: una figura que crece o se desplaza no cabe en
+   la del primero. */
+function unionBox(frames) {
+  let x0 = S, y0 = S, x1 = -1, y1 = -1, clear = 0;
+  for (const f of frames) {
+    const b = alphaBox(f.img.data);
+    if (b.x < x0) x0 = b.x; if (b.y < y0) y0 = b.y;
+    if (b.x + b.w - 1 > x1) x1 = b.x + b.w - 1; if (b.y + b.h - 1 > y1) y1 = b.y + b.h - 1;
+    clear = Math.max(clear, b.clear);
+  }
+  return x1 < 0 ? { x: 0, y: 0, w: S, h: S, clear: 0 } : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1, clear };
+}
+
+/* ───────── Recibir un archivo ya hecho (GIF, WebP, imagen) y volverlo sticker sin preguntar ─────────
+   Lo usa la app de iPhone cuando se elige algo en Instagram: llega el archivo original, así
+   que un GIF trae sus cuadros y sus tiempos exactos y no hay nada que adivinar. */
+function working(msg) {
+  $('#work').hidden = !msg;
+  if (msg) $('#workText').textContent = msg;
+}
+function sniff(b) {
+  const at = (o, t) => { for (let i = 0; i < t.length; i++) if (b[o + i] !== t.charCodeAt(i)) return false; return true; };
+  if (at(0, 'GIF8')) return 'image/gif';
+  if (at(0, 'RIFF') && at(8, 'WEBP')) return 'image/webp';
+  if (b[0] === 0x89 && at(1, 'PNG')) return 'image/png';
+  if (b[0] === 0xff && b[1] === 0xd8) return 'image/jpeg';
+  if (at(4, 'ftyp')) return 'video/mp4';
+  if (b[0] === 0x1a && b[1] === 0x45 && b[2] === 0xdf && b[3] === 0xa3) return 'video/webm';
+  return '';
+}
+async function importFile(bytes, hint, edit) {
+  const type = sniff(bytes) || hint || '';
+  hideEditor(); hidePicker(); hideClip(); hideSheet();
+  layersChanged();
+  if (type.startsWith('video/')) { openClip(new Blob([bytes], { type })); return; }    // un video sí hay que mirarlo
+  const blob = new Blob([bytes], { type: type || 'image/png' });
+  if (edit) { importBlob(blob); return; }                                              // un cuadro de video entero: mejor recortarlo a mano
+  working('Creando el sticker…');
+  try {
+    let frames = [];
+    if (type === 'image/gif') frames = await gifFrames(bytes);
+    else if (type === 'image/webp') frames = await webpAnimFrames(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+    let st;
+    if (frames.length > 1) st = await saveAnimated(frames, unionBox(frames), working, () => false);
+    else {
+      const img = await decode(blob), w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+      const c = mk(w, h);
+      c.getContext('2d').drawImage(img, 0, 0);
+      if (img.close) img.close();
+      st = await addSticker(await stickerPng(c));
+    }
+    working(null);
+    openDetail(st);
+  } catch (e) {
+    working(null);
+    toast('No pude convertir eso en sticker.');
+  }
+}
+window.PasaImport = (m) => {
+  const raw = atob(m.data), bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+  return importFile(bytes, m.type, !!m.edit);
+};
 
 /* El GIF de un sticker animado en la forma pedida. Se arma la primera vez y queda guardado;
    los de una versión anterior se descartan y se rehacen. */
@@ -2086,6 +2222,11 @@ $('#fileIn').addEventListener('change', (e) => {
   if (files.length) importFiles(files);
 });
 $('#helpBtn').addEventListener('click', openHelp);
+if (NATIVE && window.PasaNative && window.PasaNative.version >= 2) {
+  $('#igBtn').hidden = false;
+  $('#igBtn').addEventListener('click', () => window.webkit.messageHandlers.pasa.postMessage({ type: 'instagram' }));
+  $('#hint').textContent = 'Toca «Instagram», mantén pulsado un sticker o GIF y pásalo: se crea solo. También sirve una captura o una grabación de pantalla.';
+}
 
 addEventListener('paste', (e) => {
   const files = e.clipboardData && e.clipboardData.files;
