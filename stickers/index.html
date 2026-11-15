@@ -1182,7 +1182,7 @@ function paintVariant(g, src, box, variant, w, h, fill) {
 async function animatedGif(frames, box, variant) {
   const { GIFEncoder, quantize, applyPalette } = await loadGif();
   const gif = GIFEncoder();
-  const [w, h] = variantSize(box, variant, frames.length > 30 ? 384 : S);
+  const [w, h] = variantSize(box, variant, frames.length > 40 ? 384 : S);     // los muy largos, más chicos para que no pesen
   const a = mk(S, S), ag = a.getContext('2d'), b = mk(w, h), bg = b.getContext('2d', { willReadFrequently: true });
   ag.putImageData(frames[0].img, 0, 0);
   /* Un color por borde, tomado del primer cuadro para que no parpadee; si el sticker es una
