@@ -1,0 +1,64 @@
+# Compila PasaStickers para iPhone en una Mac de GitHub y deja el archivo de
+# instalación (.ipa). Sale SIN firmar: la firma la pone Sideloadly o AltStore
+# con el Apple ID de quien la instala.
+name: App de iPhone
+
+on:
+  push:
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # solo para publicar el .ipa como descarga
+
+jobs:
+  compilar:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generar el proyecto de Xcode
+        run: |
+          brew install xcodegen
+          cd ios
+          xcodegen generate
+
+      - name: Compilar sin firma
+        run: |
+          cd ios
+          xcodebuild -version
+          xcodebuild -quiet \
+            -project PasaStickers.xcodeproj \
+            -scheme PasaStickers \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Empaquetar el .ipa
+        run: |
+          cd ios
+          mkdir Payload
+          cp -R build/Build/Products/Release-iphoneos/PasaStickers.app Payload/
+          zip -qry PasaStickers.ipa Payload
+          ls -la PasaStickers.ipa
+          plutil -p Payload/PasaStickers.app/Info.plist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PasaStickers-ipa
+          path: ios/PasaStickers.ipa
+
+      # Solo desde main: deja el .ipa en una dirección fija para descargarlo.
+      - name: Publicar la descarga
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view app-iphone >/dev/null 2>&1 || gh release create app-iphone \
+            --title "PasaStickers para iPhone" \
+            --notes "Archivo de instalación (.ipa) sin firmar. Se instala desde un PC o Mac con Sideloadly o AltStore."
+          gh release upload app-iphone ios/PasaStickers.ipa --clobber
