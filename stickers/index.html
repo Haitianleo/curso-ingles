@@ -311,6 +311,8 @@ const UA = navigator.userAgent;
 const isIOS = /iPhone|iPad|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const isAndroid = /Android/i.test(UA);
 const isStandalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+/* Dentro de la app de iPhone la página tiene un canal para pedirle cosas a la parte nativa. */
+const NATIVE = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.pasa);
 
 let toastTimer;
 function toast(msg) {
@@ -1519,6 +1521,28 @@ if (isIOS) {
   ANIM_PLATFORMS.whatsapp.note += ' Truco: dentro del chat, mantén pulsado el GIF, toca «Copiar» y pégalo; WhatsApp lo convierte en sticker animado.';
 }
 
+/* Dentro de la app de iPhone hay un camino mejor para WhatsApp: entregarle un paquete de
+   stickers por su vía oficial. Quedan como stickers de verdad, con transparencia y sin
+   copiar y pegar. El GIF se conserva como alternativa. */
+if (NATIVE) {
+  const packSteps = [
+    'Toca «Agregar a WhatsApp». Se abre WhatsApp con tu paquete de stickers.',
+    'Si el iPhone pregunta si permites pegar desde PasaStickers, toca «Permitir».',
+    'En WhatsApp toca «Guardar». El paquete queda en tu bandeja de stickers.',
+  ];
+  const packNote = 'WhatsApp pide al menos 3 stickers por paquete: si tienes menos, este se repite para completar. Los quietos y los animados van en paquetes separados.';
+  PLATFORMS.whatsapp = {
+    name: 'WhatsApp', fmt: 'webp', size: 512, max: 100 * 1024, gif: 'box', pack: 'PasaStickers',
+    actions: [{ act: 'pack', label: 'Agregar a WhatsApp', primary: true }, { act: 'share', use: 'gif', label: 'Enviar como GIF' }],
+    steps: packSteps, note: packNote,
+  };
+  ANIM_PLATFORMS.whatsapp = {
+    name: 'WhatsApp', max: 500 * 1024, gif: 'box', pack: 'PasaStickers animados',
+    actions: [{ act: 'pack', use: 'webp', label: 'Agregar a WhatsApp', primary: true }, { act: 'share', use: 'gif', label: 'Enviar como GIF' }],
+    steps: packSteps, note: packNote,
+  };
+}
+
 /* Cada archivo lleva sus medidas para mostrarlas en la hoja. */
 const sized = (file, w, h) => { file.px = [w, h]; return file; };
 const webpFile = (st) => sized(new File([st.anim.webp], 'sticker-' + st.id + '.webp', { type: 'image/webp' }), S, S);
@@ -1706,6 +1730,10 @@ async function preparePlatform() {
   note.className = 'muted';
   if (!st.anim && p.fmt === 'webp' && !isWebp) { note.textContent = 'Este navegador no pudo crear WebP; va como PNG.'; note.className = 'bad'; }
   else if (p.max && file.size > p.max) { note.textContent = 'Pesa más de lo que acepta ' + p.name + '.'; note.className = 'bad'; }
+  else if (p.pack) {
+    const n = Math.min(30, stickers.filter(x => !!x.anim === !!st.anim).length);
+    note.textContent = 'Va en el paquete «' + p.pack + '»' + (n > 1 ? ', con ' + n + ' de tus stickers.' : '.');
+  }
   else if (st.anim) note.textContent = st.anim.n + ' cuadros · ' + secs(st.anim.ms / 1000);
   else note.textContent = 'Listo, en el formato de ' + (key === 'other' ? 'sticker' : p.name) + '.';
 
@@ -1734,7 +1762,73 @@ async function preparePlatform() {
   }
 }
 
+/* ───────── Paquete de stickers para WhatsApp (solo dentro de la app de iPhone) ─────────
+   WhatsApp recibe paquetes, no stickers sueltos: entre 3 y 30, todos quietos o todos
+   animados, cada uno en WebP de 512×512 (hasta 100 KB quieto, 500 KB animado), más un
+   icono de bandeja en PNG de 96×96. Aquí se arma el paquete con el sticker abierto y los
+   demás del mismo tipo; la parte nativa se lo entrega a WhatsApp. */
+const b64 = (buf) => {
+  const u = new Uint8Array(buf);
+  let out = '';
+  for (let i = 0; i < u.length; i += 0x8000) out += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+  return btoa(out);
+};
+const packCache = new Map();      // sticker quieto → su WebP ya codificado, para no repetir el trabajo
+
+async function buildPack(st) {
+  const animated = !!st.anim;
+  const list = [st, ...stickers.filter(x => !!x.anim === animated && x.id !== st.id)].slice(0, 30);
+  const items = [];
+  for (const x of list) {
+    let data = animated ? null : packCache.get(x.id);
+    if (!data) {
+      let buf;
+      if (animated) buf = x.anim.webp;
+      else {
+        const f = await buildFile(x, { fmt: 'webp', size: S, max: 100 * 1024 });
+        if (f.type !== 'image/webp') continue;
+        buf = await toBuffer(f);
+      }
+      if (buf.byteLength > (animated ? 500 : 100) * 1024) continue;       // WhatsApp lo rechazaría
+      data = b64(buf);
+      if (!animated) packCache.set(x.id, data);
+    }
+    items.push({ data, emojis: ['😀'] });
+  }
+  if (!items.length) throw new Error('pack');
+  for (let i = 0, real = items.length; items.length < 3; i++) items.push(items[i % real]);
+  const tray = mk(96, 96), tg = tray.getContext('2d');
+  tg.imageSmoothingQuality = 'high';
+  tg.drawImage((await stillSource(st)).canvas, 0, 0, 96, 96);
+  return {
+    type: 'whatsappPack',
+    identifier: animated ? 'pasastickers_animados' : 'pasastickers_fijos',
+    name: animated ? 'PasaStickers animados' : 'PasaStickers',
+    publisher: 'PasaStickers',
+    animated,
+    tray: b64(await toBuffer(await canvasBlob(tray, 'image/png'))),
+    stickers: items,
+  };
+}
+
+let packing = false;
+async function sendPack() {
+  const st = sheetPlat && sheetPlat.st;
+  if (!st || packing || !NATIVE) return;
+  packing = true;
+  toast('Preparando el paquete…');
+  try { window.webkit.messageHandlers.pasa.postMessage(await buildPack(st)); }
+  catch (e) { toast('No pude preparar el paquete.'); }
+  packing = false;
+}
+/* La parte nativa avisa aquí si no pudo entregarlo. */
+window.PasaNativeResult = (ok, code) => {
+  if (ok) return;
+  toast(code === 'sin-whatsapp' ? 'No encontré WhatsApp instalado en este iPhone.' : 'No pude entregar el paquete a WhatsApp.');
+};
+
 function doAction(act, use) {
+  if (act === 'pack') { sendPack(); return; }
   const file = ready && ready[use || 'main'];
   if (!file) return;
   if (act === 'download') {
