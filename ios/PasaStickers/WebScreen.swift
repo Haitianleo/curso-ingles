@@ -8,7 +8,9 @@ struct WebScreen: UIViewRepresentable {
     /// llegan sin tener que reinstalar la app.
     static let home = URL(string: "https://haitianleo.github.io/curso-ingles/stickers/")!
 
-    func makeCoordinator() -> Coordinator { Coordinator() }
+    let hub: Hub
+
+    func makeCoordinator() -> Coordinator { Coordinator(hub: hub) }
 
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
@@ -19,7 +21,7 @@ struct WebScreen: UIViewRepresentable {
         let content = config.userContentController
         content.add(context.coordinator, name: "pasa")
         content.addUserScript(WKUserScript(
-            source: "window.PasaNative = { version: 1 };",
+            source: "window.PasaNative = { version: 2 };",        // 2: además sabe abrir Instagram
             injectionTime: .atDocumentStart,
             forMainFrameOnly: true))
 
@@ -33,6 +35,7 @@ struct WebScreen: UIViewRepresentable {
         web.scrollView.backgroundColor = fondo
         web.allowsLinkPreview = false
         context.coordinator.web = web
+        hub.stickers = web
         context.coordinator.loadHome()
         return web
     }
@@ -41,6 +44,9 @@ struct WebScreen: UIViewRepresentable {
 
     final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
         weak var web: WKWebView?
+        private let hub: Hub
+
+        init(hub: Hub) { self.hub = hub }
 
         func loadHome() {
             // Siempre se pregunta al servidor si hay versión nueva de la página.
@@ -53,6 +59,7 @@ struct WebScreen: UIViewRepresentable {
             guard let body = message.body as? [String: Any], let type = body["type"] as? String else { return }
             switch type {
             case "whatsappPack": sendPackToWhatsApp(body)
+            case "instagram": hub.showInstagram = true
             case "reload": loadHome()
             default: break
             }
@@ -134,6 +141,14 @@ struct WebScreen: UIViewRepresentable {
                 UIApplication.shared.open(url, options: [:], completionHandler: nil)
             }
             return nil
+        }
+
+        func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+            hub.stickersDidStartLoading()
+        }
+
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            hub.stickersDidLoad()          // si esperaba algo traído de Instagram, se entrega ahora
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {

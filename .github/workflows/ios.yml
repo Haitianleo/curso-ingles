@@ -45,6 +45,9 @@ jobs:
           cp -R build/Build/Products/Release-iphoneos/PasaStickers.app Payload/
           zip -qry PasaStickers.ipa Payload
           ls -la PasaStickers.ipa
+          ls Payload/PasaStickers.app
+          # Sin este script la pantalla de Instagram no ofrece el botón de pasar stickers.
+          test -s Payload/PasaStickers.app/grab.js
           plutil -p Payload/PasaStickers.app/Info.plist
 
       - uses: actions/upload-artifact@v4
